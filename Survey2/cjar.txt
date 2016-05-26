@@ -1,0 +1,1 @@
+C:\Program Files\Java\jdk1.8.0_91\bin>jar cvfM C:\Users\Edgar\Desktop\fiji-win32-20141125_PM\Fiji.app\Survey2\Survey_2.jar C:\Users\Edgar\Desktop\fiji-win32-20141125_PM\Fiji.app\Survey2\Survey_2\plugins.config
