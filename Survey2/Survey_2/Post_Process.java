@@ -363,8 +363,8 @@ public class Post_Process implements PlugIn{
     }else if( line.matches(".*Survey2_RGB") ){
       return "Survey2_RGB";
     }else if( line.matches(".*Survey2_IR") ){
-      return "Survery2_IR";
-    }else if( line.matches(".*Survery2_NDVI") ){
+      return "Survey2_IR";
+    }else if( line.matches(".*Survey2_NDVI") ){
       return "Survey2_NDVI";
     }else{
       return "CAMERA_NOT_SUPPORTED";
