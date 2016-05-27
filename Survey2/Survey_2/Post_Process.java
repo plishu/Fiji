@@ -68,7 +68,7 @@ public class Post_Process implements PlugIn{
        }else if( dialog.cancelPressed() ){
          return;
        }
-       outDirStr = IJ.getDirectory("Select Output Folder");
+       //outDirStr = IJ.getDirectory("Select Output Folder");
     }
 
 
@@ -78,25 +78,27 @@ public class Post_Process implements PlugIn{
     // save as TIFF, and copy JPG EXIF data to TIFF.
     //runMacro("macro","args");
 
-    IJ.log("In: " + inDirStr);
-    IJ.log("Out: " + outDirStr);
+    IJ.log("Input Directory: " + inDirStr);
+    IJ.log("Output Directory: " + outDirStr);
 
     // Get all files to process
     File inDir = new File(inDirStr);
     File[] filesToProcess = inDir.listFiles();
 
+    /*
     for( int i=0; i<filesToProcess.length; i++ ){
       IJ.log(filesToProcess[i].getName());
-    }
+    }*/
 
-    IJ.log("---------------------------------------------------------");
+    //IJ.log("---------------------------------------------------------");
 
     // Put files in cronological order (ascending)
     Arrays.sort(filesToProcess, new FileComparator());
 
+    /*
     for( int i=0; i<filesToProcess.length; i++ ){
       IJ.log(filesToProcess[i].getName());
-    }
+    }*/
 
 
     List<File> jpgBatchToProcess = new ArrayList<File>();
@@ -124,18 +126,26 @@ public class Post_Process implements PlugIn{
     Collections.sort(jpgBatchToProcess);
     Collections.sort(raw_jpgBatchToProcess);
 
+    /*
     IJ.log("jpg:" + jpgBatchToProcess.size());
     IJ.log("raw:" + raw_jpgBatchToProcess.size());
+    */
 
-    IJ.log("------------------------------------------------------------");
+    //IJ.log("------------------------------------------------------------");
+    IJ.log("Images that will be proccessed: ");
     for( int i=0; i<raw_jpgBatchToProcess.size(); i++ ){
       IJ.log(raw_jpgBatchToProcess.get(i).getName());
     }
+    for( int i=0; i<jpgBatchToProcess.size(); i++ ){
+      IJ.log(jpgBatchToProcess.get(i).getName());
+    }
+    IJ.log("-----------------------------------------------------------------");
+    IJ.log("I will begin to process the images mentioned above. Please wait.");
 
 
     // Begin to process all images in input directory
     //CurrentModel = ( GetCameraModel(jpgFilesToProcess.get(0).getAbsolutePath()) );
-    IJ.log(WorkingDirectory);
+    IJ.log("Working Directory: " + WorkingDirectory);
 
     CurrentModel = "";
     String NextModel = null;
@@ -152,7 +162,12 @@ public class Post_Process implements PlugIn{
       // Index JPG by i+1 each time.
       for( int i=0; i<raw_jpgBatchToProcess.size(); i=i+2 ){
         NextModel = GetCameraModel(raw_jpgBatchToProcess.get(i+1).getAbsolutePath());
-        IJ.log(NextModel);
+        IJ.log("Camera Model for " + raw_jpgBatchToProcess.get(i+1).getAbsolutePath() + ": " + NextModel);
+
+        if( NextModel.equals("CAMERA_NOT_SUPPORTED") ){
+          IJ.log("The image you are trying to process was not taken with a compatable camera. I will skip this image");
+          continue;
+        }
 
         // Open new RAW flat-field if the camera model changes for this image
         if( !CurrentModel.equals(NextModel) ){
@@ -184,7 +199,7 @@ public class Post_Process implements PlugIn{
         // do JPG next. Total of two for loops.
 
         // Process RAW
-        IJ.log("About to process: " + raw_jpgBatchToProcess.get(i).getAbsolutePath());
+        IJ.log("Processing: " + raw_jpgBatchToProcess.get(i).getAbsolutePath());
         RAWProcessed = ProcessRAW(raw_jpgBatchToProcess.get(i).getAbsolutePath(), FILTER_RADIUS_RAW, rawFactorArray);
         IJ.wait(1000);
         String[] inImageParts = (raw_jpgBatchToProcess.get(i).getName()).split("\\.(?=[^\\.]+$)");
@@ -200,7 +215,7 @@ public class Post_Process implements PlugIn{
 
 
         // Process JPG
-        IJ.log("About to process: " + raw_jpgBatchToProcess.get(i+1).getAbsolutePath());
+        IJ.log("Processing: " + raw_jpgBatchToProcess.get(i+1).getAbsolutePath());
         JPGProcessed = ProcessJPG(raw_jpgBatchToProcess.get(i+1).getAbsolutePath(), FILTER_RADIUS_JPG, jpgFactorArray);
         inImageParts = (raw_jpgBatchToProcess.get(i+1).getName()).split("\\.(?=[^\\.]+$)");
         inImageNoExt = inImageParts[0];
@@ -237,7 +252,12 @@ public class Post_Process implements PlugIn{
 
       for( int i=0; i<jpgBatchToProcess.size(); i++){
         NextModel = GetCameraModel(jpgBatchToProcess.get(i).getAbsolutePath());
-        IJ.log(NextModel);
+
+        IJ.log("Camera Model for " + jpgBatchToProcess.get(i).getAbsolutePath() + ": " + NextModel);
+        if( NextModel.equals("CAMERA_NOT_SUPPORTED") ){
+          IJ.log("The image you are trying to process was not taken with a compatable camera. I will skip this image");
+          continue;
+        }
 
         // Open new RAW flat-field if the camera model changes for this image
         if( !CurrentModel.equals(NextModel) ){
@@ -257,7 +277,7 @@ public class Post_Process implements PlugIn{
         }
 
 
-        IJ.log("About to process: " + jpgBatchToProcess.get(i).getAbsolutePath());
+        IJ.log("Processing: " + jpgBatchToProcess.get(i).getAbsolutePath());
         JPGProcessed = ProcessJPG(jpgBatchToProcess.get(i).getAbsolutePath(), FILTER_RADIUS_JPG, jpgFactorArray);
         String[] inImageParts = (jpgBatchToProcess.get(i).getName()).split("\\.(?=[^\\.]+$)");
         String inImageNoExt = inImageParts[0];
@@ -278,7 +298,7 @@ public class Post_Process implements PlugIn{
       jpgFactorArray[2].changes = false;
       jpgFactorArray[2].close();
     }
-    IJ.log("Done");
+    IJ.log("I am done processing images. Goodbye!");
 
 
   }
@@ -300,8 +320,7 @@ public class Post_Process implements PlugIn{
     }else{
       console = "sh";
       c_arg = "-c";
-      // @TODO what if directory has spaces?
-      command = PATH_TO_EXIFTOOL + " " + img;
+      command = PATH_TO_EXIFTOOL + " " + "\'"+img+"\'";
     }
 
 
@@ -318,7 +337,7 @@ public class Post_Process implements PlugIn{
 
       do{
         line = proc_out.readLine();
-        IJ.log(line);
+        //IJ.log(line);
 
 
         if( line != null ){
@@ -348,7 +367,7 @@ public class Post_Process implements PlugIn{
     }else if( line.matches(".*Survery2_NDVI") ){
       return "Survey2_NDVI";
     }else{
-      return "NOT_SUPPORTED";
+      return "CAMERA_NOT_SUPPORTED";
     }
   }
 
@@ -365,7 +384,7 @@ public class Post_Process implements PlugIn{
 
 
   	if( (inImageExt.toUpperCase()).equals("JPG") ) {
-      IJ.log("Hello! I am opening " + path);
+      IJ.log("Opening " + path);
 
       IJ.run("Open [Image IO]", "image="+ "[" + path + "]");
       ImagePlus jpg = IJ.getImage();
@@ -406,7 +425,7 @@ public class Post_Process implements PlugIn{
     }
 
     if( (inImageExt.toUpperCase()).equals("RAW") ){
-      IJ.log("Hello! I am opening " + path);
+      IJ.log("Opening " + path);
 
       IJ.run("Raw...", "open="+ "[" + path + "]" + "image=[16-bit Unsigned] width=4608 height=3456 offset=0 number=1 gap=0 little-endian");
       ImagePlus raw = IJ.getImage();
@@ -484,19 +503,6 @@ public class Post_Process implements PlugIn{
    */
   public String getFFFile(String model ){
     String file = null;
-
-    /*
-    switch(model){
-      case "Survey2_RED":
-        file = "red";
-        break;
-      case "Survey2_BLUE":
-        file = "blue";
-        break;
-      case "Survey2_GREEN":
-        file = "green";
-        break;
-    }*/
 
     if( model.equals("Survey2_RED") ){
       file = "red";
@@ -682,14 +688,14 @@ public class Post_Process implements PlugIn{
 
       try{
         // directory spaces
-        command = exiftoolpath + " -tagsfromfile -overwrite_original " + refimg + " " + targimg;
+        command = exiftoolpath + " -tagsfromfile -overwrite_original " + "\'"+refimg+"\'" + " " + "\'"+targimg+"\'";
         IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(true);
         bob.start();
 
         //command = exiftoolpath + " -delete_original! " + targimg;
-        command = "rm -f " + targimg+"_original";
+        command = "rm -f " + "\'"+targimg+"_original\'";
         IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(true);
@@ -711,16 +717,23 @@ public class Post_Process implements PlugIn{
     if( this.OS.contains("Windows") ){
       console = "cmd";
       c_arg = "/c";
-      try{
-        command = "xcopy " + "\""+dir+"*.jpg"+"\" " + "\""+dir+"original\\\"";
-        IJ.log("Executing command: " + command);
-        bob = new ProcessBuilder(console, c_arg, command);
-        bob.redirectErrorStream(true);
-        bob.start();
-      }catch( IOException e ){
-        e.printStackTrace();
-      }
+      command = "xcopy " + "\""+dir+"*.jpg"+"\" " + "\""+dir+"original\\\"";
+    }else{
+      console = "sh";
+      c_arg = "-c";
+      command = "cp " + "\'"+dir+"*.jpg\' " + "\'"+dir+"original\\\'";
     }
+
+    try{
+      command = "xcopy " + "\""+dir+"*.jpg"+"\" " + "\""+dir+"original\\\"";
+      IJ.log("Executing command: " + command);
+      bob = new ProcessBuilder(console, c_arg, command);
+      bob.redirectErrorStream(true);
+      bob.start();
+    }catch( IOException e ){
+      e.printStackTrace();
+    }
+
   }
 
 }
