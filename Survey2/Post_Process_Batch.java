@@ -48,7 +48,7 @@ public class Post_Process_Batch implements PlugIn{
     WorkingDirectory = IJ.getDirectory("imagej");
     OS = System.getProperty("os.name");
     // WINDOWS SUPPORT ONLY
-    PATH_TO_EXIFTOOL = WorkingDirectory+"Survey2/EXIFTool/exiftool.exe";
+    PATH_TO_EXIFTOOL = WorkingDirectory+"Survey2\\EXIFTool\\exiftool.exe";
     //PATH_TO_EXIFTOOL = "/usr/bin/exiftool";
     FLAT_FIELD_DIRECTORY = WorkingDirectory+"Survey2\\Flat-Fields\\";
 
@@ -174,6 +174,8 @@ public class Post_Process_Batch implements PlugIn{
         // For memory bottle-neck, might want to do RAW first, close resources and then
         // do JPG next. Total of two for loops.
 
+
+
         // Process RAW
         IJ.log("Processing: " + raw_jpgBatchToProcess.get(i).getAbsolutePath());
         // CALL MACRO HERE
@@ -188,7 +190,10 @@ public class Post_Process_Batch implements PlugIn{
         IJ.log(margs);
         IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessRAW.ijm", margs);
 
-        //CopyEXIFData(OS, PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath(), outDirStr+inImageNoExt+".tif");
+        String[] inImageParts = (raw_jpgBatchToProcess.get(i).getName()).split("\\.(?=[^\\.]+$)");
+        String inImageNoExt = inImageParts[0];
+
+        CopyEXIFData(OS, PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath(), outDirStr+inImageNoExt+".tif");
 
 
         // Process JPG
@@ -568,18 +573,21 @@ public class Post_Process_Batch implements PlugIn{
       console = "cmd";
       c_arg = "/c";
       try{
-        command = exiftoolpath + " /tagsfromfile /overwrite_original " + "\""+refimg+"\"" + " " + "\""+targimg+"\"";
+        command = exiftoolpath + " -overwrite_original -tagsfromfile " + "\""+refimg+"\"" + " " + "\""+targimg+"\"";
         IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
-        bob.redirectErrorStream(true);
+        bob.redirectErrorStream(false);
         bob.start();
 
         //command = "del " + targimg + "_original";
+        /*
         command = exiftoolpath + " /delete_original! " + "\""+targimg+"\"";
         IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(true);
         bob.start();
+        */
+
       }catch( IOException e){
         e.printStackTrace();
       }
@@ -590,18 +598,21 @@ public class Post_Process_Batch implements PlugIn{
 
       try{
         // directory spaces
-        command = exiftoolpath + " -tagsfromfile -overwrite_original " + "\'"+refimg+"\'" + " " + "\'"+targimg+"\'";
+        command = exiftoolpath + " -overwrite_original -tagsfromfile " + "\'"+refimg+"\'" + " " + "\'"+targimg+"\'";
         IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(true);
         bob.start();
 
+        /*
         //command = exiftoolpath + " -delete_original! " + targimg;
         command = "rm -f " + "\'"+targimg+"_original\'";
         IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(true);
         bob.start();
+        */
+
       }catch( IOException e){
         e.printStackTrace();
       }
