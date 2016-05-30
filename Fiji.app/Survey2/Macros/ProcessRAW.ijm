@@ -74,3 +74,73 @@ if( filter_radius != 0 ){
   factorBlue = getTitle();
 
 }
+
+// Process RAW image
+run("Raw...", "open="+ "[" +  path_raw + "]" + "image=[16-bit Unsigned] width=4608 height=3456 offset=0 number=1 gap=0 little-endian");
+rawimgfname = getInfo("image.filename");
+
+run("Debayer Image", "order=R-G-R-G demosaicing=Replication radius=2 radius=2");
+selectWindow(rawimgfname);
+close();
+
+selectWindow("RGB Stack");
+run("Make Composite", "display=Color");
+
+if (filter_radius == 0) {
+  labels = newArray("Red", "Green", "Blue");
+} else {
+  labels = newArray("RedIn", "GreenIn", "BlueIn");
+}
+
+for (j=0; j<3; j++) {
+  setSlice(j+1);
+  setMetadata("label", labels[j]);
+}
+
+//outputFileNameParts = split(rawFilesToProcess[i], ".");
+//outputFileName = outputFileNameParts[0] + ".tif";
+
+
+if (filter_radius == 0) {
+  saveAs("Tiff", path_out + File.nameWithoutExtension + ".tif");
+  close();
+} else {
+  run("Stack to Images");
+  selectWindow("RedIn");
+  toProcessBand = getTitle();
+  run("Calculator Plus", "i1="+"["+factorRed+"]"+" i2="+"["+toProcessBand+"]"+" operation=[Multiply: i2 = (i1*i2) x k1 + k2] k1=1 k2=0 create");
+  rename("Result1");
+  selectWindow("RedIn");
+  close();
+
+  selectWindow("GreenIn");
+  toProcessBand = getTitle();
+  run("Calculator Plus", "i1="+"["+factorGreen+"]"+" i2="+"["+toProcessBand+"]"+" operation=[Multiply: i2 = (i1*i2) x k1 + k2] k1=1 k2=0 create");
+  rename("Result2");
+  selectWindow("GreenIn");
+  close();
+
+  selectWindow("BlueIn");
+  toProcessBand = getTitle();
+  run("Calculator Plus", "i1="+"["+factorBlue+"]"+" i2="+"["+toProcessBand+"]"+" operation=[Multiply: i2 = (i1*i2) x k1 + k2] k1=1 k2=0 create");
+  rename("Result3");
+  selectWindow("BlueIn");
+  close();
+
+  run("Merge Channels...", "c1=Result1 c2=Result2 c3=Result3 create");
+
+  selectWindow("Composite");
+  labels = newArray("Red", "Green", "Blue");
+  for (k=0; k<3; k++) {
+    setSlice(k+1);
+    setMetadata("label", labels[k]);
+  }
+  saveAs("Tiff", path_out + File.nameWithoutExtension + ".tif");
+  close();
+
+}
+
+// Clean up
+run("Close All");
+run("Collect Garbage");
+call("java.lang.System.gc");
