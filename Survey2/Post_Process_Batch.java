@@ -171,11 +171,6 @@ public class Post_Process_Batch implements PlugIn{
           CurrentModel = NextModel;
           FlatField = getFFFile(CurrentModel);
 
-        // For memory bottle-neck, might want to do RAW first, close resources and then
-        // do JPG next. Total of two for loops.
-
-
-
         // Process RAW
         IJ.log("Processing: " + raw_jpgBatchToProcess.get(i).getAbsolutePath());
         // CALL MACRO HERE
@@ -197,10 +192,59 @@ public class Post_Process_Batch implements PlugIn{
 
 
         // Process JPG
-        //IJ.log("Processing: " + raw_jpgBatchToProcess.get(i+1).getAbsolutePath());
         // CALL MACRO HERE
+        IJ.log("Processing: " + raw_jpgBatchToProcess.get(i+1).getAbsolutePath());
+        margs = "";
+        margs += "path_ff="+FLAT_FIELD_DIRECTORY+FlatField+"\\"+FlatField+".JPG";
+        margs += "|";
+        margs += "path_jpg="+raw_jpgBatchToProcess.get(i+1).getAbsolutePath();
+        margs += "|";
+        margs += "path_out="+outDirStr;
+        margs += "|";
+        margs += "filter_radius="+"10";
+        IJ.log(margs);
+        IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessJPG.ijm", margs);
 
-        //CopyEXIFData(OS, PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath(), outDirStr+inImageNoExt+".jpg");
+        inImageParts = (raw_jpgBatchToProcess.get(i+1).getName()).split("\\.(?=[^\\.]+$)");
+        inImageNoExt = inImageParts[0];
+
+        CopyEXIFData(OS, PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath(), outDirStr+inImageNoExt+".jpg");
+      }
+
+    }
+
+    if( !jpgBatchToProcess.isEmpty() ){
+      // JPG only case
+
+      for( int i=0; i<jpgBatchToProcess.size(); i++ ){
+        NextModel = GetCameraModel(jpgBatchToProcess.get(i).getAbsolutePath());
+        IJ.log("Camera Model for " + jpgBatchToProcess.get(i).getAbsolutePath() + ": " + NextModel);
+
+        if( NextModel.equals("CAMERA_NOT_SUPPORTED") ){
+          IJ.log("The image you are trying to process was not taken with a compatable camera. I will skip this image");
+          continue;
+        }
+          CurrentModel = NextModel;
+          FlatField = getFFFile(CurrentModel);
+
+        // Process JPG
+        // CALL MACRO HERE
+        IJ.log("Processing: " + jpgBatchToProcess.get(i).getAbsolutePath());
+        String margs = "";
+        margs += "path_ff="+FLAT_FIELD_DIRECTORY+FlatField+"\\"+FlatField+".JPG";
+        margs += "|";
+        margs += "path_jpg="+jpgBatchToProcess.get(i).getAbsolutePath();
+        margs += "|";
+        margs += "path_out="+outDirStr;
+        margs += "|";
+        margs += "filter_radius="+"10";
+        IJ.log(margs);
+        IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessJPG.ijm", margs);
+
+        String[] inImageParts = (jpgBatchToProcess.get(i).getName()).split("\\.(?=[^\\.]+$)");
+        String inImageNoExt = inImageParts[0];
+
+        CopyEXIFData(OS, PATH_TO_EXIFTOOL, jpgBatchToProcess.get(i).getAbsolutePath(), outDirStr+inImageNoExt+".jpg");
       }
 
     }
