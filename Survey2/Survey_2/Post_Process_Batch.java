@@ -21,7 +21,6 @@ public class Post_Process_Batch implements PlugIn{
   private String inDirStr = null;
   private String outDirStr = null;
 
-  /* CHANGE ON RELEASE!! */
   private String PATH_TO_EXIFTOOL = null;
 
   private final int FILTER_RADIUS_RAW = 1;
@@ -142,10 +141,14 @@ public class Post_Process_Batch implements PlugIn{
     IJ.log("-----------------------------------------------------------------");
     IJ.log("I will begin to process the images mentioned above. Please wait.");
 
+    IJ.log("\n\n");
+
 
     // Begin to process all images in input directory
     //CurrentModel = ( GetCameraModel(jpgFilesToProcess.get(0).getAbsolutePath()) );
     IJ.log("Working Directory: " + WorkingDirectory);
+
+    IJ.log("\n\n");
 
     CurrentModel = "";
     String NextModel = null;
@@ -613,6 +616,7 @@ public class Post_Process_Batch implements PlugIn{
     String c_arg = null;
     String command = null;
     ProcessBuilder bob = null;
+    Process proc = null;
   	if ( osType.contains("Windows") ) {
       console = "cmd";
       c_arg = "/c";
@@ -621,16 +625,8 @@ public class Post_Process_Batch implements PlugIn{
         IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(false);
-        bob.start();
-
-        //command = "del " + targimg + "_original";
-        /*
-        command = exiftoolpath + " /delete_original! " + "\""+targimg+"\"";
-        IJ.log("Executing command: " + command);
-        bob = new ProcessBuilder(console, c_arg, command);
-        bob.redirectErrorStream(true);
-        bob.start();
-        */
+        proc = bob.start();
+        proc.waitFor();
 
       }catch( IOException e){
         e.printStackTrace();
@@ -646,22 +642,16 @@ public class Post_Process_Batch implements PlugIn{
         IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(true);
-        bob.start();
-
-        /*
-        //command = exiftoolpath + " -delete_original! " + targimg;
-        command = "rm -f " + "\'"+targimg+"_original\'";
-        IJ.log("Executing command: " + command);
-        bob = new ProcessBuilder(console, c_arg, command);
-        bob.redirectErrorStream(true);
-        bob.start();
-        */
+        proc = bob.start();
+        proc.waitFor();
 
       }catch( IOException e){
         e.printStackTrace();
       }
 
     }
+
+    IJ.log("Finished writing EXIF data");
 
   }
 
@@ -670,6 +660,7 @@ public class Post_Process_Batch implements PlugIn{
     String c_arg = null;
     String command = null;
     ProcessBuilder bob = null;
+    Process proc = null;
 
     if( this.OS.contains("Windows") ){
       console = "cmd";
@@ -686,10 +677,14 @@ public class Post_Process_Batch implements PlugIn{
       IJ.log("Executing command: " + command);
       bob = new ProcessBuilder(console, c_arg, command);
       bob.redirectErrorStream(true);
-      bob.start();
+      proc = bob.start();
+      proc.waitFor();
+
     }catch( IOException e ){
       e.printStackTrace();
     }
+
+    IJ.log("Finished backing up images");
 
   }
 
