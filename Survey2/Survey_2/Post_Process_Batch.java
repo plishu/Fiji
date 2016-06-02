@@ -148,7 +148,6 @@ public class Post_Process_Batch implements PlugIn{
     //CurrentModel = ( GetCameraModel(jpgFilesToProcess.get(0).getAbsolutePath()) );
     IJ.log("Working Directory: " + WorkingDirectory);
 
-    IJ.log("\n\n");
 
     CurrentModel = "";
     String NextModel = null;
@@ -164,6 +163,8 @@ public class Post_Process_Batch implements PlugIn{
       // Iterate through each RAW file only!
       // Index JPG by i+1 each time.
       for( int i=0; i<raw_jpgBatchToProcess.size(); i=i+2 ){
+        IJ.log("\n\n");
+
         NextModel = GetCameraModel(raw_jpgBatchToProcess.get(i+1).getAbsolutePath());
         IJ.log("Camera Model for " + raw_jpgBatchToProcess.get(i+1).getAbsolutePath() + ": " + NextModel);
 
@@ -220,6 +221,8 @@ public class Post_Process_Batch implements PlugIn{
       // JPG only case
 
       for( int i=0; i<jpgBatchToProcess.size(); i++ ){
+        IJ.log("\n\n");
+
         NextModel = GetCameraModel(jpgBatchToProcess.get(i).getAbsolutePath());
         IJ.log("Camera Model for " + jpgBatchToProcess.get(i).getAbsolutePath() + ": " + NextModel);
 
@@ -630,6 +633,8 @@ public class Post_Process_Batch implements PlugIn{
 
       }catch( IOException e){
         e.printStackTrace();
+      }catch( InterruptedException i ){
+        i.printStackTrace();
       }
 
   	} else {
@@ -647,6 +652,8 @@ public class Post_Process_Batch implements PlugIn{
 
       }catch( IOException e){
         e.printStackTrace();
+      }catch( InterruptedException i ){
+        i.printStackTrace();
       }
 
     }
@@ -682,6 +689,8 @@ public class Post_Process_Batch implements PlugIn{
 
     }catch( IOException e ){
       e.printStackTrace();
+    }catch( InterruptedException i ){
+      i.printStackTrace();
     }
 
     IJ.log("Finished backing up images");
