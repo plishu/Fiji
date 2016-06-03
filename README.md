@@ -2,8 +2,8 @@
 This repository contains the Fiji distribution for use with MAPIR cameras. The distribution contains various plugins and resources such as luts, flat-fields, and calibration files.
 
 Functionality for MAPIR cameras includes:
-- Convert RAW to TIFF
-- Correct vignette of RAW and JPG images
+- Convert Survey2 RAW to TIFF
+- Correct vignette of Survey2 RAW and JPG images
 - Create NDVI Index Image & Apply Color Gradient lut
 - Create Calibration File Using [MAPIR Reflectance Target](http://www.mapir.camera/collections/accessories/products/mapir-camera-calibration-ground-target-package)
 - Apply Calibration File to NDVI Image and Color Gradient lut
