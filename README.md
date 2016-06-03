@@ -4,9 +4,9 @@ This repository contains the Fiji distribution for use with MAPIR cameras. The d
 Functionality for MAPIR cameras includes:
 - Convert RAW to TIFF
 - Correct vignette of RAW and JPG images
-- Create Survey2 NDVI Index Image & Apply Color Gradient lut
+- Create NDVI Index Image & Apply Color Gradient lut
 - Create Calibration File Using [MAPIR Reflectance Target](http://www.mapir.camera/collections/accessories/products/mapir-camera-calibration-ground-target-package)
-- Apply Calibration File to Survey2 NDVI Image and Color Gradient lut
+- Apply Calibration File to NDVI Image and Color Gradient lut
 
 ### Installation
 Fiji is an all-in-one package that contains everything you need to run the application. We have added plugins to extend the functionality of Fiji for our MAPIR cameras. You may choose to do an easy installation or a custom installation if you already have Fiji but would like to extend its functionality to support our MAPIR cameras.
