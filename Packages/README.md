@@ -4,4 +4,4 @@ This directory contains the download links to the various pre-packaged Fiji dist
 [DOWNLOAD](http://www.docs.peauproductions.com/fiji/fiji-win32-20160602.zip)
 
 ####Fiji Windows 64-bit
-[DOWNLOAD](http://www.docs.peauproductions.com/fiji/fiji-win32-20160602.zip)
+[DOWNLOAD](http://www.docs.peauproductions.com/fiji/fiji-win64-20160602.zip)
