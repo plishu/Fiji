@@ -48,6 +48,9 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
 
   private Boolean saveParameters = true;
   private Boolean useDefaults = false;
+  private String calibDir = null;
+  private String inputDir = null;
+  private String outputDir = null;
 
   private boolean DEBUG = true;
 
@@ -71,6 +74,32 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
       DebugPrint("Done.");
     }
 
+    // Select calibration file
+    calibDir = getCalibDir(arg);
+    if( calibDir == null){
+      IJ.log("No calibration file selected");
+      return;
+    }else{
+      DebugPrint("Calibration file: " + calibDir);
+    }
+    // Select input image directory
+    inputDir = getInputDir();
+    if( inputDir == null ){
+      IJ.log("No input directory selected");
+      return;
+    }else{
+      DebugPrint("Input directory: " + inputDir);
+    }
+    // Select output image directory
+    outputDir = getOutputDir();
+    if( outputDir == null ){
+      IJ.log("No output directory selected");
+      return;
+    }else{
+      DebugPrint("Output directory: " + outputDir);
+    }
+
+    // Get inputDir files
   }
 
   /*
@@ -87,6 +116,8 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
     for( int i=0; i<lutNames.length; i++ ){
       DebugPrint(lutNames[i]);
     }
+
+
 
   }
 
@@ -217,6 +248,56 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
           ((Choice)choices.get(1)).setEnabled(false);
       }
       return true;
+  }
+
+  /*
+   * Return the path string to the calibration file user wants to user
+   * @param none
+   * @return    Absolute path string of calibration file user chooses.
+   *            Null if no path is specified
+   */
+  public String getCalibDir(String arg){
+    OpenDialog od = new OpenDialog("Select calibration file", arg);
+    String calibrationDirectory = od.getDirectory();
+    String calibrationFileName = od.getFileName();
+    if (calibrationFileName == null) {
+        IJ.error((String)"No file was selected");
+    }
+
+    return calibrationDirectory+calibrationFileName;
+  }
+
+  /*
+   * Return path string of image input directory to calibrated
+   * @param none
+   * @return  absoulue path string of image input directory to calibrated.
+   *          Null if no path is specified
+   */
+  public String getInputDir(){
+    DirectoryChooser inDirChoose = new DirectoryChooser("Input image directory");
+    String inDir = inDirChoose.getDirectory();
+    if (inDir == null) {
+        IJ.error((String)"Input image directory was not selected");
+    }
+
+    return inDir;
+  }
+
+  /*
+   * Return path string of image output directory of calibrated images
+   * @param none
+   * @return  absoulue path string of image output directory of calibrated images.
+   *          Null if no path is specified
+   */
+  public String getOutputDir(){
+    SaveDialog sd = new SaveDialog("Output directory and log file name", "log", ".txt");
+    String outDirectory = sd.getDirectory();
+    this.logName = sd.getFileName();
+    if (logName == null) {
+        IJ.error((String)"No directory was selected");
+    }
+
+    return outDirectory;
   }
 
 
