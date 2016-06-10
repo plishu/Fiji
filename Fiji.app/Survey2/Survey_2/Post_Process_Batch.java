@@ -21,7 +21,6 @@ public class Post_Process_Batch implements PlugIn{
   private String inDirStr = null;
   private String outDirStr = null;
 
-  /* CHANGE ON RELEASE!! */
   private String PATH_TO_EXIFTOOL = null;
 
   private final int FILTER_RADIUS_RAW = 1;
@@ -33,6 +32,8 @@ public class Post_Process_Batch implements PlugIn{
 
   private String WorkingDirectory = null;
   private String FLAT_FIELD_DIRECTORY = null;
+
+  private Boolean DeleteOriginals = true;
 
 
   class FileComparator implements Comparator<File>{
@@ -58,13 +59,12 @@ public class Post_Process_Batch implements PlugIn{
     //GenericDialog gd = new GenericDialog("");
     //gd.addMessage("You have selected the same directory for the input and output. This will replace the original JPG images in the input directory. Do you wish to backup the original JPG images?");
     //gd.enableYesNoCancel();
-    while( outDirStr.equals(inDirStr) ){
+    if( outDirStr.equals(inDirStr) ){
       YesNoCancelDialog dialog = new YesNoCancelDialog(null, "Caution", "The output directory is the same as the input directory. Continuing will replace the original JPG images.\n\nDo you want to backup the original JPG images?" );
-      //gd.showDialog();
+      //Backup original images even if user said no bc we need the exif data
+      backUpImages(inDirStr);
        if( dialog.yesPressed() ){
-         //Backup original images
-         backUpImages(inDirStr);
-         break;
+         DeleteOriginals = false;
        }else if( dialog.cancelPressed() ){
          return;
        }
@@ -111,7 +111,13 @@ public class Post_Process_Batch implements PlugIn{
 
     for( int i=0; i<filesToProcess.length; i++ ){
       String[] inImageParts = (filesToProcess[i].getName()).split("\\.(?=[^\\.]+$)");
-    	String inImageExt = inImageParts[1];
+      String inImageExt = null;
+
+      if( inImageParts.length < 2 ){
+        continue;
+      } else{
+        inImageExt = inImageParts[1];
+      }
 
       // If RAW is found, then add RAW+JPG to raw_jpgBatchToProcess and skip following JPG
       if( inImageExt.toUpperCase().equals("RAW") ){
@@ -142,10 +148,13 @@ public class Post_Process_Batch implements PlugIn{
     IJ.log("-----------------------------------------------------------------");
     IJ.log("I will begin to process the images mentioned above. Please wait.");
 
+    IJ.log("\n\n");
+
 
     // Begin to process all images in input directory
     //CurrentModel = ( GetCameraModel(jpgFilesToProcess.get(0).getAbsolutePath()) );
     IJ.log("Working Directory: " + WorkingDirectory);
+
 
     CurrentModel = "";
     String NextModel = null;
@@ -161,6 +170,8 @@ public class Post_Process_Batch implements PlugIn{
       // Iterate through each RAW file only!
       // Index JPG by i+1 each time.
       for( int i=0; i<raw_jpgBatchToProcess.size(); i=i+2 ){
+        IJ.log("\n\n");
+
         NextModel = GetCameraModel(raw_jpgBatchToProcess.get(i+1).getAbsolutePath());
         IJ.log("Camera Model for " + raw_jpgBatchToProcess.get(i+1).getAbsolutePath() + ": " + NextModel);
 
@@ -194,6 +205,7 @@ public class Post_Process_Batch implements PlugIn{
         // Process JPG
         // CALL MACRO HERE
         IJ.log("Processing: " + raw_jpgBatchToProcess.get(i+1).getAbsolutePath());
+
         margs = "";
         margs += "path_ff="+FLAT_FIELD_DIRECTORY+FlatField+"\\"+FlatField+".JPG";
         margs += "|";
@@ -208,7 +220,14 @@ public class Post_Process_Batch implements PlugIn{
         inImageParts = (raw_jpgBatchToProcess.get(i+1).getName()).split("\\.(?=[^\\.]+$)");
         inImageNoExt = inImageParts[0];
 
-        CopyEXIFData(OS, PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath(), outDirStr+inImageNoExt+".jpg");
+        // This copies the already cleared exif data
+        if( outDirStr.equals(inDirStr) ){
+          // Get the exif data from original Folder if output directory is input directory
+          CopyEXIFData(OS, PATH_TO_EXIFTOOL, outDirStr+"original\\"+inImageNoExt+".jpg", outDirStr+inImageNoExt+".jpg");
+        }else{
+          CopyEXIFData(OS, PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath(), outDirStr+inImageNoExt+".jpg");
+        }
+
       }
 
     }
@@ -217,6 +236,8 @@ public class Post_Process_Batch implements PlugIn{
       // JPG only case
 
       for( int i=0; i<jpgBatchToProcess.size(); i++ ){
+        IJ.log("\n\n");
+
         NextModel = GetCameraModel(jpgBatchToProcess.get(i).getAbsolutePath());
         IJ.log("Camera Model for " + jpgBatchToProcess.get(i).getAbsolutePath() + ": " + NextModel);
 
@@ -244,12 +265,24 @@ public class Post_Process_Batch implements PlugIn{
         String[] inImageParts = (jpgBatchToProcess.get(i).getName()).split("\\.(?=[^\\.]+$)");
         String inImageNoExt = inImageParts[0];
 
-        CopyEXIFData(OS, PATH_TO_EXIFTOOL, jpgBatchToProcess.get(i).getAbsolutePath(), outDirStr+inImageNoExt+".jpg");
+        // This copies the already cleared exif data
+        if( outDirStr.equals(inDirStr) ){
+          // Get the exif data from original Folder if output directory is input directory
+          CopyEXIFData(OS, PATH_TO_EXIFTOOL, outDirStr+"original\\"+inImageNoExt+".jpg", outDirStr+inImageNoExt+".jpg");
+        }else{
+          CopyEXIFData(OS, PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath(), outDirStr+inImageNoExt+".jpg");
+        }
+
       }
 
     }
 
-
+    if( !outDirStr.equals(inDirStr) ){
+      DeleteOriginals = false;
+    }
+    if( DeleteOriginals == true ){
+      deleteOriginals(outDirStr+"original");
+    }
     IJ.log("I am done processing images. Goodbye!");
 
   }
@@ -613,6 +646,7 @@ public class Post_Process_Batch implements PlugIn{
     String c_arg = null;
     String command = null;
     ProcessBuilder bob = null;
+    Process proc = null;
   	if ( osType.contains("Windows") ) {
       console = "cmd";
       c_arg = "/c";
@@ -621,19 +655,13 @@ public class Post_Process_Batch implements PlugIn{
         IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(false);
-        bob.start();
-
-        //command = "del " + targimg + "_original";
-        /*
-        command = exiftoolpath + " /delete_original! " + "\""+targimg+"\"";
-        IJ.log("Executing command: " + command);
-        bob = new ProcessBuilder(console, c_arg, command);
-        bob.redirectErrorStream(true);
-        bob.start();
-        */
+        proc = bob.start();
+        proc.waitFor();
 
       }catch( IOException e){
         e.printStackTrace();
+      }catch( InterruptedException i ){
+        i.printStackTrace();
       }
 
   	} else {
@@ -646,51 +674,124 @@ public class Post_Process_Batch implements PlugIn{
         IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(true);
-        bob.start();
-
-        /*
-        //command = exiftoolpath + " -delete_original! " + targimg;
-        command = "rm -f " + "\'"+targimg+"_original\'";
-        IJ.log("Executing command: " + command);
-        bob = new ProcessBuilder(console, c_arg, command);
-        bob.redirectErrorStream(true);
-        bob.start();
-        */
+        proc = bob.start();
+        proc.waitFor();
 
       }catch( IOException e){
         e.printStackTrace();
+      }catch( InterruptedException i ){
+        i.printStackTrace();
       }
 
     }
 
+    IJ.log("Finished writing EXIF data");
+
   }
+
 
   public void backUpImages( String dir ){
     String console = null;
     String c_arg = null;
     String command = null;
     ProcessBuilder bob = null;
+    Process proc = null;
 
     if( this.OS.contains("Windows") ){
       console = "cmd";
       c_arg = "/c";
-      command = "xcopy " + "\""+dir+"*.jpg"+"\" " + "\""+dir+"original\\\"";
+      command = "xcopy /Y " + "\""+dir+"*.jpg"+"\" " + "\""+dir+"original\\\"";
     }else{
       console = "sh";
       c_arg = "-c";
-      command = "cp " + "\'"+dir+"*.jpg\' " + "\'"+dir+"original\\\'";
+      command = "cp -f " + "\'"+dir+"*.jpg\' " + "\'"+dir+"original\\\'";
     }
 
     try{
-      command = "xcopy " + "\""+dir+"*.jpg"+"\" " + "\""+dir+"original\\\"";
-      IJ.log("Executing command: " + command);
+      //command = "xcopy " + "\""+dir+"*.jpg"+"\" " + "\""+dir+"original\\\"";
+      IJ.log("Executing Command: " + command);
       bob = new ProcessBuilder(console, c_arg, command);
-      bob.redirectErrorStream(true);
-      bob.start();
+      bob.redirectErrorStream(false);
+      proc = bob.start();
+      //proc.waitFor();
+
+      BufferedReader proc_out = new BufferedReader( new InputStreamReader(proc.getInputStream()));
+      String line = null;
+      do{
+        line = proc_out.readLine();
+        IJ.log(line);
+      }while( line != null );
+
+
     }catch( IOException e ){
       e.printStackTrace();
+    }/*catch( InterruptedException i ){
+      i.printStackTrace();
+    }*/
+
+    IJ.log("Finished backing up images");
+
+  }
+
+  public void deleteOriginals(String path){
+    /*
+    String console = null;
+    String c_arg = null;
+    String command = null;
+    ProcessBuilder bob = null;
+    Process proc = null;
+
+    if( this.OS.contains("Windows") ){
+      console = "cmd";
+      c_arg = "/c";
+      command = "\"Rmdir /s /q " + path + "\"";
+    }else{
+      console = "sh";
+      c_arg = "-c";
+      command = "rm -rf " + path;
     }
 
+    try{
+      //command = "xcopy " + "\""+dir+"*.jpg"+"\" " + "\""+dir+"original\\\"";
+      IJ.log("Executing Command: " + command);
+      bob = new ProcessBuilder(console, c_arg, command);
+      bob.redirectErrorStream(false);
+      proc = bob.start();
+      //proc.waitFor();
+
+      BufferedReader proc_out = new BufferedReader( new InputStreamReader(proc.getInputStream()));
+      String line = null;
+      do{
+        line = proc_out.readLine();
+        IJ.log(line);
+      }while( line != null );
+
+
+    }catch( IOException e ){
+      e.printStackTrace();
+    }/*catch( InterruptedException i ){
+      i.printStackTrace();
+    }*/
+    File directory = new File(path);
+    if( directory.exists() ){
+      IJ.log("Deleting backup images: " + path);
+
+      File[] files = directory.listFiles();
+      if( files != null ){
+        for( int i=0; i<files.length; i++ ){
+          files[i].delete();
+        }
+      }
+
+      if( directory.delete() ){
+        IJ.log("Delete successful");
+      }else{
+        IJ.log("Delete not soccessful");
+      }
+    }
+
+
+    IJ.log("Finished deleting backups");
   }
 
 }

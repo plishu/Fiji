@@ -1,0 +1,33 @@
+Calibration information for 2016_0112_115715_009.JPG
+
+Number of data points for regression: 6
+R squared for visible band: 0.9126175994331129
+R squared for NIR band: 0.8707993115210216
+
+Visible band slope (gain) and intercept (offest) 
+   intercept: -0.17479136
+   slope: 0.81548662
+NIR band slope (gain) and intercept (offest) 
+   intercept: 0.00009811
+   slope: 2.36780164
+
+Subtract NIR from visible:false
+Percent of NIR to subtract: 9000.0
+Remove gamma effect:false
+Gamma factor: 0.45
+
+Visible band: 3
+Near-infrared band: 1
+
+Mean for target 1 for visible band: 0.6603961085018358
+Mean for target 1 for NIR band: 0.08773568128807503
+Mean for target 2 for visible band: 0.8085572614713952
+Mean for target 2 for NIR band: 0.12385419599803878
+Mean for target 3 for visible band: 0.23674590598653864
+Mean for target 3 for NIR band: 0.06287549643604844
+Mean for target 4 for visible band: 0.6757691303888956
+Mean for target 4 for NIR band: 0.17890102333492702
+Mean for target 5 for visible band: 0.2402571012379171
+Mean for target 5 for NIR band: 0.03866458097496852
+Mean for target 6 for visible band: 0.8784788864492267
+Mean for target 6 for NIR band: 0.3271983278984273
