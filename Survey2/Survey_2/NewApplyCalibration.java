@@ -49,7 +49,7 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
 
   private Boolean saveParameters = true;
   private Boolean useDefaults = false;
-  private String calibDir = null;
+  private String[] calibDir = null;
   private String inputDir = null;
   private String outputDir = null;
   private File[] inputFiles = null;
@@ -63,6 +63,8 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
   private double gamma = 0;
   private int visBand = 0;
   private int nirBand = 0;
+  private ImagePlus indexImage = null;
+  private ImagePlus colorIndex = null;
 
   private boolean DEBUG = true;
 
@@ -92,7 +94,7 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
       IJ.log("No calibration file selected");
       return;
     }else{
-      DebugPrint("Calibration file: " + calibDir);
+      DebugPrint("Calibration file: " + calibDir[0]+calibDir[1]);
     }
     // Select input image directory
     inputDir = getInputDir();
@@ -128,8 +130,85 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
     }
 
     // Set calibration values from calibration file
-    setCalibrationValues(calibDir);
+    setCalibrationValues(calibDir[0]+calibDir[1]); //@TODO failsafe if calib file could not be read
     printCalibrationValues();
+    saveCalibrationFile(outputDir, this.logName, calibDir[1] );
+
+    // Begin processing
+    this.percentToSubtract /= 100.0;
+    ImagePlus inImagePlus = null;
+    String imagefilepath = null;
+    String imagefile = null;
+    String[] imagenameparts = null;
+    double visPixel = 0.0;
+    double nirPixel = 0.0;
+
+    Iterator<File> imageIterator = inputImages.iterator();
+    File fimage = null;
+
+    while( imageIterator.hasNext() ){
+      fimage = imageIterator.next();
+      imagefilepath = fimage.getAbsolutePath();
+      imagefile = fimage.getName();
+      inImagePlus = new ImagePlus( imagefilepath );
+
+      if( inImagePlus == null ){
+        IJ.log("Could not open image: " + imagefile + ". I will skip it.");
+        continue;
+      }
+      IJ.log("Processing image: " + imagefilepath );
+
+      // Get filename and extension
+      imagenameparts = splitFilename(imagefile);
+
+      inImagePlus.show();
+      visPixel = 0.0;
+      nirPixel = 0.0;
+      DebugPrint( "Channels: " + Integer.toString(inImagePlus.getNChannels()) );
+
+      if( inImagePlus.getNChannels() == 1 ){
+        inImagePlus = new CompositeImage(inImagePlus);
+      }
+      IJ.log("Splitting Channels...");
+      ImagePlus[] imageBands = ChannelSplitter.split((ImagePlus)inImagePlus);
+      IJ.log("Scaling Image...");
+      ImagePlus visImage = this.scaleImage(imageBands[visBand], "visImage");
+      ImagePlus nirImage = this.scaleImage(imageBands[nirBand], "nirImage");
+
+      if( removeGamma ){
+        IJ.log("Removing Gamma...");
+        removeGamma(visImage, nirImage, visPixel, nirPixel);
+      }
+
+      if( subtractNIR ){
+        IJ.log("Subtracting NIR...");
+        subtractNIR(visImage, nirImage, visPixel, nirPixel);
+      }
+
+
+      // Make DVI or NDVI
+      if (indexType == indexTypes[0]) {
+          indexImage = this.makeNDVI(visImage, nirImage, calibrationCoefs);
+          indexImage.show();
+      } else if (indexType == indexTypes[1]) {
+          indexImage = this.makeDVI(visImage, nirImage, calibrationCoefs);
+      }
+
+      // Save image step
+      if( createIndexFloat.booleanValue() ){
+        IJ.log("Creating Index Float image");
+        createIndexFloat(outputDir, imagenameparts[0], indexType, indexImage, imagenameparts[1]);
+        IJ.log("Saved");
+      }
+
+      if( createIndexColor.booleanValue() ){
+        IJ.log("Creating Index Color");
+        createIndexColor(this.colorIndex, indexImage, indexType, indexTypes, lutLocation, lutName, minColorScale, maxColorScale);
+        IJ.log("Saved");
+      }
+
+    }
+
   }
 
   /*
@@ -286,15 +365,15 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
    * @return    Absolute path string of calibration file user chooses.
    *            Null if no path is specified
    */
-  public String getCalibDir(String arg){
+  public String[] getCalibDir(String arg){
     OpenDialog od = new OpenDialog("Select calibration file", arg);
     String calibrationDirectory = od.getDirectory();
     String calibrationFileName = od.getFileName();
     if (calibrationFileName == null) {
         IJ.error((String)"No file was selected");
     }
-
-    return calibrationDirectory+calibrationFileName;
+    String[] calibDir = {calibrationDirectory, calibrationFileName};
+    return calibDir;
   }
 
   /*
@@ -379,6 +458,11 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
     return;
   }
 
+  /*
+   * Set working calibration values
+   * @param calibfile   calibration file to read values from
+   * @return none
+   */
   public void setCalibrationValues(String calibfile){
     BufferedReader fileReader = null;
     try {
@@ -449,6 +533,45 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
     return;
   }
 
+  /*
+   * Save calibration settings to text fileReader
+   * @param outDirectory          output directory to save calibration settings to
+   * @param logName               name of the settings fileReader
+   * @param calibrationFileName   name of the calibration file used
+   * @return  none
+   */
+  public void saveCalibrationFile(String outDirectory, String logName, String calibrationFileName){
+    try {
+        BufferedWriter bufWriter = new BufferedWriter(new FileWriter(String.valueOf(outDirectory) + logName));
+        bufWriter.write("PARAMETER SETTINGS:\n");
+        bufWriter.write("File name for calibration coeficients: " + calibrationFileName + "\n");
+        bufWriter.write("Select index type for calculation: " + this.indexType + "\n\n");
+        bufWriter.write("Output Color Index image? " + this.createIndexColor + "\n");
+        bufWriter.write("Minimum Index value for scaling color Index image: " + this.minColorScale + "\n");
+        bufWriter.write("Maximum Index value for scaling color Index image: " + this.maxColorScale + "\n");
+        bufWriter.write("Output floating point Index image? " + this.createIndexFloat + "\n");
+        bufWriter.write("Channel from visible image to use for Red band to create Index: " + (this.visBand + 1) + "\n");
+        bufWriter.write("Channel from IR image to use for IR band to create Index: " + (this.nirBand + 1) + "\n");
+        bufWriter.write("Subtract NIR from visible?" + this.subtractNIR + "\n");
+        bufWriter.write("Percent of NIR to subtract: " + this.percentToSubtract + "\n");
+        bufWriter.write("Remove gamma effect? " + this.removeGamma + "\n");
+        bufWriter.write("Gammafactor: " + this.gamma + "\n");
+        bufWriter.write("Visible band: " + (this.visBand + 1) + "\n");
+        bufWriter.write("Near-infrared band: " + (this.nirBand + 1) + "\n");
+        bufWriter.write("Select output color table for color Index image: " + this.lutName + "\n\n");
+        bufWriter.close();
+    }
+    catch (Exception e) {
+        IJ.error((String)"Error writing log file", (String)e.getMessage());
+        return;
+    }
+  }
+
+  /*
+   * Print calibration values in effect
+   * @param   none
+   * @return  none
+   */
   public void printCalibrationValues(){
     IJ.log("Calibration Coefficient 1: " + Double.toString(this.calibrationCoefs[0]) );
     IJ.log("Calibration Coefficient 2: " + Double.toString(this.calibrationCoefs[1]) );
@@ -461,6 +584,194 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
     IJ.log( "gamma: " +  this.gamma );
     IJ.log( "visBand: " + this.visBand );
     IJ.log( "nirBand: " + this.nirBand );
+  }
+
+  /*
+   * Scale input imageName
+   * @param inImage   image to scale
+   * @param imageName image filename
+   * @return scaled inImage
+   */
+  public ImagePlus scaleImage(ImagePlus inImage, String imageName) {
+      double inPixel = 0.0;
+      double outPixel = 0.0;
+      double minVal = inImage.getProcessor().getMin();
+      double maxVal = inImage.getProcessor().getMax();
+      double inverseRange = 1.0 / (maxVal - minVal);
+      ImagePlus newImage = NewImage.createFloatImage((String)imageName, (int)inImage.getWidth(), (int)inImage.getHeight(), (int)1, (int)1);
+      int y = 0;
+      while (y < inImage.getHeight()) {
+          int x = 0;
+          while (x < inImage.getWidth()) {
+              inPixel = inImage.getPixel(x, y)[0];
+              outPixel = inverseRange * (inPixel - minVal);
+              newImage.getProcessor().putPixelValue(x, y, outPixel);
+              ++x;
+          }
+          ++y;
+      }
+      return newImage;
+  }
+
+  /*
+   * Apply gamma removal to ImagePlus
+   * @param visImage  visImage of ImagePlus
+   * @param nirImage   nirImage of ImagePlus
+   * @param visPixel
+   * @param nirPixel
+   * @return Image should have gamma removed
+   */
+
+  public void removeGamma(ImagePlus visImage, ImagePlus nirImage, double visPixel, double nirPixel){
+    double undoGamma = 1.0 / gamma;
+    int y = 0;
+    while (y < nirImage.getHeight()) {
+        int x = 0;
+        while (x < nirImage.getWidth()) {
+            nirPixel = Math.pow(nirImage.getProcessor().getPixelValue(x, y), undoGamma);
+            visPixel = Math.pow(visImage.getProcessor().getPixelValue(x, y), undoGamma);
+            visImage.getProcessor().putPixelValue(x, y, visPixel);
+            nirImage.getProcessor().putPixelValue(x, y, nirPixel);
+            ++x;
+        }
+        ++y;
+    }
+    return;
+  }
+
+  /*
+   * Apply subtractNIR
+   * @param visImage
+   * @param nirImage  nir image to subtractNIR
+   * @param visPixel
+   * @param nirPixel
+   * @return          none
+   */
+  public void subtractNIR(ImagePlus visImage, ImagePlus nirImage, double visPixel, double nirPixel){
+    int y = 0;
+    while (y < nirImage.getHeight()) {
+        int x = 0;
+        while (x < nirImage.getWidth()) {
+            nirPixel = nirImage.getProcessor().getPixelValue(x, y);
+            visPixel = (double)visImage.getProcessor().getPixelValue(x, y) - percentToSubtract * nirPixel;
+            visImage.getProcessor().putPixelValue(x, y, visPixel);
+            ++x;
+        }
+        ++y;
+    }
+    return;
+  }
+
+  public ImagePlus makeNDVI(ImagePlus visImage, ImagePlus nirImage, double[] calibrationCeofs) {
+      double outPixel = 0.0;
+      ImagePlus newImage = NewImage.createFloatImage((String)"ndviImage", (int)nirImage.getWidth(), (int)nirImage.getHeight(), (int)1, (int)1);
+      int y = 0;
+      while (y < nirImage.getHeight()) {
+          int x = 0;
+          while (x < nirImage.getWidth()) {
+              double visPixel;
+              double nirPixel = (double)nirImage.getProcessor().getPixelValue(x, y) * calibrationCeofs[3] + calibrationCeofs[2];
+              if (nirPixel + (visPixel = (double)visImage.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0]) == 0.0) {
+                  outPixel = 0.0;
+              } else {
+                  outPixel = (nirPixel - visPixel) / (nirPixel + visPixel);
+                  if (outPixel > 1.0) {
+                      outPixel = 1.0;
+                  }
+                  if (outPixel < -1.0) {
+                      outPixel = -1.0;
+                  }
+              }
+              newImage.getProcessor().putPixelValue(x, y, outPixel);
+              ++x;
+          }
+          ++y;
+      }
+      return newImage;
+  }
+
+  public ImagePlus makeDVI(ImagePlus visImage, ImagePlus nirImage, double[] calibrationCeofs) {
+      double outPixel = 0.0;
+      ImagePlus newImage = NewImage.createFloatImage((String)"ndviImage", (int)nirImage.getWidth(), (int)nirImage.getHeight(), (int)1, (int)1);
+      int y = 0;
+      while (y < nirImage.getHeight()) {
+          int x = 0;
+          while (x < nirImage.getWidth()) {
+              double nirPixel = (double)nirImage.getProcessor().getPixelValue(x, y) * calibrationCeofs[3] + calibrationCeofs[2];
+              double visPixel = (double)visImage.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0];
+              outPixel = nirPixel - visPixel;
+              newImage.getProcessor().putPixelValue(x, y, outPixel);
+              ++x;
+          }
+          ++y;
+      }
+      newImage.show();
+      return newImage;
+  }
+
+  public void createIndexFloat(String outDirectory, String outFileBase, String indexType, ImagePlus indexImage, String extension){
+    String NDVIAppend = "_NDVI_Float";
+    String DVIAppend = "_DVI_Float";
+
+    DebugPrint("Output Directory:" + outDirectory);
+    DebugPrint("Filename: " + outFileBase);
+    DebugPrint("Index Type: " + indexType);
+    DebugPrint("Save as extension: " + extension);
+
+    if ( indexType.equals(indexTypes[0]) ) {
+        IJ.save((ImagePlus)indexImage, (String)(String.valueOf(outDirectory) + outFileBase + NDVIAppend + "." + extension));
+    } else if (indexType == indexTypes[1]) {
+        IJ.save((ImagePlus)indexImage, (String)(String.valueOf(outDirectory) + outFileBase + DVIAppend + "." + extension));
+    }
+    return;
+  }
+
+  public void createIndexColor(ImagePlus colorIndex, ImagePlus indexImage, String indexType, String[] indexTypes, String lutLocation, String lutName, double minColorScale, double maxColorScale ){
+    DebugPrint("Index Type: " + indexType);
+    DebugPrint("Lut Location: " + lutLocation);
+    DebugPrint("Lut Name: " + lutName);
+    DebugPrint("Min Color Scale: " + Double.toString(minColorScale));
+    DebugPrint("Max Color Scale: " + Double.toString(maxColorScale));
+
+
+    IndexColorModel cm = null;
+    colorIndex = null;
+
+    if (indexType == indexTypes[0]) {
+        colorIndex = NewImage.createByteImage((String)"Color NDVI", (int)indexImage.getWidth(), (int)indexImage.getHeight(), (int)1, (int)1);
+    } else if (indexType == indexTypes[1]) {
+        colorIndex = NewImage.createByteImage((String)"Color DVI", (int)indexImage.getWidth(), (int)indexImage.getHeight(), (int)1, (int)1);
+    }
+
+    float[] pixels = (float[])indexImage.getProcessor().getPixels();
+    int y = 0;
+    while (y < indexImage.getHeight()) {
+        int offset = y * indexImage.getWidth();
+        int x = 0;
+        while (x < indexImage.getWidth()) {
+            int pos = offset + x;
+            colorIndex.getProcessor().putPixelValue(x, y, (double)Math.round(((double)pixels[pos] - minColorScale) / ((maxColorScale - minColorScale) / 255.0)));
+            ++x;
+        }
+        ++y;
+    }
+
+    try {
+        //cm = LutLoader.open((String)(String.valueOf(lutLocation) + lutName));
+        cm = LutLoader.open(lutLocation+"\\"+lutLocation);
+    }catch (IOException e) {
+        //IJ.error((String)((Object)e));
+        e.printStackTrace();
+    }
+
+    if( cm == null ){
+      IJ.log("Could not open LUT file.");
+      return;
+    }
+    LUT lut = new LUT(cm, 255.0, 0.0);
+    colorIndex.getProcessor().setLut(lut);
+    colorIndex.show();
+
   }
 
 
