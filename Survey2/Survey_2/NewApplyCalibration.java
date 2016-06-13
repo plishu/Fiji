@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.Vector;
+import java.util.*;
 
 public class NewApplyCalibration implements PlugIn, DialogListener {
 
@@ -51,6 +52,17 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
   private String calibDir = null;
   private String inputDir = null;
   private String outputDir = null;
+  private File[] inputFiles = null;
+  private List<File> inputImages = null;
+
+
+  private double[] calibrationCoefs = new double[4];
+  private Boolean subtractNIR = null;
+  private double percentToSubtract = 0;
+  private Boolean removeGamma = null;
+  private double gamma = 0;
+  private int visBand = 0;
+  private int nirBand = 0;
 
   private boolean DEBUG = true;
 
@@ -99,7 +111,25 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
       DebugPrint("Output directory: " + outputDir);
     }
 
-    // Get inputDir files
+    // Get inputDir files and filter out only the images
+    String[] fsplit = null;
+    inputFiles = new File(inputDir).listFiles();
+
+    for( int i=0; i<inputFiles.length; i++ ){
+      DebugPrint(inputFiles[i].getAbsolutePath());
+      getImagesFromFiles( inputFiles[i], inputImages );
+    }
+    for( int i=0; i<inputImages.size(); i++ ){
+      DebugPrint( inputImages.get(i).getName() );
+    }
+    if( inputImages.size() == 0 ){
+      IJ.log( "No images found. Please choose a directory with images to calibrate" );
+      return;
+    }
+
+    // Set calibration values from calibration file
+    setCalibrationValues(calibDir);
+    printCalibrationValues();
   }
 
   /*
@@ -117,7 +147,7 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
       DebugPrint(lutNames[i]);
     }
 
-
+    inputImages = new ArrayList<File>();
 
   }
 
@@ -298,6 +328,139 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
     }
 
     return outDirectory;
+  }
+
+  /*
+   * Splits the filename path into filename and extension. For example
+   * MyImage.jpg is split into MyImage and jpg
+   * @param filename  The filename to split
+   * @return          String array where first index contains the filename
+   *                  and second index contains extension.
+   *                  Return null if could not be split or extension could not be found
+   */
+  public String[] splitFilename(String filename){
+    String[] fnsplit = filename.split("\\.(?=[^\\.]+$)");
+    String[] split = null;
+
+    if( fnsplit.length == 2 ){
+      // filename split successfully into filename and extension
+      split = fnsplit;
+    }
+
+    return split;
+  }
+
+  /*
+   * Add image fils to the List. Essentially, it filters out non-image-based files.
+   * @param fname   File object of the filename to filters
+   * @param imgList List to add the image to when found
+   * @return        Function returns void. However, imgList should be populated
+   *                with Files that link to image-based-files
+   */
+  public void getImagesFromFiles(File fname, List<File> imglist ){
+    String[] fsplit = splitFilename( fname.getName() );
+    String ext = null;
+
+    if( fsplit == null ){
+      IJ.log("Could not split: " + fname.getName() + ". I am skipping it.");
+    }else{
+      ext = fsplit[1].toUpperCase();
+      if( ext.equals("JPG") ){
+        imglist.add(fname);
+      }else if( ext.equals("PNG") ){
+        imglist.add(fname);
+      }else if( ext.equals("TIF") ){
+        imglist.add(fname);
+      }else if( ext.equals("RAW") ){
+        imglist.add(fname);
+      }
+
+    }
+    return;
+  }
+
+  public void setCalibrationValues(String calibfile){
+    BufferedReader fileReader = null;
+    try {
+      String fullLine = "";
+      fileReader = new BufferedReader(new FileReader(calibfile));
+      int counter = 1;
+      while ((fullLine = fileReader.readLine()) != null) {
+          String[] dataValues;
+          if (counter == 8) {
+              dataValues = fullLine.split(":");
+              this.calibrationCoefs[0] = Double.parseDouble(dataValues[1]);
+          }
+          if (counter == 9) {
+              dataValues = fullLine.split(":");
+              this.calibrationCoefs[1] = Double.parseDouble(dataValues[1]);
+          }
+          if (counter == 11) {
+              dataValues = fullLine.split(":");
+              this.calibrationCoefs[2] = Double.parseDouble(dataValues[1]);
+          }
+          if (counter == 12) {
+              dataValues = fullLine.split(":");
+              this.calibrationCoefs[3] = Double.parseDouble(dataValues[1]);
+          }
+          if (counter == 14) {
+              dataValues = fullLine.split(":");
+              this.subtractNIR = Boolean.parseBoolean(dataValues[1]);
+          }
+          if (counter == 15) {
+              dataValues = fullLine.split(":");
+              this.percentToSubtract = Double.parseDouble(dataValues[1]);
+          }
+          if (counter == 16) {
+              dataValues = fullLine.split(":");
+              this.removeGamma = Boolean.parseBoolean(dataValues[1]);
+          }
+          if (counter == 17) {
+              dataValues = fullLine.split(":");
+              this.gamma = Double.parseDouble(dataValues[1]);
+          }
+          if (counter == 19) {
+              dataValues = fullLine.split(":");
+              this.visBand = Integer.parseInt(dataValues[1].trim()) - 1;
+          }
+          if (counter == 20) {
+              dataValues = fullLine.split(":");
+              this.nirBand = Integer.parseInt(dataValues[1].trim()) - 1;
+          }
+          ++counter;
+      }
+    }catch (Exception e) {
+        IJ.error((String)"Error reading calibration coefficient file", (String)e.getMessage());
+        try {
+            fileReader.close();
+        }
+        catch (IOException f) {
+            f.printStackTrace();
+        }
+        return;
+    }finally {
+      try {
+          fileReader.close();
+      }catch (IOException e) {
+          e.printStackTrace();
+      }
+    }
+
+    return;
+  }
+
+  public void printCalibrationValues(){
+    IJ.log("Calibration Coefficient 1: " + Double.toString(this.calibrationCoefs[0]) );
+    IJ.log("Calibration Coefficient 2: " + Double.toString(this.calibrationCoefs[1]) );
+    IJ.log("Calibration Coefficient 3: " + Double.toString(this.calibrationCoefs[2]) );
+    IJ.log("Calibration Coefficient 4: " + Double.toString(this.calibrationCoefs[3]) );
+
+    IJ.log( "subtractNIR: " + this.subtractNIR );
+    IJ.log( "percentToSubtract: " + Double.toString(this.percentToSubtract) );
+    IJ.log( "removeGamma: " + this.removeGamma );
+    IJ.log( "gamma: " +  this.gamma );
+    IJ.log( "visBand: " + this.visBand );
+    IJ.log( "nirBand: " + this.nirBand );
   }
 
 
