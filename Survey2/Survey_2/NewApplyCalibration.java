@@ -204,8 +204,10 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
       if( createIndexColor.booleanValue() ){
         IJ.log("Creating Index Color");
         createIndexColor(this.colorIndex, indexImage, indexType, indexTypes, lutLocation, lutName, minColorScale, maxColorScale);
+        saveIndexColor(outputDir, imagenameparts[0], imagenameparts[1], this.colorIndex, indexType, indexTypes);
         IJ.log("Saved");
       }
+
 
     }
 
@@ -218,7 +220,7 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
    */
   public void setup(){
     WorkingDirectory = IJ.getDirectory("imagej");
-    lutLocation = WorkingDirectory+"luts";
+    lutLocation = IJ.getDirectory("luts");
     lutNames = (new File(lutLocation)).list();
 
     DebugPrint("---------------- Luts Detected ------------------");
@@ -726,6 +728,8 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
     return;
   }
 
+  public
+
   public void createIndexColor(ImagePlus colorIndex, ImagePlus indexImage, String indexType, String[] indexTypes, String lutLocation, String lutName, double minColorScale, double maxColorScale ){
     DebugPrint("Index Type: " + indexType);
     DebugPrint("Lut Location: " + lutLocation);
@@ -757,8 +761,7 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
     }
 
     try {
-        //cm = LutLoader.open((String)(String.valueOf(lutLocation) + lutName));
-        cm = LutLoader.open(lutLocation+"\\"+lutLocation);
+        cm = LutLoader.open( (String)(String.valueOf(lutLocation) + lutName) );
     }catch (IOException e) {
         //IJ.error((String)((Object)e));
         e.printStackTrace();
@@ -772,6 +775,22 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
     colorIndex.getProcessor().setLut(lut);
     colorIndex.show();
 
+  }
+
+  public void saveIndexColor(String outDirectory, String outFileBase, String inImageExt, ImagePlus colorIndex, String indexType, String[] indexTypes){
+    DebugPrint("Index Type: " + indexType);
+    DebugPrint("Save Directory: " + outDirectory);
+    DebugPrint("Save Filename: " + outFileBase);
+    DebugPrint("Save Image Extension: " + inImageExt);
+
+    String tempFileName = String.valueOf(outDirectory) + outFileBase + "IndexColorTemp." + inImageExt;
+    tempFile = new File(tempFileName);
+    IJ.save((ImagePlus)colorIndex, (String)tempFileName);
+    if (indexType == indexTypes[0]) {
+        outFile = new File(String.valueOf(outDirectory) + outFileBase + "_NDVI_Color." + inImageExt);
+    } else if (indexType == indexTypes[1]) {
+        outFile = new File(String.valueOf(outDirectory) + outFileBase + "_DVI_Color." + inImageExt);
+    }
   }
 
 
