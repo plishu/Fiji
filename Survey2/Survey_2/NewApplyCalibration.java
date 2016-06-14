@@ -31,6 +31,23 @@ import java.io.Writer;
 import java.util.Vector;
 import java.util.*;
 
+import java.io.BufferedOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+
+import org.apache.sanselan.ImageReadException;
+import org.apache.sanselan.ImageWriteException;
+import org.apache.sanselan.Sanselan;
+import org.apache.sanselan.common.IImageMetadata;
+import org.apache.sanselan.formats.jpeg.JpegImageMetadata;
+import org.apache.sanselan.formats.jpeg.exifRewrite.ExifRewriter;
+import org.apache.sanselan.formats.tiff.TiffField;
+import org.apache.sanselan.formats.tiff.TiffImageMetadata;
+import org.apache.sanselan.formats.tiff.write.TiffOutputSet;
+
+
 public class NewApplyCalibration implements PlugIn, DialogListener {
 
   private static String[] indexTypes = new String[]{"NDVI (NIR-Vis)/(NIR+Vis)", "DVI NIR-Vis"};
@@ -201,15 +218,23 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
         IJ.log("Saved");
       }
 
+      File[] savedIndexColorImages = null;
       if( createIndexColor.booleanValue() ){
         IJ.log("Creating Index Color");
         createIndexColor(this.colorIndex, indexImage, indexType, indexTypes, lutLocation, lutName, minColorScale, maxColorScale);
-        saveIndexColor(outputDir, imagenameparts[0], imagenameparts[1], this.colorIndex, indexType, indexTypes);
+        savedIndexColorImages = saveIndexColor(outputDir, imagenameparts[0], imagenameparts[1], this.colorIndex, indexType, indexTypes);
         IJ.log("Saved");
       }
 
+      // Clean up and EXIF data copy
+      IJ.run((String)"Close All");
 
+      IJ.log("Writting EXIF data...");
+      WriteEXIF exifWriter = new WriteEXIF(fimage, savedIndexColorImages[0] , savedIndexColorImages[1]);
+      exifWriter.copyEXIF();
     }
+
+    IJ.log("Done processing!");
 
   }
 
@@ -728,8 +753,6 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
     return;
   }
 
-  public
-
   public void createIndexColor(ImagePlus colorIndex, ImagePlus indexImage, String indexType, String[] indexTypes, String lutLocation, String lutName, double minColorScale, double maxColorScale ){
     DebugPrint("Index Type: " + indexType);
     DebugPrint("Lut Location: " + lutLocation);
@@ -777,20 +800,102 @@ public class NewApplyCalibration implements PlugIn, DialogListener {
 
   }
 
-  public void saveIndexColor(String outDirectory, String outFileBase, String inImageExt, ImagePlus colorIndex, String indexType, String[] indexTypes){
+  public File[] saveIndexColor(String outDirectory, String outFileBase, String inImageExt, ImagePlus colorIndex, String indexType, String[] indexTypes){
     DebugPrint("Index Type: " + indexType);
     DebugPrint("Save Directory: " + outDirectory);
     DebugPrint("Save Filename: " + outFileBase);
     DebugPrint("Save Image Extension: " + inImageExt);
 
     String tempFileName = String.valueOf(outDirectory) + outFileBase + "IndexColorTemp." + inImageExt;
-    tempFile = new File(tempFileName);
+    File tempFile = new File(tempFileName);
     IJ.save((ImagePlus)colorIndex, (String)tempFileName);
+    File outFile = null;
     if (indexType == indexTypes[0]) {
         outFile = new File(String.valueOf(outDirectory) + outFileBase + "_NDVI_Color." + inImageExt);
     } else if (indexType == indexTypes[1]) {
         outFile = new File(String.valueOf(outDirectory) + outFileBase + "_DVI_Color." + inImageExt);
     }
+
+    File[] outputs = {outFile, tempFile};
+    return outputs;
+  }
+
+
+
+
+
+  public class WriteEXIF {
+      File outImageFile = null;
+      File originalJpegFile = null;
+      File tempImageFile = null;
+
+      public WriteEXIF(File originalJpegFile, File outImageFile, File tempImageFile) {
+          this.originalJpegFile = originalJpegFile;
+          this.outImageFile = outImageFile;
+          this.tempImageFile = tempImageFile;
+      }
+
+      public void copyEXIF() {
+          OutputStream os = null;
+          TiffOutputSet outputSet = null;
+          JpegImageMetadata jpegMetadata = null;
+          TiffImageMetadata tiffMetadata = null;
+          String extension = this.originalJpegFile.getName().substring(this.originalJpegFile.getName().lastIndexOf(".") + 1, this.originalJpegFile.getName().length());
+          try {
+              IImageMetadata metadata = Sanselan.getMetadata((File)this.originalJpegFile);
+              if (metadata instanceof JpegImageMetadata) {
+                  jpegMetadata = (JpegImageMetadata)metadata;
+              } else if (metadata instanceof TiffImageMetadata) {
+                  tiffMetadata = (TiffImageMetadata)metadata;
+              }
+              if (extension.equals("tif".toLowerCase())) {
+                  this.tempImageFile.renameTo(this.outImageFile);
+                  this.tempImageFile.delete();
+              } else if (jpegMetadata != null) {
+                  TiffImageMetadata exif = jpegMetadata.getExif();
+                  if (exif != null) {
+                      outputSet = exif.getOutputSet();
+                  }
+                  os = new FileOutputStream(this.outImageFile);
+                  os = new BufferedOutputStream(os);
+                  new ExifRewriter().updateExifMetadataLossless(this.tempImageFile, os, outputSet);
+                  this.tempImageFile.delete();
+              } else if (tiffMetadata != null) {
+                  outputSet = tiffMetadata.getOutputSet();
+                  List tiffList = tiffMetadata.getAllFields();
+                  ArrayList dirList = new ArrayList();
+                  dirList = tiffMetadata.getDirectories();
+                  outputSet = new TiffOutputSet();
+                  for (Object field : tiffMetadata.getAllFields()) {
+                      if (!(field instanceof TiffField)) continue;
+                      TiffField tiffField = (TiffField)field;
+                      System.out.println(String.valueOf(tiffField.getTagName()) + ": " + tiffField.getValueDescription() + " : " + tiffField.length);
+                  }
+                  os = new FileOutputStream(this.outImageFile);
+                  os = new BufferedOutputStream(os);
+                  new ExifRewriter().updateExifMetadataLossy(this.tempImageFile, os, outputSet);
+                  this.tempImageFile.delete();
+              } else {
+                  this.tempImageFile.renameTo(this.outImageFile);
+              }
+          }
+          catch (ImageWriteException e) {
+              e.printStackTrace();
+              IJ.error((String)("Error adding GPS metadata to file \n" + this.outImageFile.getAbsolutePath()));
+          }
+          catch (FileNotFoundException e) {
+              e.printStackTrace();
+              IJ.error((String)("Error adding GPS metadata to file \n" + this.outImageFile.getAbsolutePath()));
+          }
+          catch (IOException e) {
+              e.printStackTrace();
+              IJ.error((String)("Error adding GPS metadata to file \n" + this.outImageFile.getAbsolutePath()));
+          }
+          catch (ImageReadException e) {
+              e.printStackTrace();
+              IJ.error((String)("Error adding GPS metadata to file \n" + this.outImageFile.getAbsolutePath()));
+          }
+      }
   }
 
 
