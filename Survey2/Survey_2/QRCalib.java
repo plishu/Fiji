@@ -18,6 +18,7 @@ import java.util.Comparator;
 import java.lang.Runtime;
 import java.lang.ProcessBuilder;
 import java.lang.Process;
+import java.lang.Math;
 import ij.io.*;
 
 import com.google.zxing.BinaryBitmap;
@@ -38,6 +39,7 @@ public class QRCalib{
 
   private Reader qrReader = null;
 
+  // Anything to do that involves calibration using qr code
   public QRCalib(){
     qrReader = new QRCodeReader();
   }
@@ -73,6 +75,89 @@ public class QRCalib{
     // @TODO Make it that it is not limited to IJ.log, but any output stream
     // (command prompt, log file, etc)
     IJ.log(str);
+  }
+
+  public PolygonRoi createPolygon( float[] xcoords, float[] ycoords ){
+    PolygonRoi polygon = null;
+    if( xcoords.length == 4 && ycoords.length == 4 ){
+      polygon = new PolygonRoi(xcoords, ycoords, Roi.POLYGON);
+      polygon.setStrokeWidth(3);
+      polygon.setStrokeColor(new Color(0,0,0));
+      return polygon;
+    }else{
+      IJ.log("Not enough points to create polygon. Required: 4");
+      return null;
+    }
+  }
+
+  public void drawPolygonOn( PolygonRoi roi, ImagePlus img ){
+    img.getProcessor().drawRoi(roi);
+    img.updateAndDraw();
+    return;
+  }
+
+  /*
+   * Transform QR point 2 to the target directly above it. This will return
+   * coordinates to the center of the target.
+   * @param xcoord    The x coordinate of QR point 2
+   * @param ycoord    The y coordinate of QR point 2
+   * @return          y and y coordinates to center of target
+   */
+  public float[] getTarget1Center( float xcoord, float ycoord, float distance, float angle ){
+    float center[] = new float[2];
+    float dx = (float)(distance*Math.sin(angle));
+    float dy = (float)(distance*Math.cos(angle));
+
+    center[0] = xcoord + dx;
+    center[1] = ycoord + dy;
+
+    return center;
+  }
+
+  public float[] getTargetXCoords( float[] targetCenter, float size ){
+    /*...................................
+     *.....(x1,y1)----------(x2,y2)......
+     *............|........|.............
+     *............|........|.............
+     *............|........|.............
+     *.....(x3,y3)----------(x4,y4)......
+     *...................................
+     */
+     float[] xcoords = new float[4];
+     xcoords[0] = (float)(targetCenter[0] - 0.5*Math.sqrt(size));
+     xcoords[2] = xcoords[0];
+
+     xcoords[1] = (float)(targetCenter[0] + 0.5*Math.sqrt(size));
+     xcoords[3] = xcoords[1];
+
+     /*
+     for(int i=0; i<xcoords.length; i++){
+       IJ.log(Float.toString(xcoords[i]));
+     }*/
+    return xcoords;
+  }
+
+  public float[] getTargetYCoords( float[] targetCenter, float size ){
+    /*...................................
+     *.....(x1,y1)----------(x2,y2)......
+     *............|........|.............
+     *............|........|.............
+     *............|........|.............
+     *.....(x3,y3)----------(x4,y4)......
+     *...................................
+     */
+     float[] ycoords = new float[4];
+     ycoords[0] = (float)(targetCenter[1] - 0.5*Math.sqrt(size));
+     ycoords[1] = ycoords[0];
+
+     ycoords[2] = (float)(targetCenter[1] + 0.5*Math.sqrt(size));
+     ycoords[3] = ycoords[2];
+
+     /*
+     for(int i=0; i<ycoords.length; i++){
+       IJ.log(Float.toString(ycoords[i]));
+     }*/
+    return ycoords;
   }
 
 

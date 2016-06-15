@@ -51,14 +51,12 @@ public class Auto_Calibrate implements PlugIn{
     }
 
     ResultPoint[] points = result.getResultPoints();
-    IJ.log( Integer.toString(points.length) );
 
 
 
     // Draw polygon around qrcode
     float[] polyXCoords = getXResultPoints(points);
     float[] polyYCoords = getYResultPoints(points);
-    //PolygonRoi qrRoi = new PolygonRoi( polyXCoords, polyYCoords, Roi.POLYGON );
 
     IJ.log("X1: " + Float.toString(polyXCoords[0]) );
     IJ.log("Y1: " + Float.toString(polyYCoords[0]) );
@@ -66,10 +64,42 @@ public class Auto_Calibrate implements PlugIn{
     IJ.log("Y2: " + Float.toString(polyYCoords[1]) );
     IJ.log("X3: " + Float.toString(polyXCoords[2]) );
     IJ.log("Y3: " + Float.toString(polyYCoords[2]) );
-    //createPolygon( polyXCoords, polyYCoords ); // Handles cases where less than 4 points were found
-    PolygonRoi qrRoi = createPolygon( polyXCoords, polyYCoords );
-    qrimg.getProcessor().drawRoi(qrRoi);
-    qrimg.updateAndDraw();
+    IJ.log("X4: " + Float.toString(polyXCoords[3]) );
+    IJ.log("Y4: " + Float.toString(polyYCoords[3]) );
+
+    PolygonRoi qrRoi = qr.createPolygon( polyXCoords, polyYCoords );
+    qr.drawPolygonOn(qrRoi, qrimg);
+
+
+    float[] target1XCoords = null;
+    float[] target1YCoords = null;
+
+    // Prepare samplXCoords & sampleYCoords
+    float ls = (float)21.0;
+    float angle = (float)qrRoi.getAngle((int)polyXCoords[1], (int)polyYCoords[1], (int)polyXCoords[2], (int)polyYCoords[2]);
+    IJ.log("Angle: " + Float.toString(angle));
+    float[] target1Center = qr.getTarget1Center(polyXCoords[1], polyYCoords[1], ls, angle );
+    IJ.log( "Target center: (" + Float.toString(target1Center[0]) + "," + Float.toString(target1Center[1]) + ")" );
+
+
+
+    target1XCoords = qr.getTargetXCoords(target1Center, (float)100);
+    target1YCoords = qr.getTargetYCoords(target1Center, (float)200);
+
+    IJ.log("X1: " + Float.toString(target1XCoords[0]) );
+    IJ.log("Y1: " + Float.toString(target1YCoords[0]) );
+    IJ.log("X2: " + Float.toString(target1XCoords[1]) );
+    IJ.log("Y2: " + Float.toString(target1YCoords[1]) );
+    IJ.log("X3: " + Float.toString(target1XCoords[2]) );
+    IJ.log("Y3: " + Float.toString(target1YCoords[2]) );
+    IJ.log("X4: " + Float.toString(target1XCoords[3]) );
+    IJ.log("Y4: " + Float.toString(target1YCoords[3]) );
+
+
+
+    PolygonRoi target1Roi = qr.createPolygon( target1XCoords, target1YCoords );
+    qr.drawPolygonOn(target1Roi, qrimg);
+
 
   }
 
