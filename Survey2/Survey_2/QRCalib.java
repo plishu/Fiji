@@ -48,11 +48,11 @@ public class QRCalib{
     BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
     String resultstr = "";
     print("Decoding...");
-
+    Result result = null;
     try{
       Hashtable<DecodeHintType, Object> hints = new Hashtable<DecodeHintType, Object>();
       hints.put(DecodeHintType.TRY_HARDER, Boolean.TRUE);
-      Result result = qrReader.decode(bitmap, hints);
+      result = qrReader.decode(bitmap, hints);
 
     } catch (NotFoundException nf){
       print( "Could not find QR code.");

@@ -40,20 +40,76 @@ public class Auto_Calibrate implements PlugIn{
 
     String imageDir = IJ.getFilePath("Input QR Code image");
     ImagePlus qrimg = IJ.openImage(imageDir);
+    qrimg.show();
 
     QRCalib qr = new QRCalib();
 
     Result result = qr.decodeQR(qrimg);
+    if( result == null ){
+      IJ.log("Could not find QR code. Skiping this image.");
+      return;
+    }
 
     ResultPoint[] points = result.getResultPoints();
     IJ.log( Integer.toString(points.length) );
 
-    IJ.log("X1: " + Float.toString(points[0].getX()) );
-    IJ.log("Y1: " + Float.toString(points[0].getY()) );
-    IJ.log("X2: " + Float.toString(points[1].getX()) );
-    IJ.log("Y2: " + Float.toString(points[1].getY()) );
-    IJ.log("X3: " + Float.toString(points[2].getX()) );
-    IJ.log("Y3: " + Float.toString(points[2].getY()) );
+
+
+    // Draw polygon around qrcode
+    float[] polyXCoords = getXResultPoints(points);
+    float[] polyYCoords = getYResultPoints(points);
+    //PolygonRoi qrRoi = new PolygonRoi( polyXCoords, polyYCoords, Roi.POLYGON );
+
+    IJ.log("X1: " + Float.toString(polyXCoords[0]) );
+    IJ.log("Y1: " + Float.toString(polyYCoords[0]) );
+    IJ.log("X2: " + Float.toString(polyXCoords[1]) );
+    IJ.log("Y2: " + Float.toString(polyYCoords[1]) );
+    IJ.log("X3: " + Float.toString(polyXCoords[2]) );
+    IJ.log("Y3: " + Float.toString(polyYCoords[2]) );
+    //createPolygon( polyXCoords, polyYCoords ); // Handles cases where less than 4 points were found
+    PolygonRoi qrRoi = createPolygon( polyXCoords, polyYCoords );
+    qrimg.getProcessor().drawRoi(qrRoi);
+    qrimg.updateAndDraw();
+
+  }
+
+  /*
+   * Returns x coordinates of the result point from the qr Code
+   * @param: points   ResultPoint obtained from qr decode result
+   * @return: x coordinates of result points
+   */
+  public float[] getXResultPoints(ResultPoint[] points){
+    float[] x = new float[points.length];
+    for( int i=0; i<points.length; i++){
+      x[i] = points[i].getX();
+    }
+    return x;
+  }
+
+  /*
+   * Returns y coordinates of the result point from the qr Code
+   * @param: points   ResultPoint obtained from qr decode result
+   * @return: y coordinates of result points
+   */
+  public float[] getYResultPoints(ResultPoint[] points){
+    float[] y = new float[points.length];
+    for( int i=0; i<points.length; i++ ){
+      y[i] = points[i].getY();
+    }
+    return y;
+  }
+
+  public PolygonRoi createPolygon(float[] xcoords, float[] ycoords){
+    PolygonRoi polygon = null;
+    if( xcoords.length == 4 && ycoords.length == 4 ){
+      polygon = new PolygonRoi(xcoords, ycoords, Roi.POLYGON);
+      polygon.setStrokeWidth(10);
+      polygon.setStrokeColor(new Color(0,0,0));
+      return polygon;
+    }else{
+      IJ.log("Not enough points to create polygon. Required: 4");
+      return null;
+    }
 
   }
 }
