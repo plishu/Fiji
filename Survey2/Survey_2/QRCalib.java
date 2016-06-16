@@ -38,9 +38,9 @@ import com.google.zxing.ResultPoint;
 public class QRCalib{
 
   public static final float SQ_TO_TARG = 2.1875f; // inches
-  public static final float SQ_TO_SQ = 4.9375f; // inches
+  public static final float SQ_TO_SQ = 5.0f; // inches 4.9375f
   public static final float TARGET_LENGTH = 2f; // inches
-  public static final float TARG_TO_TARG = 2.7f; // inches
+  public static final float TARG_TO_TARG = 2.6f; // inches
 
   private Reader qrReader = null;
 
@@ -72,8 +72,12 @@ public class QRCalib{
     return result;
   }
 
-  public ImagePlus resize(ImagePlus inImg){
-    return null;
+  public ImagePlus resize(ImagePlus inImg, int amount){
+    ImageProcessor ip = inImg.getProcessor();
+    ip = ip.resize(amount);
+
+    ImagePlus resimg = new ImagePlus("Resized", ip);
+    return resimg;
   }
 
   public void print(String str){

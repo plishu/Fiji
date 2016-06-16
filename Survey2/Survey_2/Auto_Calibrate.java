@@ -44,9 +44,32 @@ public class Auto_Calibrate implements PlugIn{
 
     QRCalib qr = new QRCalib();
 
-    Result result = qr.decodeQR(qrimg);
+    // I think variable resize will be needed
+    int baseResize = 600;
+    int attempts = 50;
+    int attempt = 1;
+    ImagePlus resimg = qr.resize(qrimg, baseResize); // 900 good
+    resimg.show();
+
+    Result result = qr.decodeQR(resimg);
+    /*
     if( result == null ){
+
       IJ.log("Could not find QR code. Skiping this image.");
+      return;
+    }*/
+    while( attempt <= attempts && result == null ){
+      resimg.close();
+      attempt += 1;
+      baseResize += 100;
+
+      resimg = qr.resize(qrimg, baseResize);
+      resimg.show();
+      result = qr.decodeQR(resimg);
+    }
+
+    if( result == null ){
+      IJ.log( "Could not find QR code. Skipping this image." );
       return;
     }
 
@@ -68,7 +91,7 @@ public class Auto_Calibrate implements PlugIn{
     IJ.log("Y4: " + Float.toString(polyYCoords[3]) );
 
     PolygonRoi qrRoi = qr.createPolygon( polyXCoords, polyYCoords );
-    qr.drawPolygonOn(qrRoi, qrimg);
+    qr.drawPolygonOn(qrRoi, resimg);
 
 
     float[] target1XCoords = null;
@@ -122,11 +145,11 @@ public class Auto_Calibrate implements PlugIn{
     // Create the three ROI's
 
     PolygonRoi target1Roi = qr.createPolygon( target1XCoords, target1YCoords );
-    qr.drawPolygonOn(target1Roi, qrimg);
+    qr.drawPolygonOn(target1Roi, resimg);
     PolygonRoi target2Roi = qr.createPolygon( target2XCoords, target2YCoords );
-    qr.drawPolygonOn(target2Roi, qrimg);
+    qr.drawPolygonOn(target2Roi, resimg);
     PolygonRoi target3Roi = qr.createPolygon( target3XCoords, target3YCoords );
-    qr.drawPolygonOn(target3Roi, qrimg );
+    qr.drawPolygonOn(target3Roi, resimg);
 
 
   }
