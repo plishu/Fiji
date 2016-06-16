@@ -189,6 +189,25 @@ public class QRCalib{
     return ycoords;
   }
 
+  public float[] convertCenter( float[] center, float scalefactor ){
+    float[] ncenter = new float[2];
+
+    float nx = scalefactor*center[0];
+    float ny = scalefactor*center[1];
+
+    ncenter[0] = nx;
+    ncenter[1] = ny;
+
+    return ncenter;
+
+  }
+
+  public float getScaleFactor( ImagePlus oimg, ImagePlus simg ){
+    float scalefactor = ( (float)(oimg.getWidth())/(float)(simg.getWidth()) );
+    IJ.log( "Scale factor: " + scalefactor );
+    return scalefactor;
+  }
+
 
   public float getScaledSq_To_Sq(float x1, float y1, float x2, float y2){
     //float deltax = Math.abs(pos2[0]-pos1[0]);

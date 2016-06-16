@@ -151,6 +151,28 @@ public class Auto_Calibrate implements PlugIn{
     PolygonRoi target3Roi = qr.createPolygon( target3XCoords, target3YCoords );
     qr.drawPolygonOn(target3Roi, resimg);
 
+    float scaleFactor = qr.getScaleFactor(qrimg, resimg);
+    target1Center = qr.convertCenter( target1Center, scaleFactor );
+    target2Center = qr.convertCenter( target2Center, scaleFactor );
+    target3Center = qr.convertCenter( target3Center, scaleFactor );
+
+    target1XCoords = qr.getTargetXCoords(target1Center, scaleFactor*targetLength*targetLength*0.6f);
+    target1YCoords = qr.getTargetYCoords(target1Center, scaleFactor*targetLength*targetLength*0.6f);
+    target2XCoords = qr.getTargetXCoords(target2Center, scaleFactor*targetLength*targetLength*0.6f);
+    target2YCoords = qr.getTargetYCoords(target2Center, scaleFactor*targetLength*targetLength*0.6f);
+    target3XCoords = qr.getTargetXCoords(target3Center, scaleFactor*targetLength*targetLength*0.6f);
+    target3YCoords = qr.getTargetYCoords(target3Center, scaleFactor*targetLength*targetLength*0.6f);
+
+
+
+    target1Roi = qr.createPolygon( target1XCoords, target1YCoords );
+    qr.drawPolygonOn( target1Roi, qrimg );
+    target2Roi = qr.createPolygon( target2XCoords, target2YCoords );
+    qr.drawPolygonOn( target2Roi, qrimg );
+    target3Roi = qr.createPolygon( target3XCoords, target3YCoords );
+    qr.drawPolygonOn( target3Roi, qrimg );
+
+
 
   }
 
