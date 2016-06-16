@@ -106,7 +106,7 @@ public class QRCalib{
   public float[] getTarget1Center( float xcoord, float ycoord, float distance, float angle ){
     float center[] = new float[2];
     // Note, angle is assumed in degrees. Must convert to radians for trig functions.
-    float stdangle = Math.toRadians(90+angle); // Make angle to standard form
+    float stdangle = (float)Math.toRadians(90+angle); // Make angle to standard form
     float dx = (float)( distance*Math.cos(stdangle) );
     float dy = (float)( distance*Math.sin(stdangle) );
 
