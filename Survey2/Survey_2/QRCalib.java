@@ -37,6 +37,11 @@ import com.google.zxing.ResultPoint;
 
 public class QRCalib{
 
+  public static final float SQ_TO_TARG = 2.1875f; // inches
+  public static final float SQ_TO_SQ = 4.9375f; // inches
+  public static final float TARGET_LENGTH = 2f; // inches
+  public static final float TARG_TO_TARG = 2.7f; // inches
+
   private Reader qrReader = null;
 
   // Anything to do that involves calibration using qr code
@@ -117,6 +122,20 @@ public class QRCalib{
     return center;
   }
 
+
+  public float[] getTargetCenterNextTo( float[] neighbor, float distance, float angle ){
+    float center[] = new float[2];
+
+    float stdangle = (float)Math.toRadians(angle);
+    float dx = (float)(distance*Math.cos(stdangle));
+    float dy = (float)(distance*Math.sin(stdangle));
+
+    center[0] = neighbor[0] + dx;
+    center[1] = neighbor[1] - dy;
+
+    return center;
+  }
+
   public float[] getTargetXCoords( float[] targetCenter, float size ){
     /*...................................
      *.....(x1,y1)----------(x2,y2)......
@@ -167,5 +186,29 @@ public class QRCalib{
   }
 
 
+  public float getScaledSq_To_Sq(float x1, float y1, float x2, float y2){
+    //float deltax = Math.abs(pos2[0]-pos1[0]);
+    //float deltay = Math.abs(pos2[1]-pos1[1]);
+    float deltax = (float)Math.abs(x2 - x1);
+    float deltay = (float)Math.abs(y2 - y1);
+
+    float sq_to_sq = (float)Math.sqrt(deltax*deltax + deltay*deltay);
+    return sq_to_sq;
+  }
+
+  public float getScaledSq_To_Targ(float scaled_sq_to_sq){
+    float sq_to_targ = (SQ_TO_TARG/SQ_TO_SQ)*scaled_sq_to_sq;
+    return sq_to_targ;
+  }
+
+  public float getTargetSize(float scaled_sq_to_sq){
+    float length = (TARGET_LENGTH/SQ_TO_SQ)*scaled_sq_to_sq;
+    return length;
+  }
+
+  public float getScaledTarg_To_Targ(float scaled_sq_to_sq){
+    float length = (TARG_TO_TARG/SQ_TO_SQ)*scaled_sq_to_sq;
+    return length;
+  }
 
 }

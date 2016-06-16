@@ -73,18 +73,42 @@ public class Auto_Calibrate implements PlugIn{
 
     float[] target1XCoords = null;
     float[] target1YCoords = null;
+    float[] target2XCoords = null;
+    float[] target2YCoords = null;
+    float[] target3XCoords = null;
+    float[] target3YCoords = null;
 
     // Prepare samplXCoords & sampleYCoords
-    float ls = (float)21.0; // @TODO Make it autodetect from scaled image. This will change based on how far camera is.
+    // How apart qr blocks are on this image
+    float qrlength = qr.getScaledSq_To_Sq( polyXCoords[1], polyYCoords[1], polyXCoords[0], polyYCoords[0] );
+    IJ.log( "QR Length: " + Float.toString(qrlength) );
+    // Length between center of qr block and center of target
+    float ls = qr.getScaledSq_To_Targ( qrlength );
+    IJ.log( "Length: " + Float.toString(ls) );
+    // Length between target centers for this image
+    float targls = qr.getScaledTarg_To_Targ( qrlength );
+    IJ.log( "Target lengh apart: " + targls);
+    // Angle between horizontal line and top-left and top-right qr block line
     float angle = (float)qrRoi.getAngle((int)polyXCoords[1], (int)polyYCoords[1], (int)polyXCoords[2], (int)polyYCoords[2]);
     IJ.log("Angle: " + Float.toString(angle));
+    // Coordinates to center of target
     float[] target1Center = qr.getTarget1Center(polyXCoords[1], polyYCoords[1], ls, angle );
     IJ.log( "Target center: (" + Float.toString(target1Center[0]) + "," + Float.toString(target1Center[1]) + ")" );
+    float[] target2Center = qr.getTargetCenterNextTo(target1Center, targls , angle);
+    float[] target3Center = qr.getTargetCenterNextTo(target2Center, targls, angle);
+    // Get size of target (length, but it's a square)
+    float targetLength = qr.getTargetSize(qrlength);
+    IJ.log( "Target length: " + targetLength );
 
 
-
-    target1XCoords = qr.getTargetXCoords(target1Center, (float)100);
-    target1YCoords = qr.getTargetYCoords(target1Center, (float)200);
+    // Create the three ROI's
+    // @TODO I think this should be abstracted
+    target1XCoords = qr.getTargetXCoords(target1Center, targetLength*targetLength*0.3f);
+    target1YCoords = qr.getTargetYCoords(target1Center, targetLength*targetLength*0.3f);
+    target2XCoords = qr.getTargetXCoords(target2Center, targetLength*targetLength*0.3f);
+    target2YCoords = qr.getTargetYCoords(target2Center, targetLength*targetLength*0.3f);
+    target3XCoords = qr.getTargetXCoords(target3Center, targetLength*targetLength*0.3f);
+    target3YCoords = qr.getTargetYCoords(target3Center, targetLength*targetLength*0.3f);
 
     IJ.log("X1: " + Float.toString(target1XCoords[0]) );
     IJ.log("Y1: " + Float.toString(target1YCoords[0]) );
@@ -95,10 +119,14 @@ public class Auto_Calibrate implements PlugIn{
     IJ.log("X4: " + Float.toString(target1XCoords[3]) );
     IJ.log("Y4: " + Float.toString(target1YCoords[3]) );
 
-
+    // Create the three ROI's
 
     PolygonRoi target1Roi = qr.createPolygon( target1XCoords, target1YCoords );
     qr.drawPolygonOn(target1Roi, qrimg);
+    PolygonRoi target2Roi = qr.createPolygon( target2XCoords, target2YCoords );
+    qr.drawPolygonOn(target2Roi, qrimg);
+    PolygonRoi target3Roi = qr.createPolygon( target3XCoords, target3YCoords );
+    qr.drawPolygonOn(target3Roi, qrimg );
 
 
   }
