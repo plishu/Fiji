@@ -75,7 +75,7 @@ public class Auto_Calibrate implements PlugIn{
     float[] target1YCoords = null;
 
     // Prepare samplXCoords & sampleYCoords
-    float ls = (float)21.0;
+    float ls = (float)21.0; // @TODO Make it autodetect from scaled image. This will change based on how far camera is.
     float angle = (float)qrRoi.getAngle((int)polyXCoords[1], (int)polyYCoords[1], (int)polyXCoords[2], (int)polyYCoords[2]);
     IJ.log("Angle: " + Float.toString(angle));
     float[] target1Center = qr.getTarget1Center(polyXCoords[1], polyYCoords[1], ls, angle );

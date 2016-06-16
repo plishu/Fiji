@@ -105,11 +105,14 @@ public class QRCalib{
    */
   public float[] getTarget1Center( float xcoord, float ycoord, float distance, float angle ){
     float center[] = new float[2];
-    float dx = (float)(distance*Math.sin(angle));
-    float dy = (float)(distance*Math.cos(angle));
+    // Note, angle is assumed in degrees. Must convert to radians for trig functions.
+    float stdangle = Math.toRadians(90+angle); // Make angle to standard form
+    float dx = (float)( distance*Math.cos(stdangle) );
+    float dy = (float)( distance*Math.sin(stdangle) );
+
 
     center[0] = xcoord + dx;
-    center[1] = ycoord + dy;
+    center[1] = ycoord - dy; // Up in direction is subtracting. Hint: (0,0) at top-left.
 
     return center;
   }
@@ -125,10 +128,10 @@ public class QRCalib{
      */
      float[] xcoords = new float[4];
      xcoords[0] = (float)(targetCenter[0] - 0.5*Math.sqrt(size));
-     xcoords[2] = xcoords[0];
+     xcoords[3] = xcoords[0];
 
      xcoords[1] = (float)(targetCenter[0] + 0.5*Math.sqrt(size));
-     xcoords[3] = xcoords[1];
+     xcoords[2] = xcoords[1];
 
      /*
      for(int i=0; i<xcoords.length; i++){
@@ -146,12 +149,15 @@ public class QRCalib{
      *.....(x3,y3)----------(x4,y4)......
      *...................................
      */
+
+     // Dumb square fix; p3 and p4 are flipped
      float[] ycoords = new float[4];
      ycoords[0] = (float)(targetCenter[1] - 0.5*Math.sqrt(size));
      ycoords[1] = ycoords[0];
 
-     ycoords[2] = (float)(targetCenter[1] + 0.5*Math.sqrt(size));
-     ycoords[3] = ycoords[2];
+     // Dumb square fix; p3 and p4 are flipped
+     ycoords[3] = (float)(targetCenter[1] + 0.5*Math.sqrt(size));
+     ycoords[2] = ycoords[3];
 
      /*
      for(int i=0; i<ycoords.length; i++){
