@@ -44,9 +44,57 @@ public class QRCalib{
 
   private Reader qrReader = null;
 
+  private Attempt attempt = null;
+
+
+  public class Attempt{
+    private ImagePlus manipImg = null; // Gets modified image set by attempt
+
+    public Result runAttempt(ImagePlus qrimg){
+      // Choose which method of qr detection to run
+      return adaptiveResize(qrimg);
+    }
+
+    public Result adaptiveResize(ImagePlus qrimg){
+      int baseResize = 600;
+      int attempts = 50;
+      int attempt = 1;
+      ImagePlus resimg = resize(qrimg, baseResize);
+      resimg.show();
+
+      Result result = decodeQR(qrimg);
+
+      while( attempt <= attempts && result == null ){
+        resimg.close();
+        attempt += 1;
+        baseResize += 100;
+
+        resimg = resize(qrimg, baseResize);
+        resimg.show();
+        result = decodeQR(resimg);
+      }
+      manipImg = resimg;
+      return result;
+    }
+
+    public ImagePlus getImg(){
+      return manipImg;
+    }
+
+  }
+
   // Anything to do that involves calibration using qr code
   public QRCalib(){
     qrReader = new QRCodeReader();
+  }
+
+  public Result attemptDecode( ImagePlus qrimg ){
+    attempt = new Attempt();
+    return attempt.runAttempt(qrimg);
+  }
+
+  public ImagePlus getAttemptImg(){
+    return attempt.getImg();
   }
 
   public Result decodeQR(ImagePlus inImg){

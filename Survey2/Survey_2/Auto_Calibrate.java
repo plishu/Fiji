@@ -45,6 +45,7 @@ public class Auto_Calibrate implements PlugIn{
     QRCalib qr = new QRCalib();
 
     // I think variable resize will be needed
+    /*
     int baseResize = 600;
     int attempts = 50;
     int attempt = 1;
@@ -52,12 +53,15 @@ public class Auto_Calibrate implements PlugIn{
     resimg.show();
 
     Result result = qr.decodeQR(resimg);
+    */
     /*
     if( result == null ){
 
       IJ.log("Could not find QR code. Skiping this image.");
       return;
     }*/
+
+    /*
     while( attempt <= attempts && result == null ){
       resimg.close();
       attempt += 1;
@@ -71,7 +75,9 @@ public class Auto_Calibrate implements PlugIn{
     if( result == null ){
       IJ.log( "Could not find QR code. Skipping this image." );
       return;
-    }
+    }*/
+    Result result = qr.attemptDecode(qrimg); // Blocking
+    ImagePlus resimg = qr.getAttemptImg(); // Needed for processing
 
     ResultPoint[] points = result.getResultPoints();
 
