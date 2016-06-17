@@ -44,138 +44,39 @@ public class Auto_Calibrate implements PlugIn{
 
     QRCalib qr = new QRCalib();
 
-    // I think variable resize will be needed
-    /*
-    int baseResize = 600;
-    int attempts = 50;
-    int attempt = 1;
-    ImagePlus resimg = qr.resize(qrimg, baseResize); // 900 good
-    resimg.show();
-
-    Result result = qr.decodeQR(resimg);
-    */
-    /*
-    if( result == null ){
-
-      IJ.log("Could not find QR code. Skiping this image.");
-      return;
-    }*/
-
-    /*
-    while( attempt <= attempts && result == null ){
-      resimg.close();
-      attempt += 1;
-      baseResize += 100;
-
-      resimg = qr.resize(qrimg, baseResize);
-      resimg.show();
-      result = qr.decodeQR(resimg);
-    }
+    Result result = qr.attemptDecode(qrimg); // Blocking
 
     if( result == null ){
       IJ.log( "Could not find QR code. Skipping this image." );
       return;
-    }*/
-    Result result = qr.attemptDecode(qrimg); // Blocking
+    }
+
     ImagePlus resimg = qr.getAttemptImg(); // Needed for processing
 
     ResultPoint[] points = result.getResultPoints();
 
-
-
-    // Draw polygon around qrcode
-    float[] polyXCoords = getXResultPoints(points);
-    float[] polyYCoords = getYResultPoints(points);
-
-    IJ.log("X1: " + Float.toString(polyXCoords[0]) );
-    IJ.log("Y1: " + Float.toString(polyYCoords[0]) );
-    IJ.log("X2: " + Float.toString(polyXCoords[1]) );
-    IJ.log("Y2: " + Float.toString(polyYCoords[1]) );
-    IJ.log("X3: " + Float.toString(polyXCoords[2]) );
-    IJ.log("Y3: " + Float.toString(polyYCoords[2]) );
-    IJ.log("X4: " + Float.toString(polyXCoords[3]) );
-    IJ.log("Y4: " + Float.toString(polyYCoords[3]) );
-
-    PolygonRoi qrRoi = qr.createPolygon( polyXCoords, polyYCoords );
+    //PolygonRoi qrRoi = qr.createPolygon( polyXCoords, polyYCoords );
+    PolygonRoi qrRoi = qr.createPolygon( points );
     qr.drawPolygonOn(qrRoi, resimg);
+    qr.setTargetsCenter(qrRoi);
 
+    float[] target1Center = qr.getTarget1Center();
+    float[] target2Center = qr.getTarget2Center();
+    float[] target3Center = qr.getTarget3Center();
+    float targetLength = qr.getTargetSize();
 
-    float[] target1XCoords = null;
-    float[] target1YCoords = null;
-    float[] target2XCoords = null;
-    float[] target2YCoords = null;
-    float[] target3XCoords = null;
-    float[] target3YCoords = null;
+    Roi target1Roi = qr.createRectangleRoi( target1Center, 0.3f );
+    qr.drawPolygonOn( target1Roi, resimg );
+    Roi target2Roi = qr.createRectangleRoi( target2Center, 0.3f );
+    qr.drawPolygonOn( target2Roi, resimg );
+    Roi target3Roi = qr.createRectangleRoi( target3Center, 0.3f );
+    qr.drawPolygonOn( target3Roi, resimg );
 
-    // Prepare samplXCoords & sampleYCoords
-    // How apart qr blocks are on this image
-    float qrlength = qr.getScaledSq_To_Sq( polyXCoords[1], polyYCoords[1], polyXCoords[0], polyYCoords[0] );
-    IJ.log( "QR Length: " + Float.toString(qrlength) );
-    // Length between center of qr block and center of target
-    float ls = qr.getScaledSq_To_Targ( qrlength );
-    IJ.log( "Length: " + Float.toString(ls) );
-    // Length between target centers for this image
-    float targls = qr.getScaledTarg_To_Targ( qrlength );
-    IJ.log( "Target lengh apart: " + targls);
-    // Angle between horizontal line and top-left and top-right qr block line
-    float angle = (float)qrRoi.getAngle((int)polyXCoords[1], (int)polyYCoords[1], (int)polyXCoords[2], (int)polyYCoords[2]);
-    IJ.log("Angle: " + Float.toString(angle));
-    // Coordinates to center of target
-    float[] target1Center = qr.getTarget1Center(polyXCoords[1], polyYCoords[1], ls, angle );
-    IJ.log( "Target center: (" + Float.toString(target1Center[0]) + "," + Float.toString(target1Center[1]) + ")" );
-    float[] target2Center = qr.getTargetCenterNextTo(target1Center, targls , angle);
-    float[] target3Center = qr.getTargetCenterNextTo(target2Center, targls, angle);
-    // Get size of target (length, but it's a square)
-    float targetLength = qr.getTargetSize(qrlength);
-    IJ.log( "Target length: " + targetLength );
-
-
-    // Create the three ROI's
-    // @TODO I think this should be abstracted
-    target1XCoords = qr.getTargetXCoords(target1Center, targetLength*targetLength*0.3f);
-    target1YCoords = qr.getTargetYCoords(target1Center, targetLength*targetLength*0.3f);
-    target2XCoords = qr.getTargetXCoords(target2Center, targetLength*targetLength*0.3f);
-    target2YCoords = qr.getTargetYCoords(target2Center, targetLength*targetLength*0.3f);
-    target3XCoords = qr.getTargetXCoords(target3Center, targetLength*targetLength*0.3f);
-    target3YCoords = qr.getTargetYCoords(target3Center, targetLength*targetLength*0.3f);
-
-    IJ.log("X1: " + Float.toString(target1XCoords[0]) );
-    IJ.log("Y1: " + Float.toString(target1YCoords[0]) );
-    IJ.log("X2: " + Float.toString(target1XCoords[1]) );
-    IJ.log("Y2: " + Float.toString(target1YCoords[1]) );
-    IJ.log("X3: " + Float.toString(target1XCoords[2]) );
-    IJ.log("Y3: " + Float.toString(target1YCoords[2]) );
-    IJ.log("X4: " + Float.toString(target1XCoords[3]) );
-    IJ.log("Y4: " + Float.toString(target1YCoords[3]) );
-
-    // Create the three ROI's
-
-    PolygonRoi target1Roi = qr.createPolygon( target1XCoords, target1YCoords );
-    qr.drawPolygonOn(target1Roi, resimg);
-    PolygonRoi target2Roi = qr.createPolygon( target2XCoords, target2YCoords );
-    qr.drawPolygonOn(target2Roi, resimg);
-    PolygonRoi target3Roi = qr.createPolygon( target3XCoords, target3YCoords );
-    qr.drawPolygonOn(target3Roi, resimg);
-
-    float scaleFactor = qr.getScaleFactor(qrimg, resimg);
-    target1Center = qr.convertCenter( target1Center, scaleFactor );
-    target2Center = qr.convertCenter( target2Center, scaleFactor );
-    target3Center = qr.convertCenter( target3Center, scaleFactor );
-
-    target1XCoords = qr.getTargetXCoords(target1Center, scaleFactor*targetLength*targetLength*0.6f);
-    target1YCoords = qr.getTargetYCoords(target1Center, scaleFactor*targetLength*targetLength*0.6f);
-    target2XCoords = qr.getTargetXCoords(target2Center, scaleFactor*targetLength*targetLength*0.6f);
-    target2YCoords = qr.getTargetYCoords(target2Center, scaleFactor*targetLength*targetLength*0.6f);
-    target3XCoords = qr.getTargetXCoords(target3Center, scaleFactor*targetLength*targetLength*0.6f);
-    target3YCoords = qr.getTargetYCoords(target3Center, scaleFactor*targetLength*targetLength*0.6f);
-
-
-
-    target1Roi = qr.createPolygon( target1XCoords, target1YCoords );
+    target1Roi = qr.mapRoiTo( qrimg, resimg, target1Center, 0.9f );
     qr.drawPolygonOn( target1Roi, qrimg );
-    target2Roi = qr.createPolygon( target2XCoords, target2YCoords );
+    target2Roi = qr.mapRoiTo( qrimg, resimg, target2Center, 0.9f );
     qr.drawPolygonOn( target2Roi, qrimg );
-    target3Roi = qr.createPolygon( target3XCoords, target3YCoords );
+    target3Roi = qr.mapRoiTo( qrimg, resimg, target3Center, 0.9f );
     qr.drawPolygonOn( target3Roi, qrimg );
 
 
