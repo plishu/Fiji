@@ -32,3 +32,6 @@ Within Fiji's Plugin submenu, you will see a MAPIR option. The MAPIR plugin cont
 - [Survey2](/Survey2): Contains plugin dependencies such as flat-fields, exiftools, and macros.
 - [luts](/luts): Look up tables
 - [plugins](/plugins): Plugins for Fiji. 
+
+### Credits
+ - [Photomonitoring Plugin](https://github.com/nedhorning/PhotoMonitoringPlugin) by Ned Horning - American Museum of Natural History, Center for Biodiversity and Conservation
