@@ -497,7 +497,7 @@ implements PlugIn, DialogListener {
             }
             ++y4;
         }
-        newImage.show();
+        //newImage.show();
         imp.changes = false;
         imp.close();
     }
