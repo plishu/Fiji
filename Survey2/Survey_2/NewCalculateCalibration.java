@@ -164,11 +164,11 @@ implements PlugIn, DialogListener {
         Roi target3Roi = qr.createRectangleRoi( target3Center, 0.3f );
         qr.drawPolygonOn( target3Roi, resimg );
 
-        target1Roi = qr.mapRoiTo( qrimg, resimg, target1Center, 0.9f );
+        target1Roi = qr.mapRoiTo( qrimg, resimg, target1Center, 0.6f );
         qr.drawPolygonOn( target1Roi, qrimg );
-        target2Roi = qr.mapRoiTo( qrimg, resimg, target2Center, 0.9f );
+        target2Roi = qr.mapRoiTo( qrimg, resimg, target2Center, 0.6f );
         qr.drawPolygonOn( target2Roi, qrimg );
-        target3Roi = qr.mapRoiTo( qrimg, resimg, target3Center, 0.9f );
+        target3Roi = qr.mapRoiTo( qrimg, resimg, target3Center, 0.6f );
         qr.drawPolygonOn( target3Roi, qrimg );
 
         // Create Roi manager and add Roi
@@ -176,6 +176,7 @@ implements PlugIn, DialogListener {
         //mgr.addRoi(target1Roi);
         //mgr.addRoi(target2Roi);
         //mgr.addRoi(target3Roi);
+        mgr.add(qrimg, target1Roi, 0);
         mgr.add(qrimg, target2Roi, 1);
         mgr.add(qrimg, target3Roi, 2);
 

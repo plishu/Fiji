@@ -279,9 +279,12 @@ public class QRCalib{
     setAngle(qrRoi);
     setTargetSize();
 
-    target1Center = getTarget1Center(polyXCoords[1], polyYCoords[1], qrToTargDistance, angle );
-    target2Center = getTargetCenterNextTo(target1Center, targToTargDistance , angle);
-    target3Center = getTargetCenterNextTo(target2Center, targToTargDistance, angle);
+    target1Center = getCornerTargetCenter(polyXCoords[1], polyYCoords[1], qrToTargDistance, angle );
+    target3Center = getCornerTargetCenter(polyXCoords[2], polyYCoords[2], qrToTargDistance, angle );
+    //target2Center = getTargetCenterNextTo(target1Center, targToTargDistance , angle);
+    target2Center = getMiddleTargetCenter(target1Center, target3Center, angle);
+    //target3Center = getTargetCenterNextTo(target2Center, targToTargDistance, angle);
+
   }
 
   public float[] getPolyXCoords(){
@@ -309,6 +312,52 @@ public class QRCalib{
 
     center[0] = xcoord + dx;
     center[1] = ycoord - dy; // Up in direction is subtracting. Hint: (0,0) at top-left.
+
+    return center;
+  }
+
+  public float[] getMiddleTargetCenter( float[] lefttarget, float[] righttarget, float angle ){
+    float dx = righttarget[0] - lefttarget[0];
+    float dy = righttarget[1] - lefttarget[1];
+    float distance = (float)Math.sqrt(dx*dx + dy*dy)/2.0f;
+
+    IJ.log((String)("Angle: " + angle));
+
+    float stdangle = (float)Math.toRadians(angle);
+    float x = distance*(float)Math.cos(stdangle);
+    float y = distance*(float)Math.sin(stdangle);
+
+    // From left target
+    float center[] = new float[2];
+    center[0] = lefttarget[0] + x;
+    center[1] = lefttarget[1] - y;
+
+    return center;
+
+  }
+
+  public float[] getCornerTargetCenter( float xcoord, float ycoord, float distance, float angle ){
+    float center[] = new float[2];
+    // Note, angle is assumed in degrees. Must convert to radians for trig functions.
+    float stdangle = (float)Math.toRadians(90+angle); // Make angle to standard form
+    float dx = (float)( distance*Math.cos(stdangle) );
+    float dy = (float)( distance*Math.sin(stdangle) );
+
+    // QR center drift fix (drifts toward center; counteracted by shifting outward)
+    float dfixangle = (float)Math.toRadians(180+angle);
+    float sf = distance/SQ_TO_TARG;
+    float dfixdistance = 0.05f*sf; // px
+    float dfixex = dfixdistance*(float)Math.cos(dfixangle);
+    float dfixy = dfixdistance*(float)Math.sin(dfixangle);
+    float xc = xcoord + dfixex;
+    float yc = ycoord - dfixy;
+
+
+    center[0] = xc + dx;
+    center[1] = yc - dy; // Up in direction is subtracting. Hint: (0,0) at top-left.
+
+    IJ.log( (String)("QR Center: " + xcoord + ", " + ycoord) );
+    IJ.log( (String)("Target Center: " + center[0] + ", " + center[1]) );
 
     return center;
   }
@@ -425,6 +474,7 @@ public class QRCalib{
 
   public float getScaleFactor( ImagePlus oimg, ImagePlus simg ){
     float scalefactor = ( (float)(oimg.getWidth())/(float)(simg.getWidth()) );
+    //float scalefactor = SQ_TO_TARG/qrToTargDistance;
     IJ.log( "Scale factor: " + scalefactor );
     return scalefactor;
   }
