@@ -10,7 +10,7 @@ Move Post_Process* files into plugin. (don't include .java)
 
 Move PP_MAPIR.jar into plugins
 
-Move Calibration, luts, plugins, Survey2 to target
+Move Calibration, luts, jars, plugins, Survey2 to target
 
 
 
