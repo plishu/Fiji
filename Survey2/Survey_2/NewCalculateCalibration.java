@@ -503,6 +503,17 @@ implements PlugIn, DialogListener {
         imp.close();
     }
 
+    public double parseCSVLine(String fullLine){
+      //fullLine = fileReader.readLine();
+      String[] dataValues = fullLine.split(",");
+
+      //visRefValues[counter] = Double.parseDouble(dataValues[0]);
+      //nirRefValues[counter] = Double.parseDouble(dataValues[1]);
+
+
+      return 0.0;
+    }
+
     public ImagePlus scaleImage(ImagePlus inImage, String imageName) {
         double inPixel = 0.0;
         double outPixel = 0.0;
