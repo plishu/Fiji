@@ -56,10 +56,15 @@ public class Calibrate implements PlugIn{
     }
 
     // Check if use wants to provide calibration target image
+    RGBPhoto qrphoto = null;
     if( mainDialogValues.get(CalibrationPrompt.MAP_USEQR).equals("true") ){
       prompt.showQRFileDialog();
       qrFileDialogValues = prompt.getQRFileDialogValues();
       printAll( qrFileDialogValues.values() );
+
+      qrphoto = new RGBPhoto( qrFileDialogValues );
+      qrphoto.show();
+
     }
 
     // Ask user for input image to calibrate
@@ -71,6 +76,10 @@ public class Calibrate implements PlugIn{
     RGBPhoto photo = new RGBPhoto( imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEDIR),
               imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEFILENAME),
               imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEPATH) );
+    photo.show();
+
+
+
 
 
 

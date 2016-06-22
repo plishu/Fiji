@@ -2,6 +2,7 @@ import ij.ImagePlus;
 import ij.IJ;
 
 import java.io.File;
+import java.util.HashMap;
 
 public class RGBPhoto{
   private String imageDir = null;
@@ -30,12 +31,26 @@ public class RGBPhoto{
 
   }
 
+  public RGBPhoto(HashMap<String, String> valueMap){
+    imageDir = valueMap.get(CalibrationPrompt.MAP_IMAGEDIR);
+    imageName = valueMap.get(CalibrationPrompt.MAP_IMAGEFILENAME);
+    imagePath = valueMap.get(CalibrationPrompt.MAP_IMAGEPATH);
+    imageExt = getExtension(imagePath);
+
+    image = new ImagePlus(imagePath);
+
+  }
+
   public String getExtension(String path){
     return "yo";
   }
 
   public String getExtension(){
     return "yo";
+  }
+
+  public void show(){
+    image.show();
   }
 
 }
