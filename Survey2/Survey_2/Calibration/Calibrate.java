@@ -81,8 +81,17 @@ public class Calibrate implements PlugIn{
     photo.show();
 
     Calibrator calibrator = new Calibrator();
-    RGBPhoto procPhoto = new RGBPhoto( calibrator.scaleImages(photo.splitStack()) );
-    procPhoto.show();
+    RGBPhoto procPhoto = null;
+    if( mainDialogValues.get(CalibrationPrompt.MAP_CAMERA).equals("Survey2 NDVI") ){
+      // Scale image only in NDVI!!
+      procPhoto = new RGBPhoto( calibrator.scaleImages(photo.splitStack()) );
+      procPhoto.show();
+    }else{
+      // Every other image
+      procPhoto = new RGBPhoto( photo.splitStack() );
+      procPhoto.show();
+    }
+
 
 
     Roi[] rois = null;
@@ -92,13 +101,29 @@ public class Calibrate implements PlugIn{
       // Use base
     }else{
       // Use calibration targets
-      rois = calibration.getRois(qrimg);
-      RoiManager manager = calibrator.setupROIManager(qrimg, rois);
+      // @TODO BUG: ROI's not mapping correctly
+      rois = calibrator.getRois(qrimg);
+      manager = calibrator.setupROIManager(qrimg, rois);
     }
 
+    // Generate mean
+    String camera = mainDialogValues.get(CalibrationPrompt.MAP_CAMERA);
 
-    calibrator.processRois(procPhoto.getImage(), manager);
-
+    if( camera.equals("Survey2 NDVI") ){
+      calibrator.processRois(procPhoto.getRedChannel(), manager);
+      calibrator.processRois(procPhoto.getBlueChannel(), manager);
+    }else if( camera.equals("Survey2 NIR") ){
+      calibrator.processRois(procPhoto.getRedChannel(), manager);
+    }else if( camera.equals("Survey2 Red") ){
+      calibrator.processRois(procPhoto.getRedChannel(), manager);
+    }else if( camera.equals("Survey2 Green") ){
+      calibrator.processRois(procPhoto.getGreenChannel(), manager);
+    }else if( camera.equals("Survey2 Blue") ){
+      calibrator.processRois(procPhoto.getBlueChannel(), manager);
+    }else{
+      IJ.log("Camera " + camera +" currently not supported");
+      return;
+    }
 
 
 
