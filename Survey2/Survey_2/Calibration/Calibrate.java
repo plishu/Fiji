@@ -8,6 +8,7 @@ import ij.gui.NewImage;
 import ij.gui.Plot;
 import ij.gui.PlotWindow;
 import ij.gui.Roi;
+import ij.gui.PolygonRoi;
 import ij.io.OpenDialog;
 import ij.io.SaveDialog;
 import ij.measure.CurveFitter;
@@ -36,6 +37,7 @@ import java.util.Map;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.HashMap;
+
 
 public class Calibrate implements PlugIn{
 
@@ -78,7 +80,24 @@ public class Calibrate implements PlugIn{
               imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEPATH) );
     photo.show();
 
+    Calibrator calibrator = new Calibrator();
+    RGBPhoto procPhoto = new RGBPhoto( calibrator.scaleImages(photo.splitStack()) );
+    procPhoto.show();
 
+
+    Roi[] rois = null;
+    RoiManager manager = null;
+    ImagePlus qrimg = qrphoto.getImage();
+    if( qrphoto == null ){
+      // Use base
+    }else{
+      // Use calibration targets
+      rois = calibration.getRois(qrimg);
+      RoiManager manager = calibrator.setupROIManager(qrimg, rois);
+    }
+
+
+    calibrator.processRois(procPhoto.getImage(), manager);
 
 
 
