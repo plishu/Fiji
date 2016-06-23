@@ -5,13 +5,21 @@ import ij.plugin.frame.RoiManager;
 import ij.gui.Roi;
 import ij.gui.PolygonRoi;
 import ij.process.ImageProcessor;
+import ij.measure.CurveFitter;
+import ij.gui.Plot;
+import ij.gui.PlotWindow;
 
 import java.lang.Math;
 import java.util.Map;
 import java.util.HashMap;
 import java.awt.Rectangle;
+import java.awt.Color;
 import java.util.List;
 import java.util.ArrayList;
+import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.lang.Exception;
 
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.ChecksumException;
@@ -34,6 +42,10 @@ public class Calibrator{
   public static String MAP_COUNT = "COUNT";
   public static String MAP_SUM = "SUM";
   public static String MAP_MEAN = "MEAN";
+
+  public static String MAP_TARG1 = "TARGET1";
+  public static String MAP_TARG2 = "TARGET2";
+  public static String MAP_TARG3 = "TARGET3";
 
 
 
@@ -118,6 +130,132 @@ public class Calibrator{
         }
         ++y3;
     }
+  }
+
+
+  public double[] calculateCalibrationCoefficients(double[] calcValues, double[] refValues){
+    double[] regressionParams = null;
+    double r_Squared = 0.0;
+
+    CurveFitter visRegression = new CurveFitter(calcValues, refValues);
+    visRegression.doFit(0, true);
+    regressionParams = visRegression.getParams();
+    r_Squared = visRegression.getRSquared();
+
+    IJ.log((String)("intercept: " + IJ.d2s((double)regressionParams[0], (int)8)));
+    IJ.log((String)("slope: " + IJ.d2s((double)regressionParams[1], (int)8)));
+
+    PlotWindow.noGridLines = false;
+    Plot visPlot = new Plot("Visible band regression", "Image values", "Reflectance values");
+    visPlot.setLimits(0.0, 1.0, 0.0, 1.0);
+    visPlot.setColor(Color.RED);
+    visPlot.addPoints(calcValues, refValues, 0);
+    visPlot.draw();
+    double[] xVis = new double[]{0.0, 1.0};
+    double[] yVis = new double[]{regressionParams[0], regressionParams[1] + regressionParams[0]};
+    visPlot.addPoints(xVis, yVis, 2);
+    visPlot.addLabel(0.05, 0.1, "R squared = " + Double.toString(r_Squared));
+    visPlot.show();
+
+    HashMap<String, double[]> values = new HashMap<String, double[]>();
+
+    return null;
+  }
+
+
+  public ImagePlus createIndexImage(){
+    return null;
+  }
+
+  public double[][] getRefValues(File directory, String filter){
+    String fullLine = "";
+    BufferedReader fileReader = null;
+    try{
+      fileReader = new BufferedReader( new FileReader(directory.getPath()) );
+    }catch( Exception e ){
+      e.printStackTrace();
+    }
+    String line = "";
+    int numLines = 0;
+
+    double[] t1 = new double[3];
+    double[] t2 = new double[3];
+    double[] t3 = new double[3];
+
+    String[] split = null;
+
+    //HashMap<String, String> value = null;
+    //List<HashMap<String, String>> values = null;
+    double[][] values = new double[3][3];
+    IJ.log("WHAT THE FUCK ARE YOU DOING");
+    try{
+      while ((line = fileReader.readLine()) != null) {
+          if (line.length() <= 0) continue;
+          ++numLines;
+
+          split = line.split(",");
+
+
+          if( split.length <= 0 ) continue;
+
+          if( split.length == 10 && split[0].equals(filter) ){
+
+            for( int i=0; i<split.length; i++){
+              IJ.log( String.valueOf(split[i]) );
+            }
+
+
+            values[0][0] = Double.parseDouble(split[1])/100.0;
+            values[0][1] = Double.parseDouble(split[2])/100.0;
+            values[0][2] = Double.parseDouble(split[3])/100.0;
+
+            // Target 2 RGB
+            values[1][0] = Double.parseDouble(split[4])/100.0;
+            values[1][1] = Double.parseDouble(split[5])/100.0;
+            values[1][2] = Double.parseDouble(split[6])/100.0;
+
+
+            // Target 3 RGB
+            values[2][0] = Double.parseDouble(split[7])/100.0;
+            values[2][1] = Double.parseDouble(split[8])/100.0;
+            values[2][2] = Double.parseDouble(split[9])/100.0;
+
+            break;
+          }
+      }
+    }catch( Exception e ){
+      e.printStackTrace();
+    }
+
+    return values;
+  }
+
+  public ImagePlus makeNDVI(ImagePlus visImage, ImagePlus nirImage, double[] calibrationCeofs) {
+      double outPixel = 0.0;
+      ImagePlus newImage = NewImage.createFloatImage((String)"ndviImage", (int)nirImage.getWidth(), (int)nirImage.getHeight(), (int)1, (int)1);
+      int y = 0;
+      while (y < nirImage.getHeight()) {
+          int x = 0;
+          while (x < nirImage.getWidth()) {
+              double visPixel;
+              double nirPixel = (double)nirImage.getProcessor().getPixelValue(x, y) * calibrationCeofs[3] + calibrationCeofs[2];
+              if (nirPixel + (visPixel = (double)visImage.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0]) == 0.0) {
+                  outPixel = 0.0;
+              } else {
+                  outPixel = (nirPixel - visPixel) / (nirPixel + visPixel);
+                  if (outPixel > 1.0) {
+                      outPixel = 1.0;
+                  }
+                  if (outPixel < -1.0) {
+                      outPixel = -1.0;
+                  }
+              }
+              newImage.getProcessor().putPixelValue(x, y, outPixel);
+              ++x;
+          }
+          ++y;
+      }
+      return newImage;
   }
 
 

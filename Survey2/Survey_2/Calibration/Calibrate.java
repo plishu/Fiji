@@ -27,6 +27,7 @@ import java.awt.TextField;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -37,6 +38,8 @@ import java.util.Map;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.HashMap;
+import java.util.List;
+
 
 
 public class Calibrate implements PlugIn{
@@ -49,6 +52,8 @@ public class Calibrate implements PlugIn{
     HashMap<String, String> qrFileDialogValues = null;
     HashMap<String, String> imageFileDialogValues = null;
     printAll( mainDialogValues.values() );
+
+    ImagePlus qrimg = null;
 
     // Check if camera selected is NDVI
     if( mainDialogValues.get(CalibrationPrompt.MAP_CAMERA).equals("Survey2 NDVI") ){
@@ -66,6 +71,7 @@ public class Calibrate implements PlugIn{
 
       qrphoto = new RGBPhoto( qrFileDialogValues );
       qrphoto.show();
+      qrimg = qrphoto.getImage();
 
     }
 
@@ -96,7 +102,7 @@ public class Calibrate implements PlugIn{
 
     Roi[] rois = null;
     RoiManager manager = null;
-    ImagePlus qrimg = qrphoto.getImage();
+
     if( qrphoto == null ){
       // Use base
     }else{
@@ -109,21 +115,68 @@ public class Calibrate implements PlugIn{
     // Generate mean
     String camera = mainDialogValues.get(CalibrationPrompt.MAP_CAMERA);
 
+    HashMap<String, String> visBandIndex = null;
+    HashMap<String, String> nirBandIndex = null;
+
+    List<HashMap<String, String>> redBandSummary = null;
+    List<HashMap<String, String>> greenBandSummary = null;
+    List<HashMap<String, String>> blueBandSummary = null;
+    double[][] baseSummary = null;
+
+    // Get reference values
+    OpenDialog baseFileDialog = new OpenDialog("Select Base File");
+    File bfs = new File(baseFileDialog.getPath());
+    //baseSummary = calibrator.getRefValues(bfs, "850/660"); //@TODO Replace hard coded value
+    double coefficients[] = null;
+
+    // @TODO Option to use base value summary if no QR calibration
     if( camera.equals("Survey2 NDVI") ){
-      calibrator.processRois(procPhoto.getRedChannel(), manager);
-      calibrator.processRois(procPhoto.getBlueChannel(), manager);
+      baseSummary = calibrator.getRefValues(bfs, "850/660");
+      redBandSummary = calibrator.processRois(procPhoto.getRedChannel(), manager);
+      blueBandSummary = calibrator.processRois(procPhoto.getBlueChannel(), manager);
     }else if( camera.equals("Survey2 NIR") ){
-      calibrator.processRois(procPhoto.getRedChannel(), manager);
+      redBandSummary = calibrator.processRois(procPhoto.getRedChannel(), manager);
     }else if( camera.equals("Survey2 Red") ){
-      calibrator.processRois(procPhoto.getRedChannel(), manager);
+      redBandSummary = calibrator.processRois(procPhoto.getRedChannel(), manager);
     }else if( camera.equals("Survey2 Green") ){
-      calibrator.processRois(procPhoto.getGreenChannel(), manager);
+      greenBandSummary = calibrator.processRois(procPhoto.getGreenChannel(), manager);
     }else if( camera.equals("Survey2 Blue") ){
-      calibrator.processRois(procPhoto.getBlueChannel(), manager);
+
+      baseSummary = calibrator.getRefValues(bfs, "450");
+      blueBandSummary = calibrator.processRois(procPhoto.getBlueChannel(), manager);
+
+      double[] blue = {Double.parseDouble(blueBandSummary.get(0).get(Calibrator.MAP_MEAN)),
+         Double.parseDouble(blueBandSummary.get(1).get(Calibrator.MAP_MEAN)),
+         Double.parseDouble(blueBandSummary.get(2).get(Calibrator.MAP_MEAN))};
+
+      /*
+      double[] refblue = {baseSummary.get(Calibrator.MAP_TARG1)[2],
+        baseSummary.get(Calibrator.MAP_TARG2)[2], baseSummary.get(Calibrator.MAP_TARG3)[2]};
+      coefficients = calibrator.calculateCalibrationCoefficients(blue, refblue);*/
+      double[] refblue = {baseSummary[0][2], baseSummary[1][2], baseSummary[2][2]};
+
+      for(int i=0; i<3; i++){
+        IJ.log(String.valueOf(refblue[i]));
+      }
+
+      coefficients = calibrator.calculateCalibrationCoefficients(blue, refblue);
+
     }else{
       IJ.log("Camera " + camera +" currently not supported");
       return;
     }
+
+
+
+    ImagePlus indexImage = null;
+    if( mainDialogValues.get(CalibrationPrompt.MAP_CAMERA).equals("Survey2 NDVI") ){
+      // Scale image only in NDVI!!
+      //indexImage = calibrator.makeNDVI(procPhoto.getRedChannel(), procPhoto.getBlueChannel(), )
+    }else{
+      // Every other image
+
+    }
+
 
 
 
