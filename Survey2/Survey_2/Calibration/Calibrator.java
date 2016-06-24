@@ -75,7 +75,7 @@ public class Calibrator{
 
     ImagePlus[] rgb = {redChannel, greenChannel, blueChannel};
 
-    return (new RGBPhoto(rgb));
+    return ( new RGBPhoto(rgb, inPhoto.getCameraType()) );
   }
 
 
@@ -170,7 +170,7 @@ public class Calibrator{
 
 
     ImagePlus[] rgb = {redChannel, greenChannel, blueChannel};
-    return (new RGBPhoto(rgb));
+    return (new RGBPhoto(rgb, inImage.getCameraType()) );
 
   }
 
@@ -204,6 +204,9 @@ public class Calibrator{
     regressionParams = visRegression.getParams();
     r_Squared = visRegression.getRSquared();
 
+    double intercept = (double)regressionParams[0];
+    double slope = (double)regressionParams[1];
+
     IJ.log((String)("intercept: " + IJ.d2s((double)regressionParams[0], (int)8)));
     IJ.log((String)("slope: " + IJ.d2s((double)regressionParams[1], (int)8)));
 
@@ -219,9 +222,10 @@ public class Calibrator{
     visPlot.addLabel(0.05, 0.1, "R squared = " + Double.toString(r_Squared));
     visPlot.show();
 
-    HashMap<String, double[]> values = new HashMap<String, double[]>();
+    //HashMap<String, double[]> values = new HashMap<String, double[]>();
+    double[] values = {intercept, slope};
 
-    return null;
+    return values;
   }
 
 

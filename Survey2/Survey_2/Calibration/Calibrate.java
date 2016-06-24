@@ -164,13 +164,84 @@ public class Calibrate implements PlugIn{
     //baseSummary = calibrator.getRefValues(bfs, "850/660"); //@TODO Replace hard coded value
     double coefficients[] = null;
 
-    //procPhoto.getBlueChannel().show();
-    //procPhoto.getGreenChannel().show();
-    //procPhoto.getRedChannel().show();
+    double redCoeff[] = null;
+    double greenCoeff[] = null;
+    double blueCoeff[] = null;
 
 
 
     // @TODO Option to use base value summary if no QR calibration
+    if( camera.equals("Survey2 NDVI") ){
+      //baseSummary = calibrator.getRefValues(bfs, "850/660");
+      baseSummary = calibrator.getRefValues(bfs, "660/850");
+      redBandSummary = calibrator.processRois(procPhoto.getRedChannel(), manager);
+      blueBandSummary = calibrator.processRois(procPhoto.getBlueChannel(), manager);
+
+      double[] blue = {Double.parseDouble(blueBandSummary.get(0).get(Calibrator.MAP_MEAN)),
+         Double.parseDouble(blueBandSummary.get(1).get(Calibrator.MAP_MEAN)),
+         Double.parseDouble(blueBandSummary.get(2).get(Calibrator.MAP_MEAN))};
+      double[] red = {Double.parseDouble(redBandSummary.get(0).get(Calibrator.MAP_MEAN)),
+         Double.parseDouble(redBandSummary.get(1).get(Calibrator.MAP_MEAN)),
+         Double.parseDouble(redBandSummary.get(2).get(Calibrator.MAP_MEAN))};
+
+      double[] refred = {baseSummary[0][0], baseSummary[1][0], baseSummary[2][0]};
+      double[] refblue = {baseSummary[0][2], baseSummary[1][2], baseSummary[2][2]};
+
+      redCoeff = calibrator.calculateCalibrationCoefficients( red, refred );
+      blueCoeff = calibrator.calculateCalibrationCoefficients( blue, refblue );
+
+    }else if( camera.equals("Survey2 NIR") ){
+      redBandSummary = calibrator.processRois(procPhoto.getRedChannel(), manager);
+    }else if( camera.equals("Survey2 Red") ){
+      redBandSummary = calibrator.processRois(procPhoto.getRedChannel(), manager);
+    }else if( camera.equals("Survey2 Green") ){
+      greenBandSummary = calibrator.processRois(procPhoto.getGreenChannel(), manager);
+    }else if( camera.equals("Survey2 Blue") ){
+
+      baseSummary = calibrator.getRefValues(bfs, "450");
+      //blueBandSummary = calibrator.processRois(procPhoto.getBlueChannel(), manager);
+      blueBandSummary = calibrator.processRois(procPhoto.getBlueChannel(), manager);
+
+      double[] blue = {Double.parseDouble(blueBandSummary.get(0).get(Calibrator.MAP_MEAN)),
+         Double.parseDouble(blueBandSummary.get(1).get(Calibrator.MAP_MEAN)),
+         Double.parseDouble(blueBandSummary.get(2).get(Calibrator.MAP_MEAN))};
+
+      /*
+      double[] refblue = {baseSummary.get(Calibrator.MAP_TARG1)[2],
+        baseSummary.get(Calibrator.MAP_TARG2)[2], baseSummary.get(Calibrator.MAP_TARG3)[2]};
+      coefficients = calibrator.calculateCalibrationCoefficients(blue, refblue); ----> HERE */
+      double[] refblue = {baseSummary[0][2], baseSummary[1][2], baseSummary[2][2]};
+
+      for(int i=0; i<3; i++){
+        IJ.log(String.valueOf(refblue[i]));
+      }
+
+      blueCoeff = calibrator.calculateCalibrationCoefficients(blue, refblue);
+
+    }else{
+      IJ.log("Camera " + camera +" currently not supported");
+      return;
+    }
+
+
+
+
+    ImagePlus indexImage = null;
+    if( mainDialogValues.get(CalibrationPrompt.MAP_CAMERA).equals("Survey2 NDVI") ){
+      // Scale image only in NDVI!!
+      //indexImage = calibrator.makeNDVI(procPhoto.getRedChannel(), procPhoto.getBlueChannel(), )
+    }else{
+      // Every other image
+
+    }
+
+
+
+
+  }
+
+  public double[][] calculateCoefficients(RGBPhoto photo){
+    /*
     if( camera.equals("Survey2 NDVI") ){
       baseSummary = calibrator.getRefValues(bfs, "850/660");
       redBandSummary = calibrator.processRois(procPhoto.getRedChannel(), manager);
@@ -199,52 +270,21 @@ public class Calibrate implements PlugIn{
       /*
       double[] refblue = {baseSummary.get(Calibrator.MAP_TARG1)[2],
         baseSummary.get(Calibrator.MAP_TARG2)[2], baseSummary.get(Calibrator.MAP_TARG3)[2]};
-      coefficients = calibrator.calculateCalibrationCoefficients(blue, refblue); ----> HERE */ 
+      coefficients = calibrator.calculateCalibrationCoefficients(blue, refblue);
       double[] refblue = {baseSummary[0][2], baseSummary[1][2], baseSummary[2][2]};
 
       for(int i=0; i<3; i++){
         IJ.log(String.valueOf(refblue[i]));
       }
 
-      coefficients = calibrator.calculateCalibrationCoefficients(blue, refblue);
+      blueCoeff = calibrator.calculateCalibrationCoefficients(blue, refblue);
 
     }else{
       IJ.log("Camera " + camera +" currently not supported");
       return;
-    }
-
-
-
-
-    ImagePlus indexImage = null;
-    if( mainDialogValues.get(CalibrationPrompt.MAP_CAMERA).equals("Survey2 NDVI") ){
-      // Scale image only in NDVI!!
-      //indexImage = calibrator.makeNDVI(procPhoto.getRedChannel(), procPhoto.getBlueChannel(), )
-    }else{
-      // Every other image
-
-    }
-
-
-
-
+    } */
+    return null;
   }
-
-  /*
-  public RGBPhoto scaleImage( RGBPhoto photo, Calibrator calibrator ){
-    RGBPhoto procPhoto = null;
-
-    if( (photo.getCameraType()).equals(CalibrationPrompt.SURVEY2_NDVI) ){
-      // Scale image only in NDVI!!
-      procPhoto = new RGBPhoto( calibrator.scaleImages(photo.splitStack()) );
-      procPhoto.show();
-      // procPhoto's channels are scaled at this point
-    }else{
-      // Every other image
-      procPhoto = new RGBPhoto( photo.splitStack() );
-      procPhoto.show();
-    }
-  }*/
 
   public void printAll(Collection col){
     Iterator itr = col.iterator();

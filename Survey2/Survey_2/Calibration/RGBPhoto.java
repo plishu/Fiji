@@ -55,6 +55,7 @@ public class RGBPhoto{
       // This is ok for qr code because it is not needed.
     }
 
+    /*
     if( camera != null ){
       if( camera.equals(CalibrationPrompt.SURVEY2_RED) ){
         filter = "650";
@@ -72,7 +73,8 @@ public class RGBPhoto{
       }else{
         IJ.log("Camera not supported");
       }
-    }
+    }*/
+    setFilter(camera);
 
   }
 
@@ -91,7 +93,7 @@ public class RGBPhoto{
 
   }
 
-  public RGBPhoto( ImagePlus[] channels ){
+  public RGBPhoto( ImagePlus[] channels, String cam ){
     redChannel = channels[0];
     greenChannel = channels[1];
     blueChannel = channels[2];
@@ -99,6 +101,9 @@ public class RGBPhoto{
     RGBStackMerge merger = new RGBStackMerge();
     image = merger.mergeChannels(channels, false);
     //image = new CompositeImage(image);
+
+    camera = cam;
+    setFilter(camera);
   }
 
 
@@ -127,7 +132,7 @@ public class RGBPhoto{
       // qrFileDialogValues because the camera model is not set there.
       // This is ok for qr code because it is not needed.
     }
-
+    /*
     if( camera != null ){
       if( camera.equals(CalibrationPrompt.SURVEY2_RED) ){
         filter = "650";
@@ -144,7 +149,8 @@ public class RGBPhoto{
       }else{
         IJ.log("Camera not supported");
       }
-    }
+    }*/
+    setFilter(camera);
   }
 
   public ImagePlus[] splitStack(){
@@ -167,6 +173,27 @@ public class RGBPhoto{
     greenChannel = imageBands[2];
 
     return imageBands;
+  }
+
+  public void setFilter( String camera ){
+    if( camera != null ){
+      if( camera.equals(CalibrationPrompt.SURVEY2_RED) ){
+        this.filter = "650";
+      }else if( camera.equals(CalibrationPrompt.SURVEY2_GREEN) ){
+        this.filter = "548";
+      }else if( camera.equals(CalibrationPrompt.SURVEY2_BLUE) ){
+        this.filter = "450";
+      }else if( camera.equals(CalibrationPrompt.SURVEY2_NDVI) ){
+        this.filter = "660/850";
+      }else if( camera.equals(CalibrationPrompt.SURVEY2_NIR) ){
+        this.filter = "850";
+      }else if( camera.equals(CalibrationPrompt.OTHER_CAMERA) ){
+        //this.filter = valueMap.get(CalibrationPrompt.MAP_FILTER);
+        filter = null;
+      }else{
+        IJ.log("Camera not supported");
+      }
+    }
   }
 
   public String getExtension(String path){
