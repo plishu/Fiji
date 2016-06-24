@@ -53,6 +53,7 @@ public class Calibrate implements PlugIn{
     HashMap<String, String> imageFileDialogValues = null;
     printAll( mainDialogValues.values() );
 
+    // Image that contains QR calibration (if option is choosen)
     ImagePlus qrimg = null;
 
     // Check if camera selected is NDVI
@@ -62,16 +63,16 @@ public class Calibrate implements PlugIn{
       printAll( dualBandDialogValues.values() );
     }
 
-    // Check if use wants to provide calibration target image
+    // Check if user wants to provide calibration target image
     RGBPhoto qrphoto = null;
     if( mainDialogValues.get(CalibrationPrompt.MAP_USEQR).equals("true") ){
-      prompt.showQRFileDialog();
+      prompt.showQRFileDialog(); // Get QR image
       qrFileDialogValues = prompt.getQRFileDialogValues();
       printAll( qrFileDialogValues.values() );
 
       qrphoto = new RGBPhoto( qrFileDialogValues );
       qrphoto.show();
-      qrimg = qrphoto.getImage();
+      qrimg = qrphoto.getImage(); // QR picture in ImagePlus form
 
     }
 
@@ -80,25 +81,59 @@ public class Calibrate implements PlugIn{
     imageFileDialogValues = prompt.getImageFileDialogValues();
     printAll( imageFileDialogValues.values() );
 
-    // Values!!
+    // Load image to calibrate
+
     RGBPhoto photo = new RGBPhoto( imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEDIR),
               imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEFILENAME),
-              imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEPATH) );
+              imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEPATH),
+              mainDialogValues.get(CalibrationPrompt.MAP_CAMERA) );
     photo.show();
+
 
     Calibrator calibrator = new Calibrator();
     RGBPhoto procPhoto = null;
+
+    /*
     if( mainDialogValues.get(CalibrationPrompt.MAP_CAMERA).equals("Survey2 NDVI") ){
       // Scale image only in NDVI!!
       procPhoto = new RGBPhoto( calibrator.scaleImages(photo.splitStack()) );
+
+      if( dualBandDialogValues.get(CalibrationPrompt.MAP_REMOVEGAMMA).equals("true") ){
+        IJ.log("Removing gamma");
+        ImagePlus red = procPhoto.getRedChannel();
+        ImagePlus green = procPhoto.getGreenChannel();
+        ImagePlus blue = procPhoto.getBlueChannel();
+        double gm = Double.parseDouble( dualBandDialogValues.get(CalibrationPrompt.MAP_GAMMA) );
+        calibrator.removeGamma(blue, red, gm);
+
+        ImagePlus[] bands = {red, green, blue};
+        procPhoto = new RGBPhoto(bands);
+
+      }
       procPhoto.show();
     }else{
       // Every other image
       procPhoto = new RGBPhoto( photo.splitStack() );
       procPhoto.show();
-    }
+    }*/
 
+    //procPhoto = new RGBPhoto( calibrator.scaleImages())
 
+    // Scale all channels. Use only the ones you need.
+    procPhoto = calibrator.scaleChannels(photo);
+
+    //procPhoto.getBlueChannel().show();
+    //procPhoto.getGreenChannel().show();
+    //procPhoto.getRedChannel().show();
+
+    // Remove gamma (JPG only!!)
+    double gm = Double.parseDouble( mainDialogValues.get(CalibrationPrompt.MAP_GAMMA) );
+    procPhoto = calibrator.removeGamma(procPhoto, gm);
+    //procPhoto.show();
+
+    //procPhoto.getBlueChannel().show();
+    //procPhoto.getGreenChannel().show();
+    //procPhoto.getRedChannel().show();
 
     Roi[] rois = null;
     RoiManager manager = null;
@@ -129,11 +164,22 @@ public class Calibrate implements PlugIn{
     //baseSummary = calibrator.getRefValues(bfs, "850/660"); //@TODO Replace hard coded value
     double coefficients[] = null;
 
+    //procPhoto.getBlueChannel().show();
+    //procPhoto.getGreenChannel().show();
+    //procPhoto.getRedChannel().show();
+
+
+
     // @TODO Option to use base value summary if no QR calibration
     if( camera.equals("Survey2 NDVI") ){
       baseSummary = calibrator.getRefValues(bfs, "850/660");
       redBandSummary = calibrator.processRois(procPhoto.getRedChannel(), manager);
       blueBandSummary = calibrator.processRois(procPhoto.getBlueChannel(), manager);
+
+      double[] blue = {Double.parseDouble(blueBandSummary.get(0).get(Calibrator.MAP_MEAN)),
+         Double.parseDouble(blueBandSummary.get(1).get(Calibrator.MAP_MEAN)),
+         Double.parseDouble(blueBandSummary.get(2).get(Calibrator.MAP_MEAN))};
+
     }else if( camera.equals("Survey2 NIR") ){
       redBandSummary = calibrator.processRois(procPhoto.getRedChannel(), manager);
     }else if( camera.equals("Survey2 Red") ){
@@ -143,6 +189,7 @@ public class Calibrate implements PlugIn{
     }else if( camera.equals("Survey2 Blue") ){
 
       baseSummary = calibrator.getRefValues(bfs, "450");
+      //blueBandSummary = calibrator.processRois(procPhoto.getBlueChannel(), manager);
       blueBandSummary = calibrator.processRois(procPhoto.getBlueChannel(), manager);
 
       double[] blue = {Double.parseDouble(blueBandSummary.get(0).get(Calibrator.MAP_MEAN)),
@@ -152,7 +199,7 @@ public class Calibrate implements PlugIn{
       /*
       double[] refblue = {baseSummary.get(Calibrator.MAP_TARG1)[2],
         baseSummary.get(Calibrator.MAP_TARG2)[2], baseSummary.get(Calibrator.MAP_TARG3)[2]};
-      coefficients = calibrator.calculateCalibrationCoefficients(blue, refblue);*/
+      coefficients = calibrator.calculateCalibrationCoefficients(blue, refblue); ----> HERE */ 
       double[] refblue = {baseSummary[0][2], baseSummary[1][2], baseSummary[2][2]};
 
       for(int i=0; i<3; i++){
@@ -165,6 +212,7 @@ public class Calibrate implements PlugIn{
       IJ.log("Camera " + camera +" currently not supported");
       return;
     }
+
 
 
 
@@ -181,6 +229,22 @@ public class Calibrate implements PlugIn{
 
 
   }
+
+  /*
+  public RGBPhoto scaleImage( RGBPhoto photo, Calibrator calibrator ){
+    RGBPhoto procPhoto = null;
+
+    if( (photo.getCameraType()).equals(CalibrationPrompt.SURVEY2_NDVI) ){
+      // Scale image only in NDVI!!
+      procPhoto = new RGBPhoto( calibrator.scaleImages(photo.splitStack()) );
+      procPhoto.show();
+      // procPhoto's channels are scaled at this point
+    }else{
+      // Every other image
+      procPhoto = new RGBPhoto( photo.splitStack() );
+      procPhoto.show();
+    }
+  }*/
 
   public void printAll(Collection col){
     Iterator itr = col.iterator();

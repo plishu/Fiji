@@ -1,5 +1,6 @@
 import ij.gui.GenericDialog;
 import ij.io.OpenDialog;
+import ij.IJ;
 
 import java.awt.AWTEvent;
 import java.awt.Checkbox;
@@ -23,27 +24,35 @@ public class CalibrationPrompt{
   private Map<String, String> qrFileDialogValues = null;
   private Map<String, String> imageFileDialog = null;
   */
-  public static String MAP_CAMERA = "CAMERA";
-  public static String MAP_USEQR = "USEQR";
-  public static String MAP_REMOVEGAMMA = "REMOVEGAMMA";
-  public static String MAP_GAMMA = "GAMMA";
-  public static String MAP_REMOVENIR = "REMOVENIR";
-  public static String MAP_NIRSUB = "NIRSUB";
-  public static String MAP_IMAGEDIR = "IMAGEDIR";
-  public static String MAP_IMAGEFILENAME = "IMAGEFILENAME";
-  public static String MAP_IMAGEPATH = "IMAGEPATH";
+  public static final String MAP_CAMERA = "CAMERA";
+  public static final String MAP_FILTER = "FILTER";
+  public static final String MAP_USEQR = "USEQR";
+  public static final String MAP_REMOVEGAMMA = "REMOVEGAMMA";
+  public static final String MAP_GAMMA = "GAMMA";
+  public static final String MAP_REMOVENIR = "REMOVENIR";
+  public static final String MAP_NIRSUB = "NIRSUB";
+  public static final String MAP_IMAGEDIR = "IMAGEDIR";
+  public static final String MAP_IMAGEFILENAME = "IMAGEFILENAME";
+  public static final String MAP_IMAGEPATH = "IMAGEPATH";
   /* Treat QR image as an image - use same keys
   public static String MAP_QRDIR = "QRDIR";
   public static String MAP_QRFILENAME = "QRFILENAME";
   public static String MAP_QRPATH = "QRPATH";
   */
 
+  public static final String SURVEY2_RED = "Survey2 Red";
+  public static final String SURVEY2_GREEN = "Survey2 Green";
+  public static final String SURVEY2_BLUE = "Survey2 Blue";
+  public static final String SURVEY2_NDVI = "Survey2 NDVI";
+  public static final String SURVEY2_NIR = "Survey2 NIR";
+  public static final String OTHER_CAMERA = "OTHER";
 
-  private String[] cameras = new String[]{"Survey2 Red", "Survey2 Green",
-    "Survey2 Blue", "Survey2 NDVI", "Survey2 NIR"};
-  private String[] dualBand = new String[]{"Survey2 NDVI"};
-  private double gamma = 0.0;
-  private double nirsub = 0.0; // Percentage
+
+  private String[] cameras = new String[]{SURVEY2_RED, SURVEY2_GREEN,
+    SURVEY2_BLUE, SURVEY2_NDVI, SURVEY2_NIR, OTHER_CAMERA};
+  private String[] dualBand = new String[]{SURVEY2_NDVI};
+  private double gamma = 2.2;
+  private double nirsub = 80.0; // Percentage
 
   private boolean useQR = false;
   private boolean removeGamma = true;
@@ -52,11 +61,13 @@ public class CalibrationPrompt{
   public CalibrationPrompt(){
     mainDialog = new GenericDialog("Calibrate Image");
     mainDialog.addChoice("Camera: ", cameras, cameras[3]);
-    mainDialog.addCheckbox("Calibrate with QR Calibration Photo: ", useQR);
+    mainDialog.addCheckbox("Calibrate with QR Calibration Photo ", useQR);
+    mainDialog.addCheckbox("Remove gamma? (Only applies to JPG images) ", removeGamma);
+    mainDialog.addNumericField("Gamma value: ", gamma, 3);
 
-    dualBandDialog = new GenericDialog("Remove Gamma Effect");
-    dualBandDialog.addCheckbox("Remove gamma effect? ", removeGamma);
-    dualBandDialog.addNumericField("Gamma value: ", gamma, 5);
+    dualBandDialog = new GenericDialog("NDVI options");
+    //dualBandDialog.addCheckbox("Remove gamma effect? ", removeGamma);
+    //dualBandDialog.addNumericField("Gamma value: ", gamma, 5);
     dualBandDialog.addCheckbox("Subtract NIR? ", removeNIR);
     dualBandDialog.addNumericField( "Subtract amount percentage: ", nirsub, 3);
 
@@ -95,9 +106,12 @@ public class CalibrationPrompt{
 
   public HashMap<String, String> getMainDialogValues(){
     HashMap<String, String> values = new HashMap<String, String>();
-
-    values.put( MAP_CAMERA, mainDialog.getNextChoice() );
+    String theCamera = mainDialog.getNextChoice();
+    IJ.log("THe camera selected is: " + theCamera);
+    values.put( MAP_CAMERA, theCamera );
     values.put( MAP_USEQR, String.valueOf(mainDialog.getNextBoolean()) );
+    values.put( MAP_REMOVEGAMMA, String.valueOf(mainDialog.getNextBoolean()) );
+    values.put( MAP_GAMMA, String.valueOf(mainDialog.getNextNumber()) );
 
     return values;
   }
@@ -105,8 +119,8 @@ public class CalibrationPrompt{
   public HashMap<String, String> getDualBandDialogValues(){
     HashMap<String, String> values = new HashMap<String, String>();
 
-    values.put( MAP_REMOVEGAMMA, String.valueOf(dualBandDialog.getNextBoolean()) );
-    values.put( MAP_GAMMA, String.valueOf(dualBandDialog.getNextNumber()) );
+    //values.put( MAP_REMOVEGAMMA, String.valueOf(dualBandDialog.getNextBoolean()) );
+    //values.put( MAP_GAMMA, String.valueOf(dualBandDialog.getNextNumber()) );
     values.put( MAP_REMOVENIR, String.valueOf(dualBandDialog.getNextBoolean()) );
     values.put( MAP_NIRSUB, String.valueOf(dualBandDialog.getNextNumber()) );
 

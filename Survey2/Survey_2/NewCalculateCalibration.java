@@ -178,7 +178,7 @@ implements PlugIn, DialogListener {
         //mgr.addRoi(target3Roi);
         mgr.add(qrimg, target1Roi, 0);
         mgr.add(qrimg, target2Roi, 1);
-        mgr.add(qrimg, target3Roi, 2);
+        //mgr.add(qrimg, target3Roi, 2);
 
         // Assumes RoiManager has been created and at least two Roi exist
         RoiManager manager = RoiManager.getInstance();
@@ -320,13 +320,19 @@ implements PlugIn, DialogListener {
         ImagePlus[] imageBands = ChannelSplitter.split((ImagePlus)imp);
         ImagePlus visImage = this.scaleImage(imageBands[visBandIndex], "visImage");
         ImagePlus nirImage = this.scaleImage(imageBands[nirBandIndex], "nirImage");
+
+        visImage.show();
+        nirImage.show();
+
         if (removeGamma.booleanValue()) {
             double undoGamma = 1.0 / gamma;
             int y2 = 0;
             while (y2 < nirImage.getHeight()) {
                 int x2 = 0;
                 while (x2 < nirImage.getWidth()) {
+                    //IJ.log( "Old pixel value: " + String.valueOf(nirImage.getProcessor().getPixelValue(x2, y2)) );
                     nirPixel = Math.pow(nirImage.getProcessor().getPixelValue(x2, y2), undoGamma);
+                    //IJ.log( "New pixel value: " + String.valueOf(nirPixel) );
                     visPixel = Math.pow(visImage.getProcessor().getPixelValue(x2, y2), undoGamma);
                     visImage.getProcessor().putPixelValue(x2, y2, visPixel);
                     nirImage.getProcessor().putPixelValue(x2, y2, nirPixel);
@@ -519,6 +525,10 @@ implements PlugIn, DialogListener {
         double outPixel = 0.0;
         double minVal = inImage.getProcessor().getMin();
         double maxVal = inImage.getProcessor().getMax();
+
+        IJ.log("Pixel min: " + String.valueOf(minVal));
+        IJ.log("Pixel max: " + String.valueOf(maxVal));
+
         double inverseRange = 1.0 / (maxVal - minVal);
         ImagePlus newImage = NewImage.createFloatImage((String)imageName, (int)inImage.getWidth(), (int)inImage.getHeight(), (int)1, (int)1);
         int y = 0;

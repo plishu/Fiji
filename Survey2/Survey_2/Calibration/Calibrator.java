@@ -64,17 +64,36 @@ public class Calibrator{
     return scaledImages;
   }
 
+  public RGBPhoto scaleChannels( RGBPhoto inPhoto ){
+    ImagePlus redChannel = inPhoto.getRedChannel();
+    ImagePlus greenChannel = inPhoto.getGreenChannel();
+    ImagePlus blueChannel = inPhoto.getBlueChannel();
+
+    redChannel = scaleImage(redChannel, "red");
+    greenChannel = scaleImage(greenChannel, "green");
+    blueChannel = scaleImage(blueChannel, "blue");
+
+    ImagePlus[] rgb = {redChannel, greenChannel, blueChannel};
+
+    return (new RGBPhoto(rgb));
+  }
+
 
   public ImagePlus scaleImage(ImagePlus inImage, String imageName) {
       double inPixel = 0.0;
       double outPixel = 0.0;
       double minVal = inImage.getProcessor().getMin();
       double maxVal = inImage.getProcessor().getMax();
+
+      IJ.log("Pixel min: " + String.valueOf(minVal));
+      IJ.log("Pixel max: " + String.valueOf(maxVal));
+
       double inverseRange = 1.0 / (maxVal - minVal);
       ImagePlus newImage = NewImage.createFloatImage((String)imageName, (int)inImage.getWidth(), (int)inImage.getHeight(), (int)1, (int)1);
       int y = 0;
+      int x = 0;
       while (y < inImage.getHeight()) {
-          int x = 0;
+          x = 0;
           while (x < inImage.getWidth()) {
               inPixel = inImage.getPixel(x, y)[0];
               outPixel = inverseRange * (inPixel - minVal);
@@ -110,6 +129,49 @@ public class Calibrator{
         }
         ++y2;
     }
+  }
+
+  public ImagePlus removeGamma(ImagePlus channel, double gamma){
+    IJ.log("Gamma to apply: " + String.valueOf(gamma));
+    double undoGamma = 1.0 / gamma;
+    double cPixel = 0.0;
+    int x2 = 0;
+    int y2 = 0;
+
+    ImagePlus nChannel = channel;
+
+    while (y2 < nChannel.getHeight()) {
+        x2 = 0; // Reset for new row
+        while (x2 < nChannel.getWidth()) {
+            //IJ.log( "Old pixel value: " + String.valueOf(nChannel.getProcessor().getPixel(x2,y2)));
+            cPixel = Math.pow(nChannel.getProcessor().getPixelValue(x2, y2), undoGamma);
+            //IJ.log( "New pixel value: " + String.valueOf(cPixel) );
+            nChannel.getProcessor().putPixelValue(x2, y2, cPixel);
+            ++x2;
+        }
+        ++y2;
+    }
+
+    nChannel.show();
+    return nChannel;
+  }
+
+  public RGBPhoto removeGamma(RGBPhoto inImage, double gamma){
+    ImagePlus redChannel = inImage.getRedChannel();
+    ImagePlus greenChannel = inImage.getGreenChannel();
+    ImagePlus blueChannel = inImage.getBlueChannel();
+
+
+    redChannel = removeGamma(redChannel, gamma);
+    greenChannel = removeGamma(greenChannel, gamma);
+    blueChannel = removeGamma(blueChannel, gamma);
+
+
+
+
+    ImagePlus[] rgb = {redChannel, greenChannel, blueChannel};
+    return (new RGBPhoto(rgb));
+
   }
 
   public void subtractNIR(ImagePlus nirImage, ImagePlus visImage, double gamma, double nirsub){
@@ -187,7 +249,6 @@ public class Calibrator{
     //HashMap<String, String> value = null;
     //List<HashMap<String, String>> values = null;
     double[][] values = new double[3][3];
-    IJ.log("WHAT THE FUCK ARE YOU DOING");
     try{
       while ((line = fileReader.readLine()) != null) {
           if (line.length() <= 0) continue;
