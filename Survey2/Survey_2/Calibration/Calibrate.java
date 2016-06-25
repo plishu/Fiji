@@ -63,6 +63,9 @@ public class Calibrate implements PlugIn{
       printAll( dualBandDialogValues.values() );
     }
 
+    Calibrator calibrator = new Calibrator();
+    RGBPhoto procPhoto = null;
+
     // Check if user wants to provide calibration target image
     RGBPhoto qrphoto = null;
     if( mainDialogValues.get(CalibrationPrompt.MAP_USEQR).equals("true") ){
@@ -71,8 +74,12 @@ public class Calibrate implements PlugIn{
       printAll( qrFileDialogValues.values() );
 
       qrphoto = new RGBPhoto( qrFileDialogValues );
-      qrphoto.show();
+      qrphoto = calibrator.scaleChannels(qrphoto);
+      double gm = Double.parseDouble( mainDialogValues.get(CalibrationPrompt.MAP_GAMMA) );
+      qrphoto = calibrator.removeGamma(qrphoto, gm);
+      //qrphoto.show();
       qrimg = qrphoto.getImage(); // QR picture in ImagePlus form
+      qrimg.show();
 
     }
 
@@ -82,58 +89,22 @@ public class Calibrate implements PlugIn{
     printAll( imageFileDialogValues.values() );
 
     // Load image to calibrate
-
     RGBPhoto photo = new RGBPhoto( imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEDIR),
               imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEFILENAME),
               imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEPATH),
               mainDialogValues.get(CalibrationPrompt.MAP_CAMERA) );
-    photo.show();
+    //photo.show();
 
 
-    Calibrator calibrator = new Calibrator();
-    RGBPhoto procPhoto = null;
 
-    /*
-    if( mainDialogValues.get(CalibrationPrompt.MAP_CAMERA).equals("Survey2 NDVI") ){
-      // Scale image only in NDVI!!
-      procPhoto = new RGBPhoto( calibrator.scaleImages(photo.splitStack()) );
-
-      if( dualBandDialogValues.get(CalibrationPrompt.MAP_REMOVEGAMMA).equals("true") ){
-        IJ.log("Removing gamma");
-        ImagePlus red = procPhoto.getRedChannel();
-        ImagePlus green = procPhoto.getGreenChannel();
-        ImagePlus blue = procPhoto.getBlueChannel();
-        double gm = Double.parseDouble( dualBandDialogValues.get(CalibrationPrompt.MAP_GAMMA) );
-        calibrator.removeGamma(blue, red, gm);
-
-        ImagePlus[] bands = {red, green, blue};
-        procPhoto = new RGBPhoto(bands);
-
-      }
-      procPhoto.show();
-    }else{
-      // Every other image
-      procPhoto = new RGBPhoto( photo.splitStack() );
-      procPhoto.show();
-    }*/
-
-    //procPhoto = new RGBPhoto( calibrator.scaleImages())
 
     // Scale all channels. Use only the ones you need.
     procPhoto = calibrator.scaleChannels(photo);
-
-    //procPhoto.getBlueChannel().show();
-    //procPhoto.getGreenChannel().show();
-    //procPhoto.getRedChannel().show();
 
     // Remove gamma (JPG only!!)
     double gm = Double.parseDouble( mainDialogValues.get(CalibrationPrompt.MAP_GAMMA) );
     procPhoto = calibrator.removeGamma(procPhoto, gm);
     //procPhoto.show();
-
-    //procPhoto.getBlueChannel().show();
-    //procPhoto.getGreenChannel().show();
-    //procPhoto.getRedChannel().show();
 
     Roi[] rois = null;
     RoiManager manager = null;
@@ -143,8 +114,11 @@ public class Calibrate implements PlugIn{
     }else{
       // Use calibration targets
       // @TODO BUG: ROI's not mapping correctly
-      rois = calibrator.getRois(qrimg);
+      // @TODO:YO get ROI from EACH band dumb dumb
+      //rois = calibrator.getRois(qrimg);
+      rois = calibrator.getRois(qrphoto.getRedChannel());
       manager = calibrator.setupROIManager(qrimg, rois);
+      qrphoto.getRedChannel().show();
     }
 
     // Generate mean
@@ -174,7 +148,9 @@ public class Calibrate implements PlugIn{
     if( camera.equals("Survey2 NDVI") ){
       //baseSummary = calibrator.getRefValues(bfs, "850/660");
       baseSummary = calibrator.getRefValues(bfs, "660/850");
-      redBandSummary = calibrator.processRois(procPhoto.getRedChannel(), manager);
+
+      //@TODO supply QR CODE channels, not image to calibrate
+      redBandSummary = calibrator.processRois(qrphoto.getRedChannel(), manager); // <--- This is the key
       blueBandSummary = calibrator.processRois(procPhoto.getBlueChannel(), manager);
 
       double[] blue = {Double.parseDouble(blueBandSummary.get(0).get(Calibrator.MAP_MEAN)),

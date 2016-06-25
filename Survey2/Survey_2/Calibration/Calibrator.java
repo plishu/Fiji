@@ -59,7 +59,7 @@ public class Calibrator{
       else if( i==2 ){ imageTitle = "blue";}
 
       scaledImages[i] = scaleImage(channels[i], imageTitle);
-      scaledImages[i].show();
+      //scaledImages[i].show();
     }
     return scaledImages;
   }
@@ -152,7 +152,7 @@ public class Calibrator{
         ++y2;
     }
 
-    nChannel.show();
+    //nChannel.show();
     return nChannel;
   }
 
@@ -435,14 +435,16 @@ public class Calibrator{
     Roi target3Roi = qr.createRectangleRoi( target3Center, 0.3f );
     qr.drawPolygonOn( target3Roi, resimg );
 
-    target1Roi = qr.mapRoiTo( qrimg, resimg, target1Center, 0.6f );
+    target1Roi = qr.mapRoiTo( qrimg, resimg, target1Center, 1.0f );
     qr.drawPolygonOn( target1Roi, qrimg );
-    target2Roi = qr.mapRoiTo( qrimg, resimg, target2Center, 0.6f );
+    target2Roi = qr.mapRoiTo( qrimg, resimg, target2Center, 1.0f );
     qr.drawPolygonOn( target2Roi, qrimg );
-    target3Roi = qr.mapRoiTo( qrimg, resimg, target3Center, 0.6f );
+    target3Roi = qr.mapRoiTo( qrimg, resimg, target3Center, 1.0f );
     qr.drawPolygonOn( target3Roi, qrimg );
 
     Roi[] rois = {target1Roi, target2Roi, target3Roi};
+
+    //Roi[] rois = {target3Roi, target2Roi, target1Roi}; // @TODO TESTING,
 
     return rois;
   }
