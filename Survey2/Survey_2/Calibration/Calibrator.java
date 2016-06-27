@@ -295,32 +295,34 @@ public class Calibrator{
     return values;
   }
 
-  public ImagePlus makeNDVI(ImagePlus visImage, ImagePlus nirImage, double[] calibrationCeofs) {
+  public RGBPhoto makeNDVI(RGBPhoto photo, double[] calibrationCeofs) {
+      ImagePlus img = photo.getImage();
+      ImagePlus rimg = photo.getRedChannel();
+      ImagePlus gimg = photo.getGreenChannel();
+      ImagePlus bimg = photo.getBlueChannel();
+
+      double redPixel = 0.0;
+      double bluePixel = 0.0;
       double outPixel = 0.0;
-      ImagePlus newImage = NewImage.createFloatImage((String)"ndviImage", (int)nirImage.getWidth(), (int)nirImage.getHeight(), (int)1, (int)1);
+      int x = 0;
       int y = 0;
-      while (y < nirImage.getHeight()) {
-          int x = 0;
-          while (x < nirImage.getWidth()) {
-              double visPixel;
-              double nirPixel = (double)nirImage.getProcessor().getPixelValue(x, y) * calibrationCeofs[3] + calibrationCeofs[2];
-              if (nirPixel + (visPixel = (double)visImage.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0]) == 0.0) {
-                  outPixel = 0.0;
-              } else {
-                  outPixel = (nirPixel - visPixel) / (nirPixel + visPixel);
-                  if (outPixel > 1.0) {
-                      outPixel = 1.0;
-                  }
-                  if (outPixel < -1.0) {
-                      outPixel = -1.0;
-                  }
-              }
-              newImage.getProcessor().putPixelValue(x, y, outPixel);
-              ++x;
+      while (y < img.getHeight()) {
+          x = 0;
+          while (x < img.getWidth()) {
+              redPixel = (double)rimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0];
+              bluePixel = (double)bimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[3] + calibrationCeofs[2];
+              rimg.getProcessor().putPixelValue(x, y, redPixel);
+              bimg.getProcessor().putPixelValue(x, y, bluePixel);
+
+              x++;
           }
-          ++y;
+          y++;
       }
-      return newImage;
+
+      ImagePlus[] nchan = {rimg, gimg, bimg};
+      RGBPhoto nphoto = new RGBPhoto(nchan, CalibrationPrompt.SURVEY2_NDVI);
+
+      return nphoto;
   }
 
 

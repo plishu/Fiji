@@ -1,5 +1,6 @@
 import ij.gui.GenericDialog;
 import ij.io.OpenDialog;
+import ij.io.SaveDialog;
 import ij.IJ;
 
 import java.awt.AWTEvent;
@@ -17,6 +18,7 @@ public class CalibrationPrompt{
   private GenericDialog dualBandDialog = null;
   private OpenDialog qrFileDialog = null;
   private OpenDialog imageFileDialog = null;
+  private SaveDialog saveFileDialog = null;
 
   /*
   private Map<String, String> mainDialogValues = null;
@@ -34,6 +36,7 @@ public class CalibrationPrompt{
   public static final String MAP_IMAGEDIR = "IMAGEDIR";
   public static final String MAP_IMAGEFILENAME = "IMAGEFILENAME";
   public static final String MAP_IMAGEPATH = "IMAGEPATH";
+  public static final String MAP_SAVEDIR = "SAVEDIR";
   /* Treat QR image as an image - use same keys
   public static String MAP_QRDIR = "QRDIR";
   public static String MAP_QRFILENAME = "QRFILENAME";
@@ -104,6 +107,10 @@ public class CalibrationPrompt{
     imageFileDialog = new OpenDialog("Select Image to Calibrate");
   }
 
+  public void showSaveFileDialog(){
+    saveFileDialog = new SaveDialog("Choose Directory to Save","","");
+  }
+
   public HashMap<String, String> getMainDialogValues(){
     HashMap<String, String> values = new HashMap<String, String>();
     String theCamera = mainDialog.getNextChoice();
@@ -143,6 +150,14 @@ public class CalibrationPrompt{
     values.put( MAP_IMAGEDIR, imageFileDialog.getDirectory() );
     values.put( MAP_IMAGEFILENAME, imageFileDialog.getFileName() );
     values.put( MAP_IMAGEPATH, imageFileDialog.getPath() );
+
+    return values;
+  }
+
+  public HashMap<String, String> getSaveFileDialogValues(){
+    HashMap<String, String> values = new HashMap<String, String>();
+
+    values.put( MAP_SAVEDIR, saveFileDialog.getDirectory() );
 
     return values;
   }

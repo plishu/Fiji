@@ -197,11 +197,31 @@ public class RGBPhoto{
   }
 
   public String getExtension(String path){
-    return "yo";
+    String[] fnsplit = path.split("\\.(?=[^\\.]+$)");
+    String[] split = null;
+
+    if( fnsplit.length == 2 ){
+      // filename split successfully into filename and extension
+      split = fnsplit;
+    }
+    imageExt = split[1];
+    return split[1];
   }
 
   public String getExtension(){
-    return "yo";
+    String[] fnsplit = imagePath.split("\\.(?=[^\\.]+$)");
+    String[] split = null;
+
+    if( fnsplit.length == 2 ){
+      // filename split successfully into filename and extension
+      split = fnsplit;
+    }
+    imageExt = split[1];
+    return split[1];
+  }
+
+  public String getFileName(){
+    return imageName;
   }
 
   public ImagePlus getImage(){
