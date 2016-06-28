@@ -295,15 +295,63 @@ public class Calibrator{
     return values;
   }
 
+  public RGBPhoto makeSingle(RGBPhoto photo, double[] calibrationCeofs){
+    ImagePlus img = photo.getImage();
+    ImagePlus rimg = photo.getRedChannel();
+    ImagePlus gimg = photo.getGreenChannel();
+    ImagePlus bimg = photo.getBlueChannel();
+
+    rimg.show();
+    gimg.show();
+    bimg.show();
+
+    //RGBPhoto nphoto = null;
+
+    double pixel = 0.0;
+    double outPixel = 0.0;
+    int x = 0;
+    int y = 0;
+    while (y < img.getHeight()) {
+        x = 0;
+        while (x < img.getWidth()) {
+
+            if( photo.getCameraType().equals(CalibrationPrompt.SURVEY2_RED) ){
+              pixel = (double)rimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0];
+              rimg.getProcessor().putPixelValue(x, y, pixel);
+            }else if( photo.getCameraType().equals(CalibrationPrompt.SURVEY2_GREEN) ){
+              pixel = (double)gimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0];
+              gimg.getProcessor().putPixelValue(x, y, pixel);
+            }else if( photo.getCameraType().equals(CalibrationPrompt.SURVEY2_BLUE) ){
+              pixel = (double)bimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0];
+              bimg.getProcessor().putPixelValue(x, y, pixel);
+            }else if( photo.getCameraType().equals(CalibrationPrompt.SURVEY2_NIR) ){
+              pixel = (double)rimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0];
+              rimg.getProcessor().putPixelValue(x, y, pixel);
+            }
+            x++;
+        }
+        y++;
+    }
+
+    ImagePlus[] nchan = {rimg, gimg, bimg};
+
+    RGBPhoto nphoto = new RGBPhoto(nchan, photo.getCameraType());
+
+    return nphoto;
+  }
+
   public RGBPhoto makeNDVI(RGBPhoto photo, double[] calibrationCeofs) {
       ImagePlus img = photo.getImage();
       ImagePlus rimg = photo.getRedChannel();
       ImagePlus gimg = photo.getGreenChannel();
       ImagePlus bimg = photo.getBlueChannel();
 
+      rimg.show();
+      gimg.show();
+      bimg.show();
+
       double redPixel = 0.0;
       double bluePixel = 0.0;
-      double outPixel = 0.0;
       int x = 0;
       int y = 0;
       while (y < img.getHeight()) {

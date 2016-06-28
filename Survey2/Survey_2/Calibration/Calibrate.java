@@ -120,6 +120,7 @@ public class Calibrate implements PlugIn{
     List<HashMap<String, String>> redBandSummary = null;
 
     String camera = mainDialogValues.get(CalibrationPrompt.MAP_CAMERA);
+    RGBPhoto resultphoto = null;
 
     if( camera.equals(CalibrationPrompt.SURVEY2_NDVI) ){
       // Use red channel and blue channel
@@ -131,7 +132,7 @@ public class Calibrate implements PlugIn{
       coeffs[2] = tmpcoeff[0];
       coeffs[3] = tmpcoeff[1];
 
-      calibrator.makeNDVI(photo, coeffs).show();
+      resultphoto = calibrator.makeNDVI(photo, coeffs);
 
       IJ.log("Creating Index Float image");
       //createIndexFloat(saveFileDialogValues.get(CalibrationPrompt.MAP_SAVEDIR), procPhoto.getFileName(), procPhoto.getExtension(), indexImage);
@@ -139,20 +140,40 @@ public class Calibrate implements PlugIn{
 
     }else if( camera.equals(CalibrationPrompt.SURVEY2_NIR) ){
       baseSummary = calibrator.getRefValues(bfs, "850");
-      calculateCoefficients(qrphoto, calibrator, baseSummary, "Red");
+      tmpcoeff = calculateCoefficients(qrphoto, calibrator, baseSummary, "Red");
+      coeffs[0] = tmpcoeff[0];
+      coeffs[1] = tmpcoeff[1];
+
+      resultphoto = calibrator.makeSingle(photo, coeffs);
+
     }else if( camera.equals(CalibrationPrompt.SURVEY2_RED) ){
       baseSummary = calibrator.getRefValues(bfs, "650");
-      calculateCoefficients(qrphoto, calibrator, baseSummary, "Red");
+      tmpcoeff = calculateCoefficients(qrphoto, calibrator, baseSummary, "Red");
+      coeffs[0] = tmpcoeff[0];
+      coeffs[1] = tmpcoeff[1];
+
+      resultphoto = calibrator.makeSingle(photo, coeffs);
+
     }else if( camera.equals(CalibrationPrompt.SURVEY2_GREEN) ){
       baseSummary = calibrator.getRefValues(bfs, "548");
-      calculateCoefficients(qrphoto, calibrator, baseSummary, "Green");
+      tmpcoeff = calculateCoefficients(qrphoto, calibrator, baseSummary, "Green");
+      coeffs[0] = tmpcoeff[0];
+      coeffs[1] = tmpcoeff[1];
+
+      resultphoto = calibrator.makeSingle(photo, coeffs);
+
     }else if( camera.equals(CalibrationPrompt.SURVEY2_BLUE) ){
       baseSummary = calibrator.getRefValues(bfs, "450");
-      calculateCoefficients(qrphoto, calibrator, baseSummary, "Blue");
+      tmpcoeff = calculateCoefficients(qrphoto, calibrator, baseSummary, "Blue");
+      coeffs[0] = tmpcoeff[0];
+      coeffs[1] = tmpcoeff[1];
+
+      resultphoto = calibrator.makeSingle(photo, coeffs);
 
     }else{
       // IDK
     }
+    resultphoto.show();
 
   }
 

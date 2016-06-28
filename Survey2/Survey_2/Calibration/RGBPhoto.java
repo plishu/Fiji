@@ -1,5 +1,6 @@
 import ij.ImagePlus;
 import ij.IJ;
+import ij.ImageStack;
 import ij.plugin.ChannelSplitter;
 import ij.plugin.RGBStackMerge;
 import ij.CompositeImage;
@@ -38,14 +39,33 @@ public class RGBPhoto{
     image = new ImagePlus(imagePath);
 
     // Get channels
+    /*
     ImagePlus imp = image;
     if (imp.getNChannels() == 1) {
+        IJ.log("THIS IS A COMPOSITE IMAGE");
         imp = new CompositeImage(image);
-    }
-    ImagePlus[] imageBands = ChannelSplitter.split((ImagePlus)imp);
+    }*/
+
+    /*
+    ImagePlus[] imageBands = ChannelSplitter.split(image);
     redChannel = imageBands[0];
-    blueChannel = imageBands[1];
-    greenChannel = imageBands[2];
+    greenChannel = imageBands[1];
+    blueChannel = imageBands[2];
+    */
+
+    splitStack(image);
+
+    //ImageStack stack = image.getImageStack();
+    //ImageStack[] stk = ChannelSplitter.splitRGB(stack, false);
+
+    //redChannel.setStack(stk[0]);
+    //greenChannel.setStack(stk[1]);
+    //blueChannel.setStack(stk[2]);
+
+
+    //redChannel.show();
+    //greenChannel.show();
+    //blueChannel.show();
 
     camera = cmodel;
 
@@ -82,14 +102,17 @@ public class RGBPhoto{
     this.image = image;
 
     // Get channels
+    /*
     ImagePlus imp = image;
     if (imp.getNChannels() == 1) {
         imp = new CompositeImage(image);
     }
     ImagePlus[] imageBands = ChannelSplitter.split((ImagePlus)imp);
     redChannel = imageBands[0];
-    blueChannel = imageBands[1];
-    greenChannel = imageBands[2];
+    greenChannel = imageBands[1];
+    blueChannel = imageBands[2];
+    */
+    splitStack(image);
 
   }
 
@@ -100,7 +123,6 @@ public class RGBPhoto{
 
     RGBStackMerge merger = new RGBStackMerge();
     image = merger.mergeChannels(channels, false);
-    //image = new CompositeImage(image);
 
     camera = cam;
     setFilter(camera);
@@ -116,14 +138,16 @@ public class RGBPhoto{
     image = new ImagePlus(imagePath);
 
     // Get channels
+    /*
     ImagePlus imp = image;
     if (imp.getNChannels() == 1) {
         imp = new CompositeImage(image);
     }
     ImagePlus[] imageBands = ChannelSplitter.split((ImagePlus)imp);
     redChannel = imageBands[0];
-    blueChannel = imageBands[1];
-    greenChannel = imageBands[2];
+    greenChannel = imageBands[1];
+    blueChannel = imageBands[2];*/
+    splitStack(image);
 
     camera = valueMap.get(CalibrationPrompt.MAP_CAMERA);
 
@@ -153,24 +177,12 @@ public class RGBPhoto{
     setFilter(camera);
   }
 
-  public ImagePlus[] splitStack(){
-    ImagePlus imp = image;
-    if (imp.getNChannels() == 1) {
-        imp = new CompositeImage(image);
-    }
-    ImagePlus[] imageBands = ChannelSplitter.split((ImagePlus)imp);
-    /*
-    redChannel = scaleImage(imageBands[0], "Red");
-    greenChannel = scaleImage(imageBands[1], "Green");
-    blueChannel = scaleImage(imageBands[2], "Blue");
+  public ImagePlus[] splitStack(ImagePlus img){
+    ImagePlus[] imageBands = ChannelSplitter.split(img);
 
-    imageBands = new ImagePlus[]{redChannel, greenChannel, blueChannel};
-    //ImagePlus visImage = scaleImage(imageBands[visBandIndex], "visImage");
-    //ImagePlus nirImage = scaleImage(imageBands[nirBandIndex], "nirImage");
-    */
     redChannel = imageBands[0];
-    blueChannel = imageBands[1];
-    greenChannel = imageBands[2];
+    greenChannel = imageBands[1];
+    blueChannel = imageBands[2];
 
     return imageBands;
   }
