@@ -16,6 +16,7 @@ import ij.plugin.ChannelSplitter;
 import ij.plugin.PlugIn;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
+import ij.plugin.RGBStackConverter;
 
 
 import java.awt.AWTEvent;
@@ -88,16 +89,17 @@ public class Calibrate implements PlugIn{
     imageFileDialogValues = prompt.getImageFileDialogValues();
     printAll( imageFileDialogValues.values() );
 
-    // Ask user where to save calibrated image
-    //prompt.showSaveFileDialog();
-    //saveFileDialogValues = prompt.getSaveFileDialogValues();
-
     // Load image to calibrate
     RGBPhoto photo = new RGBPhoto( imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEDIR),
               imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEFILENAME),
               imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEPATH),
               mainDialogValues.get(CalibrationPrompt.MAP_CAMERA) );
 
+    // Ask user where to save calibrated image
+    prompt.showSaveFileDialog(photo.getFileName(), photo.getExtension());
+    saveFileDialogValues = prompt.getSaveFileDialogValues();
+
+    /*
     // Scale all channels. Use only the ones you need.
     procPhoto = calibrator.scaleChannels(photo);
 
@@ -105,7 +107,7 @@ public class Calibrate implements PlugIn{
     double gm = Double.parseDouble( mainDialogValues.get(CalibrationPrompt.MAP_GAMMA) );
     if( mainDialogValues.get(CalibrationPrompt.MAP_REMOVEGAMMA).equals("true") ){
       procPhoto = calibrator.removeGamma(procPhoto, gm);
-    }
+    }*/
 
     photo.show();
 
@@ -133,10 +135,6 @@ public class Calibrate implements PlugIn{
       coeffs[3] = tmpcoeff[1];
 
       resultphoto = calibrator.makeNDVI(photo, coeffs);
-
-      IJ.log("Creating Index Float image");
-      //createIndexFloat(saveFileDialogValues.get(CalibrationPrompt.MAP_SAVEDIR), procPhoto.getFileName(), procPhoto.getExtension(), indexImage);
-      IJ.log("Saved");
 
     }else if( camera.equals(CalibrationPrompt.SURVEY2_NIR) ){
       baseSummary = calibrator.getRefValues(bfs, "850");
@@ -173,7 +171,13 @@ public class Calibrate implements PlugIn{
     }else{
       // IDK
     }
+
+    RGBStackConverter.convertToRGB(resultphoto.getImage());
+    resultphoto.copyFileData(photo);
     resultphoto.show();
+    IJ.log("Saving Image");
+    saveToDir(saveFileDialogValues.get(CalibrationPrompt.MAP_SAVEDIR), resultphoto.getFileName(), resultphoto.getExtension(), resultphoto.getImage());
+    IJ.log("Saved");
 
   }
 
@@ -231,20 +235,19 @@ public class Calibrate implements PlugIn{
     return coeff;
   }
 
-  /*
-  public void createIndexFloat(String outdir, String filename, String ext, ImagePlus indexImage){
-    String NDVIAppend = "_NDVI_Float";
 
-    /*
-    DebugPrint("Output Directory:" + outdir);
-    DebugPrint("Filename: " + filename);
-    DebugPrint("Save as extension: " + ext);
+  public void saveToDir(String outdir, String filename, String ext, ImagePlus image){
+    String NDVIAppend = "_Calibrated";
 
+    IJ.log("Output Directory: " + outdir);
+    IJ.log("Filename: " + filename);
+    IJ.log("Save as extension: " + ext);
 
 
-    IJ.save((ImagePlus)indexImage, (String)(String.valueOf(outdir) + filename + NDVIAppend + "." + ext));
+
+    IJ.save((ImagePlus)image, (String)(String.valueOf(outdir) + filename + NDVIAppend + "." + ext));
     return;
-  }*/
+  }
 
   public void printAll(Collection col){
     Iterator itr = col.iterator();

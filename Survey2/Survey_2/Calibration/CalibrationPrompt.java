@@ -107,8 +107,8 @@ public class CalibrationPrompt{
     imageFileDialog = new OpenDialog("Select Image to Calibrate");
   }
 
-  public void showSaveFileDialog(){
-    saveFileDialog = new SaveDialog("Choose Directory to Save","","");
+  public void showSaveFileDialog(String filename, String ext){
+    saveFileDialog = new SaveDialog("Choose Directory to Save", filename, "");
   }
 
   public HashMap<String, String> getMainDialogValues(){

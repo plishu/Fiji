@@ -32,7 +32,7 @@ public class RGBPhoto{
    */
   public RGBPhoto(String dir, String fname, String path, String cmodel){
     imageDir = dir;
-    imageName = fname;
+    imageName = getFileName(fname);
     imagePath = path;
     imageExt = getExtension(imagePath);
 
@@ -131,7 +131,7 @@ public class RGBPhoto{
 
   public RGBPhoto(HashMap<String, String> valueMap){
     imageDir = valueMap.get(CalibrationPrompt.MAP_IMAGEDIR);
-    imageName = valueMap.get(CalibrationPrompt.MAP_IMAGEFILENAME);
+    imageName = getFileName(valueMap.get(CalibrationPrompt.MAP_IMAGEFILENAME));
     imagePath = valueMap.get(CalibrationPrompt.MAP_IMAGEPATH);
     imageExt = getExtension(imagePath);
 
@@ -175,6 +175,24 @@ public class RGBPhoto{
       }
     }*/
     setFilter(camera);
+  }
+
+  public void copyFileData( RGBPhoto refphoto ){
+    imageDir = refphoto.getDir();
+    imageName = refphoto.getFileName();
+    imagePath = refphoto.getPath();
+    imageExt = refphoto.getExtension(imagePath);
+
+    camera = refphoto.getCameraType();
+    setFilter(camera);
+  }
+
+  public String getDir(){
+    return imageDir;
+  }
+
+  public String getPath(){
+    return imagePath;
   }
 
   public ImagePlus[] splitStack(ImagePlus img){
@@ -230,6 +248,17 @@ public class RGBPhoto{
     }
     imageExt = split[1];
     return split[1];
+  }
+
+  public String getFileName(String fname){
+    String[] fnsplit = fname.split("\\.(?=[^\\.]+$)");
+    String[] split = null;
+
+    if( fnsplit.length == 2 ){
+      // filename split successfully into filename and extension
+      split = fnsplit;
+    }
+    return split[0];
   }
 
   public String getFileName(){
