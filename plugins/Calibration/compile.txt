@@ -1,0 +1,4 @@
+C:\Program Files\Java\jdk1.8.0_91\bin>javac -source 1.6 -target 1.6 -classpath C:\Users\Nolan\Documents\GitHub\Fiji\Fiji.app\jars\*; C:\Users\Nolan\Documents\GitHub\Fiji\Survey2\Survey_2\QRCalib.java
+
+--CalibrationPrompt--
+C:\Program Files\Java\jdk1.8.0_91\bin>javac -source 1.6 -target 1.6 -classpath C:\Users\Nolan\Documents\GitHub\Fiji\Fiji.app\jars\*; C:\Users\Nolan\Documents\GitHub\Fiji\Survey2\Survey_2\Calibration\*.java

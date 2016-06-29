@@ -19,7 +19,6 @@ public class CalibrationPrompt{
   private OpenDialog qrFileDialog = null;
   private OpenDialog imageFileDialog = null;
   private SaveDialog saveFileDialog = null;
-  private GenericDialog fullDialog = null;
 
   /*
   private Map<String, String> mainDialogValues = null;
@@ -75,15 +74,6 @@ public class CalibrationPrompt{
     dualBandDialog.addCheckbox("Subtract NIR? ", removeNIR);
     dualBandDialog.addNumericField( "Subtract amount percentage: ", nirsub, 3);
 
-
-    fullDialog = new GenericDialog("Calibrate Images in Directory");
-    fullDialog.addChoice("Select camera images were taken with", cameras, cameras[3]);
-    fullDialog.addCheckbox("Calibrate with QR Calibration Target photo", useQR);
-    fullDialog.addCheckbox("Remove Gamma (Applies to JPG images only)", removeGamma);
-    fullDialog.addNumericField("Gamma value", gamma, 3);
-    fullDialog.addCheckbox("Subtract NIR (Use this for NDVI only)", removeNIR);
-    fullDialog.addNumericField("Subtract amount percentage", nirsub, 3);
-
   }
 
   /*
@@ -103,10 +93,6 @@ public class CalibrationPrompt{
    */
   public void showMainDialog(){
     mainDialog.showDialog();
-  }
-
-  public void showFullDialog(){
-    fullDialog.showDialog();
   }
 
   public void showDualBandDialog(){
@@ -133,19 +119,6 @@ public class CalibrationPrompt{
     values.put( MAP_USEQR, String.valueOf(mainDialog.getNextBoolean()) );
     values.put( MAP_REMOVEGAMMA, String.valueOf(mainDialog.getNextBoolean()) );
     values.put( MAP_GAMMA, String.valueOf(mainDialog.getNextNumber()) );
-
-    return values;
-  }
-
-  public HashMap<String, String> getFullDialogValues(){
-    HashMap<String, String> values = new HashMap<String, String>();
-    String theCamera = fullDialog.getNextChoice();
-    values.put( MAP_CAMERA, theCamera );
-    values.put( MAP_USEQR, String.valueOf(fullDialog.getNextBoolean()) );
-    values.put( MAP_REMOVEGAMMA, String.valueOf(fullDialog.getNextBoolean()) );
-    values.put( MAP_GAMMA, String.valueOf(fullDialog.getNextNumber()) );
-    values.put( MAP_REMOVENIR, String.valueOf(fullDialog.getNextBoolean()) );
-    values.put( MAP_NIRSUB, String.valueOf(fullDialog.getNextNumber()) );
 
     return values;
   }

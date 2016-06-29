@@ -69,18 +69,14 @@ public class Calibrate implements PlugIn{
     RGBPhoto procPhoto = null;
 
     // Check if user wants to provide calibration target image
-    RGBPhoto qrphoto = null; // Use to detect qr code
-    RGBPhoto qrscaled = null; // Use to feed into roi processing
-
+    RGBPhoto qrphoto = null;
     if( mainDialogValues.get(CalibrationPrompt.MAP_USEQR).equals("true") ){
       prompt.showQRFileDialog(); // Get QR image
       qrFileDialogValues = prompt.getQRFileDialogValues();
       printAll( qrFileDialogValues.values() );
 
       qrphoto = new RGBPhoto( qrFileDialogValues );
-      qrscaled = calibrator.scaleChannels(qrphoto);
-      qrphoto.show();
-
+      qrphoto = calibrator.scaleChannels(qrphoto);
       double gm = Double.parseDouble( mainDialogValues.get(CalibrationPrompt.MAP_GAMMA) );
       if( mainDialogValues.get(CalibrationPrompt.MAP_REMOVEGAMMA).equals("true") ){
         qrphoto = calibrator.removeGamma(qrphoto, gm);
@@ -128,16 +124,13 @@ public class Calibrate implements PlugIn{
     String camera = mainDialogValues.get(CalibrationPrompt.MAP_CAMERA);
     RGBPhoto resultphoto = null;
 
-    RoiManager manager = null;
-    Roi[] rois = calibrator.getRois(qrphoto.getImage());
-
     if( camera.equals(CalibrationPrompt.SURVEY2_NDVI) ){
       // Use red channel and blue channel
       baseSummary = calibrator.getRefValues(bfs, "660/850");
-      tmpcoeff = calculateCoefficients(qrscaled, rois, calibrator, baseSummary, "Red");
+      tmpcoeff = calculateCoefficients(qrphoto, calibrator, baseSummary, "Red");
       coeffs[0] = tmpcoeff[0];
       coeffs[1] = tmpcoeff[1];
-      tmpcoeff = calculateCoefficients(qrscaled, rois, calibrator, baseSummary, "Blue");
+      tmpcoeff = calculateCoefficients(qrphoto, calibrator, baseSummary, "Blue");
       coeffs[2] = tmpcoeff[0];
       coeffs[3] = tmpcoeff[1];
 
@@ -145,7 +138,7 @@ public class Calibrate implements PlugIn{
 
     }else if( camera.equals(CalibrationPrompt.SURVEY2_NIR) ){
       baseSummary = calibrator.getRefValues(bfs, "850");
-      tmpcoeff = calculateCoefficients(qrscaled, rois, calibrator, baseSummary, "Red");
+      tmpcoeff = calculateCoefficients(qrphoto, calibrator, baseSummary, "Red");
       coeffs[0] = tmpcoeff[0];
       coeffs[1] = tmpcoeff[1];
 
@@ -153,7 +146,7 @@ public class Calibrate implements PlugIn{
 
     }else if( camera.equals(CalibrationPrompt.SURVEY2_RED) ){
       baseSummary = calibrator.getRefValues(bfs, "650");
-      tmpcoeff = calculateCoefficients(qrscaled, rois, calibrator, baseSummary, "Red");
+      tmpcoeff = calculateCoefficients(qrphoto, calibrator, baseSummary, "Red");
       coeffs[0] = tmpcoeff[0];
       coeffs[1] = tmpcoeff[1];
 
@@ -161,7 +154,7 @@ public class Calibrate implements PlugIn{
 
     }else if( camera.equals(CalibrationPrompt.SURVEY2_GREEN) ){
       baseSummary = calibrator.getRefValues(bfs, "548");
-      tmpcoeff = calculateCoefficients(qrscaled, rois, calibrator, baseSummary, "Green");
+      tmpcoeff = calculateCoefficients(qrphoto, calibrator, baseSummary, "Green");
       coeffs[0] = tmpcoeff[0];
       coeffs[1] = tmpcoeff[1];
 
@@ -169,7 +162,7 @@ public class Calibrate implements PlugIn{
 
     }else if( camera.equals(CalibrationPrompt.SURVEY2_BLUE) ){
       baseSummary = calibrator.getRefValues(bfs, "450");
-      tmpcoeff = calculateCoefficients(qrscaled, rois, calibrator, baseSummary, "Blue");
+      tmpcoeff = calculateCoefficients(qrphoto, calibrator, baseSummary, "Blue");
       coeffs[0] = tmpcoeff[0];
       coeffs[1] = tmpcoeff[1];
 
@@ -178,8 +171,6 @@ public class Calibrate implements PlugIn{
     }else{
       // IDK
     }
-
-    //manager = RoiManager.getInstance();
 
     RGBStackConverter.convertToRGB(resultphoto.getImage());
     resultphoto.copyFileData(photo);
@@ -190,10 +181,10 @@ public class Calibrate implements PlugIn{
 
   }
 
-  //@TODO Seperate original QR (to find qr code) and scaled QR (To get values)
-  public double[] calculateCoefficients(RGBPhoto qrphoto, Roi[] rois, Calibrator calibrator, double[][] baseSummary, String channel){
-    //Roi[] rois = null;
+  public double[] calculateCoefficients(RGBPhoto qrphoto, Calibrator calibrator, double[][] baseSummary, String channel){
+    Roi[] rois = null;
     RoiManager manager = null;
+    //double[][] baseSummary = null;
     double[] coeff = null;
     List<HashMap<String, String>> bandSummary = null;
     double[] refmeans = new double[3];
@@ -202,8 +193,9 @@ public class Calibrate implements PlugIn{
     if( qrphoto == null ){
 
     }else{
-      //rois = calibrator.getRois(qrphoto.getImage());
+      rois = calibrator.getRois(qrphoto.getImage());
       if( channel.equals("Red") ){
+        qrphoto.getRedChannel().show();
         manager = calibrator.setupROIManager(qrphoto.getRedChannel(), rois);
         bandSummary = calibrator.processRois(qrphoto.getRedChannel(), manager); // <--- This is the key
 
