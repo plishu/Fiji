@@ -190,7 +190,7 @@ public class Calibrate implements PlugIn{
 
   }
 
-  //@TODO Seperate original QR (to find qr code) and scaled QR (To get values)
+  
   public double[] calculateCoefficients(RGBPhoto qrphoto, Roi[] rois, Calibrator calibrator, double[][] baseSummary, String channel){
     //Roi[] rois = null;
     RoiManager manager = null;
