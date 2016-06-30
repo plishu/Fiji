@@ -142,6 +142,7 @@ public class CalibrateDirectory implements PlugIn{
     RGBPhoto photo = null;
     RGBPhoto resultphoto = null;
     Iterator<File> jpgIterator = jpgToCalibrate.iterator();
+    Iterator<File> tifIterator = tifToCalibrate.iterator();
     File tmpfile = null;
 
     OpenDialog baseFileDialog = new OpenDialog("Select Base File");
@@ -153,6 +154,70 @@ public class CalibrateDirectory implements PlugIn{
 
     while( jpgIterator.hasNext() ){
       tmpfile = jpgIterator.next();
+
+      photo = new RGBPhoto(inputDir, tmpfile.getName(), tmpfile.getPath(), cameraType);
+      photo.show();
+
+
+      if( cameraType.equals(CalibrationPrompt.SURVEY2_NDVI) ){
+        // Use red channel and blue channel
+        baseSummary = calibrator.getRefValues(bfs, "660/850");
+        tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
+        coeffs[0] = tmpcoeff[0];
+        coeffs[1] = tmpcoeff[1];
+        tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Blue");
+        coeffs[2] = tmpcoeff[0];
+        coeffs[3] = tmpcoeff[1];
+
+        resultphoto = calibrator.makeNDVI(photo, coeffs);
+
+      }else if( cameraType.equals(CalibrationPrompt.SURVEY2_NIR) ){
+        baseSummary = calibrator.getRefValues(bfs, "850");
+        tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
+        coeffs[0] = tmpcoeff[0];
+        coeffs[1] = tmpcoeff[1];
+
+        resultphoto = calibrator.makeSingle(photo, coeffs);
+
+      }else if( cameraType.equals(CalibrationPrompt.SURVEY2_RED) ){
+        baseSummary = calibrator.getRefValues(bfs, "650");
+        tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
+        coeffs[0] = tmpcoeff[0];
+        coeffs[1] = tmpcoeff[1];
+
+        resultphoto = calibrator.makeSingle(photo, coeffs);
+
+      }else if( cameraType.equals(CalibrationPrompt.SURVEY2_GREEN) ){
+        baseSummary = calibrator.getRefValues(bfs, "548");
+        tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Green");
+        coeffs[0] = tmpcoeff[0];
+        coeffs[1] = tmpcoeff[1];
+
+        resultphoto = calibrator.makeSingle(photo, coeffs);
+
+      }else if( cameraType.equals(CalibrationPrompt.SURVEY2_BLUE) ){
+        baseSummary = calibrator.getRefValues(bfs, "450");
+        tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Blue");
+        coeffs[0] = tmpcoeff[0];
+        coeffs[1] = tmpcoeff[1];
+
+        resultphoto = calibrator.makeSingle(photo, coeffs);
+
+      }else{
+        // IDK
+      }
+
+      RGBStackConverter.convertToRGB(resultphoto.getImage());
+      resultphoto.copyFileData(photo);
+      //resultphoto.show();
+      IJ.log("Saving Image");
+      saveToDir(outputDir, resultphoto.getFileName(), resultphoto.getExtension(), resultphoto.getImage());
+      IJ.log("Saved");
+
+    }
+
+    while( tifIterator.hasNext() ){
+      tmpfile = tifIterator.next();
 
       photo = new RGBPhoto(inputDir, tmpfile.getName(), tmpfile.getPath(), cameraType);
       photo.show();
