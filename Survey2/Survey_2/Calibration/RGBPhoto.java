@@ -37,6 +37,7 @@ public class RGBPhoto{
     imageExt = getExtension(imagePath);
 
     image = new ImagePlus(imagePath);
+    image.show();
 
     // Get channels
     /*

@@ -83,6 +83,10 @@ public class CalibrationPrompt{
     fullDialog.addNumericField("Gamma value", gamma, 3);
     fullDialog.addCheckbox("Subtract NIR (Use this for NDVI only)", removeNIR);
     fullDialog.addNumericField("Subtract amount percentage", nirsub, 3);
+    fullDialog.centerDialog(true);
+    fullDialog.setOKLabel("Begin");
+    fullDialog.setCancelLabel("Quit");
+    fullDialog.setSmartRecording(false);
 
   }
 
@@ -96,6 +100,10 @@ public class CalibrationPrompt{
       prompt = new CalibrationPrompt();
     }
     return prompt;
+  }
+
+  public boolean wasCanceledFullDialog(){
+    return fullDialog.wasCanceled();
   }
 
   /*
@@ -118,7 +126,7 @@ public class CalibrationPrompt{
   }
 
   public void showImageFileDialog(){
-    imageFileDialog = new OpenDialog("Select Image to Calibrate");
+    imageFileDialog = new OpenDialog("Select First Image in Directory to Calibrate");
   }
 
   public void showSaveFileDialog(String filename, String ext){

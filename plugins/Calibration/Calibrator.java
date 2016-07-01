@@ -220,7 +220,7 @@ public class Calibrator{
     double[] yVis = new double[]{regressionParams[0], regressionParams[1] + regressionParams[0]};
     visPlot.addPoints(xVis, yVis, 2);
     visPlot.addLabel(0.05, 0.1, "R squared = " + Double.toString(r_Squared));
-    visPlot.show();
+    //visPlot.show();
 
     //HashMap<String, double[]> values = new HashMap<String, double[]>();
     double[] values = {intercept, slope};
@@ -301,9 +301,9 @@ public class Calibrator{
     ImagePlus gimg = photo.getGreenChannel();
     ImagePlus bimg = photo.getBlueChannel();
 
-    rimg.show();
-    gimg.show();
-    bimg.show();
+    //rimg.show();
+    //gimg.show();
+    //bimg.show();
 
     //RGBPhoto nphoto = null;
 
@@ -336,6 +336,7 @@ public class Calibrator{
     ImagePlus[] nchan = {rimg, gimg, bimg};
 
     RGBPhoto nphoto = new RGBPhoto(nchan, photo.getCameraType());
+    //nphoto.show();
 
     return nphoto;
   }
@@ -346,9 +347,9 @@ public class Calibrator{
       ImagePlus gimg = photo.getGreenChannel();
       ImagePlus bimg = photo.getBlueChannel();
 
-      rimg.show();
-      gimg.show();
-      bimg.show();
+      //rimg.show();
+      //gimg.show();
+      //bimg.show();
 
       double redPixel = 0.0;
       double bluePixel = 0.0;
