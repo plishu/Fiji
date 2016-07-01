@@ -125,6 +125,8 @@ for (j=0; j<3; j++) {
 
 
 if (filter_radius == 0) {
+  //run("RGB Color");
+  print("Saving " + getTitle());
   saveAs("Tiff", path_out + File.nameWithoutExtension + ".tif");
   close();
 } else {
@@ -169,6 +171,7 @@ if (filter_radius == 0) {
     setSlice(k+1);
     setMetadata("label", labels[k]);
   }
+  //run("RGB Color");
   print("Saving " + getTitle());
   saveAs("Tiff", path_out + File.nameWithoutExtension + ".tif");
   print("Closing " + getTitle());
