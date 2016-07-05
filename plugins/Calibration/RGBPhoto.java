@@ -5,6 +5,8 @@ import ij.plugin.ChannelSplitter;
 import ij.plugin.RGBStackMerge;
 import ij.CompositeImage;
 import ij.gui.NewImage;
+import ij.plugin.RGBStackConverter;
+import ij.process.StackConverter;
 
 import java.io.File;
 import java.util.HashMap;
@@ -37,6 +39,12 @@ public class RGBPhoto{
     imageExt = getExtension(imagePath);
 
     image = new ImagePlus(imagePath);
+
+    if( imageExt.toUpperCase().equals("TIF") ){
+      //RGBStackConverter.convertToRGB(image);
+      (new StackConverter(image)).convertToRGB();
+    }
+
     image.show();
 
     // Get channels
