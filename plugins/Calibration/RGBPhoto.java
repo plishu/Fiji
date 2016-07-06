@@ -40,10 +40,11 @@ public class RGBPhoto{
 
     image = new ImagePlus(imagePath);
 
+    /*
     if( imageExt.toUpperCase().equals("TIF") ){
       //RGBStackConverter.convertToRGB(image);
       (new StackConverter(image)).convertToRGB();
-    }
+    }*/
 
     image.show();
 
@@ -300,6 +301,21 @@ public class RGBPhoto{
 
   public void show(){
     image.show();
+  }
+
+  public void close(){
+    image.close();
+  }
+
+  public void fixTif(){
+    image.getProcessor().setMinAndMax(0,65535);
+    image.setDefault16bitRange(16);
+
+    image.show();
+    IJ.run("RGB Color");
+
+    //(new StackConverter(image)).convertToRGB();
+    //RGBStackConverter.convertToRGB(image);
   }
 
 }

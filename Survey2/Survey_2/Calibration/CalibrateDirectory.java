@@ -66,11 +66,13 @@ public class CalibrateDirectory implements PlugIn{
   private EXIFTool exif = null;
 
 
-  private final double[] COEFF_RED = {-0.31238818, 2.35239490};
-  private final double[] COEFF_GREEN = {-0.32874756, 5.44419416};
-  private final double[] COEFF_BLUE = {-0.40351347, 1.58893643};
-  private final double[] COEFF_NDVI = {-0321163012, 1.81411080, -0.09248552, 3.05593169};
-  private final double[] COEFF_NIR = {-1.18032326, 10.92737546};
+  private final double[] BASE_COEFF_SURVEY2_RED = {-0.31238818, 2.35239490};
+  private final double[] BASE_COEFF_SURVEY2_GREEN = {-0.32874756, 5.44419416};
+  private final double[] BASE_COEFF_SURVEY2_BLUE = {-0.40351347, 1.58893643};
+  private final double[] BASE_COEFF_SURVEY2_NDVI = {-0321163012, 1.81411080, -0.09248552, 3.05593169};
+  private final double[] BASE_COEFF_SURVEY2_NIR = {-1.18032326, 10.92737546};
+  private final double[] BASE_COEFF_DJIX3_NDVI = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
+  private final double[] BASE_COEFF_GOPROHERO4_NDVI = {0,0};
 
   private String OS = System.getProperty("os.name");
   private String WorkingDirectory = IJ.getDirectory("imagej");
@@ -181,6 +183,14 @@ public class CalibrateDirectory implements PlugIn{
       photo = new RGBPhoto(inputDir, tmpfile.getName(), tmpfile.getPath(), cameraType);
       //photo.show();
 
+      // Fix dumb tif stuff
+      if( photo.getExtension().toUpperCase().equals("TIF") ){
+        IJ.log("Tif detected. Fixing tif.");
+        IJ.log("HEY WHATS GOING ON");
+        photo.fixTif();
+
+      }
+
 
       if( cameraType.equals(CalibrationPrompt.SURVEY2_NDVI) ){
         // Use red channel and blue channel
@@ -194,10 +204,10 @@ public class CalibrateDirectory implements PlugIn{
           coeffs[2] = tmpcoeff[0];
           coeffs[3] = tmpcoeff[1];
         }else{
-          coeffs[0] = COEFF_NDVI[0];
-          coeffs[1] = COEFF_NDVI[1];
-          coeffs[2] = COEFF_NDVI[2];
-          coeffs[3] = COEFF_NDVI[3];
+          coeffs[0] = BASE_COEFF_SURVEY2_NDVI[0];
+          coeffs[1] = BASE_COEFF_SURVEY2_NDVI[1];
+          coeffs[2] = BASE_COEFF_SURVEY2_NDVI[2];
+          coeffs[3] = BASE_COEFF_SURVEY2_NDVI[3];
         }
 
 
@@ -211,8 +221,8 @@ public class CalibrateDirectory implements PlugIn{
           coeffs[0] = tmpcoeff[0];
           coeffs[1] = tmpcoeff[1];
         }else{
-          coeffs[0] = COEFF_NIR[0];
-          coeffs[1] = COEFF_NIR[1];
+          coeffs[0] = BASE_COEFF_SURVEY2_NIR[0];
+          coeffs[1] = BASE_COEFF_SURVEY2_NIR[1];
         }
 
         resultphoto = calibrator.makeSingle(photo, coeffs);
@@ -226,8 +236,8 @@ public class CalibrateDirectory implements PlugIn{
           coeffs[0] = tmpcoeff[0];
           coeffs[1] = tmpcoeff[1];
         }else{
-          coeffs[0] = COEFF_RED[0];
-          coeffs[1] = COEFF_RED[1];
+          coeffs[0] = BASE_COEFF_SURVEY2_RED[0];
+          coeffs[1] = BASE_COEFF_SURVEY2_RED[1];
         }
 
         resultphoto = calibrator.makeSingle(photo, coeffs);
@@ -241,8 +251,8 @@ public class CalibrateDirectory implements PlugIn{
           coeffs[0] = tmpcoeff[0];
           coeffs[1] = tmpcoeff[1];
         }else{
-          coeffs[0] = COEFF_GREEN[0];
-          coeffs[1] = COEFF_GREEN[1];
+          coeffs[0] = BASE_COEFF_SURVEY2_GREEN[0];
+          coeffs[1] = BASE_COEFF_SURVEY2_GREEN[1];
         }
 
         resultphoto = calibrator.makeSingle(photo, coeffs);
@@ -256,14 +266,53 @@ public class CalibrateDirectory implements PlugIn{
           coeffs[0] = tmpcoeff[0];
           coeffs[1] = tmpcoeff[1];
         }else{
-          coeffs[0] = COEFF_BLUE[0];
-          coeffs[1] = COEFF_BLUE[1];
+          coeffs[0] = BASE_COEFF_SURVEY2_BLUE[0];
+          coeffs[1] = BASE_COEFF_SURVEY2_BLUE[1];
         }
 
         resultphoto = calibrator.makeSingle(photo, coeffs);
 
-      }else{
-        // IDK
+      }else if( cameraType.equals(CalibrationPrompt.DJIX3_NDVI) ){
+        baseSummary = calibrator.getRefValues(bfs, "660/850");
+
+        if( useQR == true && rois != null ){
+          tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
+          coeffs[0] = tmpcoeff[0];
+          coeffs[1] = tmpcoeff[1];
+          tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Blue");
+          coeffs[2] = tmpcoeff[0];
+          coeffs[3] = tmpcoeff[1];
+        }else{
+          coeffs[0] = BASE_COEFF_DJIX3_NDVI[0];
+          coeffs[1] = BASE_COEFF_DJIX3_NDVI[1];
+          coeffs[2] = BASE_COEFF_DJIX3_NDVI[2];
+          coeffs[3] = BASE_COEFF_DJIX3_NDVI[3];
+        }
+
+
+        resultphoto = calibrator.makeNDVI(photo, coeffs);
+      }else if( cameraType.equals(CalibrationPrompt.GOPRO_HERO4_NDVI) ){
+        /*
+        baseSummary = calibrator.getRefValues(bfs, "660/850");
+
+        if( useQR == true && rois != null ){
+          tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
+          coeffs[0] = tmpcoeff[0];
+          coeffs[1] = tmpcoeff[1];
+          tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Blue");
+          coeffs[2] = tmpcoeff[0];
+          coeffs[3] = tmpcoeff[1];
+        }else{
+          coeffs[0] = BASE_COEFF_DJIX3_NDVI[0];
+          coeffs[1] = BASE_COEFF_DJIX3_NDVI[1];
+          coeffs[2] = BASE_COEFF_DJIX3_NDVI[2];
+          coeffs[3] = BASE_COEFF_DJIX3_NDVI[3];
+        }
+
+
+        resultphoto = calibrator.makeNDVI(photo, coeffs);*/
+
+        IJ.log("GoPro Hero 4 support coming soon!");
       }
 
       //resultphoto.show();
@@ -285,7 +334,7 @@ public class CalibrateDirectory implements PlugIn{
       //EXIFTool.copyEXIF( (new File(outputDir+resultphoto.getFileName()+"_Calibrated"+"."+resultphoto.getExtension())), tmpfile );
       //CopyEXIFData()
       CopyEXIFData(OS, PATH_TO_EXIFTOOL, tmpfile.getAbsolutePath(), outputDir+resultphoto.getFileName()+"_Calibrated"+"."+resultphoto.getExtension());
-
+      //photo.close();
     }
 
   }
