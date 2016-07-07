@@ -85,8 +85,8 @@ public class Calibrator{
       double minVal = inImage.getProcessor().getMin();
       double maxVal = inImage.getProcessor().getMax();
 
-      IJ.log("Pixel min: " + String.valueOf(minVal));
-      IJ.log("Pixel max: " + String.valueOf(maxVal));
+      //IJ.log("Pixel min: " + String.valueOf(minVal));
+      //IJ.log("Pixel max: " + String.valueOf(maxVal));
 
       double inverseRange = 1.0 / (maxVal - minVal);
       ImagePlus newImage = NewImage.createFloatImage((String)imageName, (int)inImage.getWidth(), (int)inImage.getHeight(), (int)1, (int)1);
@@ -132,7 +132,7 @@ public class Calibrator{
   }
 
   public ImagePlus removeGamma(ImagePlus channel, double gamma){
-    IJ.log("Gamma to apply: " + String.valueOf(gamma));
+    //IJ.log("Gamma to apply: " + String.valueOf(gamma));
     double undoGamma = 1.0 / gamma;
     double cPixel = 0.0;
     int x2 = 0;
@@ -207,8 +207,8 @@ public class Calibrator{
     double intercept = (double)regressionParams[0];
     double slope = (double)regressionParams[1];
 
-    IJ.log((String)("intercept: " + IJ.d2s((double)regressionParams[0], (int)8)));
-    IJ.log((String)("slope: " + IJ.d2s((double)regressionParams[1], (int)8)));
+    //IJ.log((String)("intercept: " + IJ.d2s((double)regressionParams[0], (int)8)));
+    //IJ.log((String)("slope: " + IJ.d2s((double)regressionParams[1], (int)8)));
 
     PlotWindow.noGridLines = false;
     Plot visPlot = new Plot("Visible band regression", "Image values", "Reflectance values");
@@ -266,7 +266,7 @@ public class Calibrator{
           if( split.length == 10 && split[0].equals(filter) ){
 
             for( int i=0; i<split.length; i++){
-              IJ.log( String.valueOf(split[i]) );
+              //IJ.log( String.valueOf(split[i]) );
             }
 
 
@@ -402,7 +402,7 @@ public class Calibrator{
     // Begin processing roi
     if( roi != null && !roi.isArea() ){
       roi = null;
-      IJ.log("No area selection");
+      //IJ.log("No area selection");
       return null;
     }
 
@@ -421,9 +421,9 @@ public class Calibrator{
         }
         ++y;
     }
-    IJ.log((String)("count: " + count));
-    IJ.log((String)("sum: " + sum));
-    IJ.log((String)("mean: " + IJ.d2s((double)(sum / (double)count), (int)4)));
+    //IJ.log((String)("count: " + count));
+    //IJ.log((String)("sum: " + sum));
+    //IJ.log((String)("mean: " + IJ.d2s((double)(sum / (double)count), (int)4)));
     mean = (double)(sum/(double)count);
 
     values = new HashMap<String, String>();

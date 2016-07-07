@@ -72,7 +72,7 @@ public class CalibrateDirectory implements PlugIn{
   private final double[] BASE_COEFF_SURVEY2_RED = {-0.31238818, 2.35239490};
   private final double[] BASE_COEFF_SURVEY2_GREEN = {-0.32874756, 5.44419416};
   private final double[] BASE_COEFF_SURVEY2_BLUE = {-0.40351347, 1.58893643};
-  private final double[] BASE_COEFF_SURVEY2_NDVI = {-0321163012, 1.81411080, -0.09248552, 3.05593169};
+  private final double[] BASE_COEFF_SURVEY2_NDVI = {-0.321163012, 1.81411080, -0.09248552, 3.05593169};
   private final double[] BASE_COEFF_SURVEY2_NIR = {-1.18032326, 10.92737546};
   private final double[] BASE_COEFF_DJIX3_NDVI = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
   private final double[] BASE_COEFF_GOPROHERO4_NDVI = {0,0};
@@ -103,8 +103,8 @@ public class CalibrateDirectory implements PlugIn{
       HashMap<String, String> fullDialogValues = prompts.getFullDialogValues();
       HashMap<String, String> qrFileDialogValues = null;
       useQR = Boolean.parseBoolean( fullDialogValues.get(CalibrationPrompt.MAP_USEQR) );
-      IJ.log(fullDialogValues.get(CalibrationPrompt.MAP_USEQR));
-      IJ.log( String.valueOf(useQR) );
+      //IJ.log(fullDialogValues.get(CalibrationPrompt.MAP_USEQR));
+      //IJ.log( String.valueOf(useQR) );
       cameraType = fullDialogValues.get(CalibrationPrompt.MAP_CAMERA);
 
       String qrCameraModel = null;
@@ -114,6 +114,12 @@ public class CalibrateDirectory implements PlugIn{
         qrDir = qrFileDialogValues.get(CalibrationPrompt.MAP_IMAGEDIR);
         qrPath = qrFileDialogValues.get(CalibrationPrompt.MAP_IMAGEPATH);
         qrFilename = qrFileDialogValues.get(CalibrationPrompt.MAP_IMAGEFILENAME);
+
+        if(qrDir == null){
+          // User hit cancel
+          IJ.log("Goodbye!");
+          return;
+        }
 
         // Check if correct camera model QR type found
         qrCameraModel = GetEXIFCameraModel("Windows", PATH_TO_EXIFTOOL, qrPath);
@@ -141,7 +147,7 @@ public class CalibrateDirectory implements PlugIn{
         rois = calibrator.getRois(qrPhoto.getImage());
 
         if( rois == null ){
-          IJ.log("ATTN: QR calibration targets could not be found. I will use default coefficient values.");
+          //IJ.log("ATTN: QR calibration targets could not be found. I will use default coefficient values.");
           try{
 
             if( prompts.showQRNotDetectedDialog() ){
@@ -164,6 +170,12 @@ public class CalibrateDirectory implements PlugIn{
       prompts.showImageFileDialog();
       HashMap<String, String> imageFileDialogValues = prompts.getImageFileDialogValues();
       inputDir = imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEDIR);
+
+      if( inputDir == null ){
+        // User selected cancel
+        IJ.log("Goodbye!");
+        return;
+      }
       outputDir = inputDir + "\\Calibrated\\";
 
       // Create output Folder
@@ -174,7 +186,7 @@ public class CalibrateDirectory implements PlugIn{
 
 
 
-      IJ.log("I will begin to process the images in ");
+      //IJ.log("I will begin to process the images in ");
       // Get all images to process
       fileInputDir = new File(inputDir);
       imagesToCalibrate = fileInputDir.listFiles();
@@ -194,13 +206,15 @@ public class CalibrateDirectory implements PlugIn{
         }
       }
 
-      IJ.log("---------------Images To Calibrate---------------");
+      //IJ.log("---------------Images To Calibrate---------------");
       for( int i=0; i<jpgToCalibrate.size(); i++ ){
-        IJ.log(jpgToCalibrate.get(i).getName());
+        //IJ.log(jpgToCalibrate.get(i).getName());
       }
       for( int i=0; i<tifToCalibrate.size(); i++ ){
-        IJ.log(tifToCalibrate.get(i).getName());
+        //IJ.log(tifToCalibrate.get(i).getName());
       }
+
+      IJ.log("I will begin processing the " + jpgToCalibrate.size() + " images that were found.");
 
       // Load in photo (only after calibration coefficients have been prepared)
       RGBPhoto photo = null;
@@ -220,6 +234,7 @@ public class CalibrateDirectory implements PlugIn{
       while( jpgIterator.hasNext() ){
         tmpfile = jpgIterator.next();
 
+        IJ.log("Opening image: " + tmpfile.getName());
         photo = new RGBPhoto(inputDir, tmpfile.getName(), tmpfile.getPath(), cameraType);
         if( !photo.checkChannels() ){
           // Could not split channels. Skip image;
@@ -238,7 +253,7 @@ public class CalibrateDirectory implements PlugIn{
 
         }*/
 
-
+        IJ.log("Calibrating image: " + tmpfile.getName());
         if( cameraType.equals(CalibrationPrompt.SURVEY2_NDVI) ){
           // Use red channel and blue channel
           baseSummary = calibrator.getRefValues(bfs, "660/850");
@@ -370,10 +385,10 @@ public class CalibrateDirectory implements PlugIn{
         //resultphoto.show();
         IJ.log("Saving Image");
         saveToDir(outputDir, resultphoto.getFileName(), resultphoto.getExtension(), resultphoto.getImage());
-        IJ.log("Saved");
+        //IJ.log("Saved");
 
         // Write EXIF data
-        IJ.log("Copying EXIF data");
+        //IJ.log("Copying EXIF data");
         /*
         exif = new EXIFTool(tmpfile, new File(outputDir+resultphoto.getFileName()), new File(outputDir+resultphoto.getFileName()+".tmp") );
         exif.copyEXIF();
@@ -452,9 +467,9 @@ public class CalibrateDirectory implements PlugIn{
   public void saveToDir(String outdir, String filename, String ext, ImagePlus image){
     String NDVIAppend = "_Calibrated";
 
-    IJ.log("Output Directory: " + outdir);
-    IJ.log("Filename: " + filename);
-    IJ.log("Save as extension: " + ext);
+    //IJ.log("Output Directory: " + outdir);
+    //IJ.log("Filename: " + filename);
+    //IJ.log("Save as extension: " + ext);
 
 
 
@@ -522,7 +537,7 @@ public class CalibrateDirectory implements PlugIn{
       c_arg = "/c";
       try{
         command = exiftoolpath + " -overwrite_original -tagsfromfile " + "\""+refimg+"\"" + " " + "\""+targimg+"\"";
-        IJ.log("Executing command: " + command);
+        //IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(false);
         proc = bob.start();
@@ -541,7 +556,7 @@ public class CalibrateDirectory implements PlugIn{
       try{
         // directory spaces
         command = exiftoolpath + " -overwrite_original -tagsfromfile " + "\'"+refimg+"\'" + " " + "\'"+targimg+"\'";
-        IJ.log("Executing command: " + command);
+        //IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(true);
         proc = bob.start();
@@ -555,7 +570,7 @@ public class CalibrateDirectory implements PlugIn{
 
     }
 
-    IJ.log("Finished writing EXIF data");
+    //IJ.log("Finished writing EXIF data");
 
   }
 

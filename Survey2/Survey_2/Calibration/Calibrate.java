@@ -190,7 +190,7 @@ public class Calibrate implements PlugIn{
 
   }
 
-  
+
   public double[] calculateCoefficients(RGBPhoto qrphoto, Roi[] rois, Calibrator calibrator, double[][] baseSummary, String channel){
     //Roi[] rois = null;
     RoiManager manager = null;
@@ -247,9 +247,9 @@ public class Calibrate implements PlugIn{
   public void saveToDir(String outdir, String filename, String ext, ImagePlus image){
     String NDVIAppend = "_Calibrated";
 
-    IJ.log("Output Directory: " + outdir);
-    IJ.log("Filename: " + filename);
-    IJ.log("Save as extension: " + ext);
+    //IJ.log("Output Directory: " + outdir);
+    //IJ.log("Filename: " + filename);
+    //IJ.log("Save as extension: " + ext);
 
 
 

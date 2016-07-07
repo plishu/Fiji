@@ -97,7 +97,7 @@ public class QRCalib{
       int attempts = 50;
       int attempt = 1;
       ImagePlus resimg = resize(qrimg, baseResize);
-      resimg.show();
+      //resimg.show();
 
       Result result = decodeQR(qrimg);
 
@@ -107,7 +107,7 @@ public class QRCalib{
         baseResize += 100;
 
         resimg = resize(qrimg, baseResize);
-        resimg.show();
+        //resimg.show();
         result = decodeQR(resimg);
       }
       manipImg = resimg;
