@@ -34,6 +34,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.io.InputStreamReader;
 import java.util.Vector;
 import java.util.Map;
 import java.util.Collection;
@@ -60,10 +61,12 @@ public class CalibrateDirectory implements PlugIn{
   private File fileInputDir = null;
   private File fileOutputDir = null;
   private File[] imagesToCalibrate = null;
-  private List<File> jpgToCalibrate = new ArrayList<File>();
-  private List<File> tifToCalibrate = new ArrayList<File>();
+  private List<File> jpgToCalibrate = null;
+  private List<File> tifToCalibrate = null; // Not being used - they all go into jpgToCalibrate
 
   private EXIFTool exif = null;
+
+  private boolean keepPluginAlive = true;
 
 
   private final double[] BASE_COEFF_SURVEY2_RED = {-0.31238818, 2.35239490};
@@ -82,260 +85,313 @@ public class CalibrateDirectory implements PlugIn{
 
 
   public void run(String arg){
-    Calibrator calibrator = new Calibrator();
-    Roi[] rois = null;
-    CalibrationPrompt prompts = new CalibrationPrompt();
-    prompts.showFullDialog();
-    if( prompts.wasCanceledFullDialog() ){
-      IJ.log("Goodbye!");
-      return;
-    }
 
-
-    HashMap<String, String> fullDialogValues = prompts.getFullDialogValues();
-    HashMap<String, String> qrFileDialogValues = null;
-    useQR = Boolean.parseBoolean( fullDialogValues.get(CalibrationPrompt.MAP_USEQR) );
-    IJ.log(fullDialogValues.get(CalibrationPrompt.MAP_USEQR));
-    IJ.log( String.valueOf(useQR) );
-    cameraType = fullDialogValues.get(CalibrationPrompt.MAP_CAMERA);
-
-
-    if( useQR == true ){
-      prompts.showQRFileDialog();
-      qrFileDialogValues = prompts.getQRFileDialogValues();
-      qrDir = qrFileDialogValues.get(CalibrationPrompt.MAP_IMAGEDIR);
-      qrPath = qrFileDialogValues.get(CalibrationPrompt.MAP_IMAGEPATH);
-      qrFilename = qrFileDialogValues.get(CalibrationPrompt.MAP_IMAGEFILENAME);
-
-      qrPhoto = new RGBPhoto(qrDir, qrFilename, qrPath, cameraType);
-      qrScaled = calibrator.scaleChannels(qrPhoto);
-
-      rois = calibrator.getRois(qrPhoto.getImage());
-
-      if( rois == null ){
-        IJ.log("ATTN: QR calibration targets could not be found. I will use default coefficient values.");
+    while( keepPluginAlive ){
+      Calibrator calibrator = new Calibrator();
+      Roi[] rois = null;
+      CalibrationPrompt prompts = new CalibrationPrompt();
+      prompts.showFullDialog();
+      if( prompts.wasCanceledFullDialog() ){
+        IJ.log("Goodbye!");
+        return;
       }
 
-    }else{
-      // Use base files
-
-    }
-
-    prompts.showImageFileDialog();
-    HashMap<String, String> imageFileDialogValues = prompts.getImageFileDialogValues();
-    inputDir = imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEDIR);
-    outputDir = inputDir + "\\Calibrated\\";
-
-    // Create output Folder
-    fileOutputDir = new File(outputDir);
-    if( !fileOutputDir.exists() ){
-      fileOutputDir.mkdir();
-    }
+      jpgToCalibrate = new ArrayList<File>();
+      tifToCalibrate = new ArrayList<File>();
 
 
+      HashMap<String, String> fullDialogValues = prompts.getFullDialogValues();
+      HashMap<String, String> qrFileDialogValues = null;
+      useQR = Boolean.parseBoolean( fullDialogValues.get(CalibrationPrompt.MAP_USEQR) );
+      IJ.log(fullDialogValues.get(CalibrationPrompt.MAP_USEQR));
+      IJ.log( String.valueOf(useQR) );
+      cameraType = fullDialogValues.get(CalibrationPrompt.MAP_CAMERA);
 
-    IJ.log("I will begin to process the images in ");
-    // Get all images to process
-    fileInputDir = new File(inputDir);
-    imagesToCalibrate = fileInputDir.listFiles();
+      String qrCameraModel = null;
+      while( useQR == true ){
+        prompts.showQRFileDialog();
+        qrFileDialogValues = prompts.getQRFileDialogValues();
+        qrDir = qrFileDialogValues.get(CalibrationPrompt.MAP_IMAGEDIR);
+        qrPath = qrFileDialogValues.get(CalibrationPrompt.MAP_IMAGEPATH);
+        qrFilename = qrFileDialogValues.get(CalibrationPrompt.MAP_IMAGEFILENAME);
 
-    for( int i=0; i<imagesToCalibrate.length; i++ ){
-      String[] inImageParts = (imagesToCalibrate[i].getName()).split("\\.(?=[^\\.]+$)");
-      String inImageExt = null;
+        // Check if correct camera model QR type found
+        qrCameraModel = GetEXIFCameraModel("Windows", PATH_TO_EXIFTOOL, qrPath);
+        if( !qrCameraModel.equals(cameraType) ){
+          if( prompts.showQRNotSameModelDialog(qrCameraModel, cameraType) ){
+            // Ask for QR again
+            useQR = true;
+            continue;
+          }else{
+            // Quit was selected
+            useQR = false;
+            IJ.log("Goodbye!");
+            return;
+          }
+        }
 
-      if( inImageParts.length < 2){
-        continue;
-      }else{
-        inImageExt = inImageParts[1];
+        qrPhoto = new RGBPhoto(qrDir, qrFilename, qrPath, cameraType);
+
+        if( !qrPhoto.checkChannels() ){
+          // Dialog?
+          continue;
+        }
+        qrScaled = calibrator.scaleChannels(qrPhoto);
+
+        rois = calibrator.getRois(qrPhoto.getImage());
+
+        if( rois == null ){
+          IJ.log("ATTN: QR calibration targets could not be found. I will use default coefficient values.");
+          try{
+
+            if( prompts.showQRNotDetectedDialog() ){
+              useQR = true;
+              continue;
+            }else{
+              useQR = false;
+            }
+
+          }catch(IOException io){
+            IJ.log("Goodbye!");
+            return;
+          }
+        }else{
+          // QR code found!
+          break;
       }
-
-      if( inImageExt.toUpperCase().equals("JPG") || inImageExt.toUpperCase().equals("TIF") ){
-        jpgToCalibrate.add(imagesToCalibrate[i]);
-      }
     }
 
-    IJ.log("---------------Images To Calibrate---------------");
-    for( int i=0; i<jpgToCalibrate.size(); i++ ){
-      IJ.log(jpgToCalibrate.get(i).getName());
-    }
-    for( int i=0; i<tifToCalibrate.size(); i++ ){
-      IJ.log(tifToCalibrate.get(i).getName());
-    }
+      prompts.showImageFileDialog();
+      HashMap<String, String> imageFileDialogValues = prompts.getImageFileDialogValues();
+      inputDir = imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEDIR);
+      outputDir = inputDir + "\\Calibrated\\";
 
-    // Load in photo (only after calibration coefficients have been prepared)
-    RGBPhoto photo = null;
-    RGBPhoto resultphoto = null;
-    Iterator<File> jpgIterator = jpgToCalibrate.iterator();
-    Iterator<File> tifIterator = tifToCalibrate.iterator();
-    File tmpfile = null;
-
-    //OpenDialog baseFileDialog = new OpenDialog("Select Base File");
-    //File bfs = new File(baseFileDialog.getPath());
-    File bfs = new File(PATH_TO_VALUES);
-
-    double[][] baseSummary = null;
-    double[] coeffs = new double[4];
-    double[] tmpcoeff = null;
-
-    while( jpgIterator.hasNext() ){
-      tmpfile = jpgIterator.next();
-
-      photo = new RGBPhoto(inputDir, tmpfile.getName(), tmpfile.getPath(), cameraType);
-      //photo.show();
-
-      // Fix dumb tif stuff
-      if( photo.getExtension().toUpperCase().equals("TIF") ){
-        IJ.log("Tif detected. Fixing tif.");
-        IJ.log("HEY WHATS GOING ON");
-        photo.fixTif();
-
+      // Create output Folder
+      fileOutputDir = new File(outputDir);
+      if( !fileOutputDir.exists() ){
+        fileOutputDir.mkdir();
       }
 
 
-      if( cameraType.equals(CalibrationPrompt.SURVEY2_NDVI) ){
-        // Use red channel and blue channel
-        baseSummary = calibrator.getRefValues(bfs, "660/850");
 
-        if( useQR == true && rois != null ){
-          tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
-          coeffs[0] = tmpcoeff[0];
-          coeffs[1] = tmpcoeff[1];
-          tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Blue");
-          coeffs[2] = tmpcoeff[0];
-          coeffs[3] = tmpcoeff[1];
+      IJ.log("I will begin to process the images in ");
+      // Get all images to process
+      fileInputDir = new File(inputDir);
+      imagesToCalibrate = fileInputDir.listFiles();
+
+      for( int i=0; i<imagesToCalibrate.length; i++ ){
+        String[] inImageParts = (imagesToCalibrate[i].getName()).split("\\.(?=[^\\.]+$)");
+        String inImageExt = null;
+
+        if( inImageParts.length < 2){
+          continue;
         }else{
-          coeffs[0] = BASE_COEFF_SURVEY2_NDVI[0];
-          coeffs[1] = BASE_COEFF_SURVEY2_NDVI[1];
-          coeffs[2] = BASE_COEFF_SURVEY2_NDVI[2];
-          coeffs[3] = BASE_COEFF_SURVEY2_NDVI[3];
+          inImageExt = inImageParts[1];
         }
 
+        if( inImageExt.toUpperCase().equals("JPG") || inImageExt.toUpperCase().equals("TIF") ){
+          jpgToCalibrate.add(imagesToCalibrate[i]);
+        }
+      }
 
-        resultphoto = calibrator.makeNDVI(photo, coeffs);
+      IJ.log("---------------Images To Calibrate---------------");
+      for( int i=0; i<jpgToCalibrate.size(); i++ ){
+        IJ.log(jpgToCalibrate.get(i).getName());
+      }
+      for( int i=0; i<tifToCalibrate.size(); i++ ){
+        IJ.log(tifToCalibrate.get(i).getName());
+      }
 
-      }else if( cameraType.equals(CalibrationPrompt.SURVEY2_NIR) ){
-        baseSummary = calibrator.getRefValues(bfs, "850");
+      // Load in photo (only after calibration coefficients have been prepared)
+      RGBPhoto photo = null;
+      RGBPhoto resultphoto = null;
+      Iterator<File> jpgIterator = jpgToCalibrate.iterator();
+      Iterator<File> tifIterator = tifToCalibrate.iterator();
+      File tmpfile = null;
 
-        if( useQR == true && rois != null ){
-          tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
-          coeffs[0] = tmpcoeff[0];
-          coeffs[1] = tmpcoeff[1];
-        }else{
-          coeffs[0] = BASE_COEFF_SURVEY2_NIR[0];
-          coeffs[1] = BASE_COEFF_SURVEY2_NIR[1];
+      //OpenDialog baseFileDialog = new OpenDialog("Select Base File");
+      //File bfs = new File(baseFileDialog.getPath());
+      File bfs = new File(PATH_TO_VALUES);
+
+      double[][] baseSummary = null;
+      double[] coeffs = new double[4];
+      double[] tmpcoeff = null;
+
+      while( jpgIterator.hasNext() ){
+        tmpfile = jpgIterator.next();
+
+        photo = new RGBPhoto(inputDir, tmpfile.getName(), tmpfile.getPath(), cameraType);
+        if( !photo.checkChannels() ){
+          // Could not split channels. Skip image;
+          continue;
         }
 
-        resultphoto = calibrator.makeSingle(photo, coeffs);
+        // @TODO Undo gamma and subtractNIR logic here
+        //photo.show();
 
-      }else if( cameraType.equals(CalibrationPrompt.SURVEY2_RED) ){
-        baseSummary = calibrator.getRefValues(bfs, "650");
-
-
-        if( useQR == true && rois != null ){
-          tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
-          coeffs[0] = tmpcoeff[0];
-          coeffs[1] = tmpcoeff[1];
-        }else{
-          coeffs[0] = BASE_COEFF_SURVEY2_RED[0];
-          coeffs[1] = BASE_COEFF_SURVEY2_RED[1];
-        }
-
-        resultphoto = calibrator.makeSingle(photo, coeffs);
-
-      }else if( cameraType.equals(CalibrationPrompt.SURVEY2_GREEN) ){
-        baseSummary = calibrator.getRefValues(bfs, "548");
-
-
-        if( useQR == true && rois != null ){
-          tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Green");
-          coeffs[0] = tmpcoeff[0];
-          coeffs[1] = tmpcoeff[1];
-        }else{
-          coeffs[0] = BASE_COEFF_SURVEY2_GREEN[0];
-          coeffs[1] = BASE_COEFF_SURVEY2_GREEN[1];
-        }
-
-        resultphoto = calibrator.makeSingle(photo, coeffs);
-
-      }else if( cameraType.equals(CalibrationPrompt.SURVEY2_BLUE) ){
-        baseSummary = calibrator.getRefValues(bfs, "450");
-
-
-        if( useQR == true && rois != null ){
-          tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Blue");
-          coeffs[0] = tmpcoeff[0];
-          coeffs[1] = tmpcoeff[1];
-        }else{
-          coeffs[0] = BASE_COEFF_SURVEY2_BLUE[0];
-          coeffs[1] = BASE_COEFF_SURVEY2_BLUE[1];
-        }
-
-        resultphoto = calibrator.makeSingle(photo, coeffs);
-
-      }else if( cameraType.equals(CalibrationPrompt.DJIX3_NDVI) ){
-        baseSummary = calibrator.getRefValues(bfs, "660/850");
-
-        if( useQR == true && rois != null ){
-          tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
-          coeffs[0] = tmpcoeff[0];
-          coeffs[1] = tmpcoeff[1];
-          tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Blue");
-          coeffs[2] = tmpcoeff[0];
-          coeffs[3] = tmpcoeff[1];
-        }else{
-          coeffs[0] = BASE_COEFF_DJIX3_NDVI[0];
-          coeffs[1] = BASE_COEFF_DJIX3_NDVI[1];
-          coeffs[2] = BASE_COEFF_DJIX3_NDVI[2];
-          coeffs[3] = BASE_COEFF_DJIX3_NDVI[3];
-        }
-
-
-        resultphoto = calibrator.makeNDVI(photo, coeffs);
-      }else if( cameraType.equals(CalibrationPrompt.GOPRO_HERO4_NDVI) ){
+        // Fix dumb tif stuff
         /*
-        baseSummary = calibrator.getRefValues(bfs, "660/850");
+        if( photo.getExtension().toUpperCase().equals("TIF") ){
+          IJ.log("Tif detected. Fixing tif.");
+          IJ.log("HEY WHATS GOING ON");
+          photo.fixTif();
 
-        if( useQR == true && rois != null ){
-          tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
-          coeffs[0] = tmpcoeff[0];
-          coeffs[1] = tmpcoeff[1];
-          tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Blue");
-          coeffs[2] = tmpcoeff[0];
-          coeffs[3] = tmpcoeff[1];
-        }else{
-          coeffs[0] = BASE_COEFF_DJIX3_NDVI[0];
-          coeffs[1] = BASE_COEFF_DJIX3_NDVI[1];
-          coeffs[2] = BASE_COEFF_DJIX3_NDVI[2];
-          coeffs[3] = BASE_COEFF_DJIX3_NDVI[3];
+        }*/
+
+
+        if( cameraType.equals(CalibrationPrompt.SURVEY2_NDVI) ){
+          // Use red channel and blue channel
+          baseSummary = calibrator.getRefValues(bfs, "660/850");
+
+          if( useQR == true && rois != null ){
+            tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
+            coeffs[0] = tmpcoeff[0];
+            coeffs[1] = tmpcoeff[1];
+            tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Blue");
+            coeffs[2] = tmpcoeff[0];
+            coeffs[3] = tmpcoeff[1];
+          }else{
+            coeffs[0] = BASE_COEFF_SURVEY2_NDVI[0];
+            coeffs[1] = BASE_COEFF_SURVEY2_NDVI[1];
+            coeffs[2] = BASE_COEFF_SURVEY2_NDVI[2];
+            coeffs[3] = BASE_COEFF_SURVEY2_NDVI[3];
+          }
+
+
+          resultphoto = calibrator.makeNDVI(photo, coeffs);
+
+        }else if( cameraType.equals(CalibrationPrompt.SURVEY2_NIR) ){
+          baseSummary = calibrator.getRefValues(bfs, "850");
+
+          if( useQR == true && rois != null ){
+            tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
+            coeffs[0] = tmpcoeff[0];
+            coeffs[1] = tmpcoeff[1];
+          }else{
+            coeffs[0] = BASE_COEFF_SURVEY2_NIR[0];
+            coeffs[1] = BASE_COEFF_SURVEY2_NIR[1];
+          }
+
+          resultphoto = calibrator.makeSingle(photo, coeffs);
+
+        }else if( cameraType.equals(CalibrationPrompt.SURVEY2_RED) ){
+          baseSummary = calibrator.getRefValues(bfs, "650");
+
+
+          if( useQR == true && rois != null ){
+            tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
+            coeffs[0] = tmpcoeff[0];
+            coeffs[1] = tmpcoeff[1];
+          }else{
+            coeffs[0] = BASE_COEFF_SURVEY2_RED[0];
+            coeffs[1] = BASE_COEFF_SURVEY2_RED[1];
+          }
+
+          resultphoto = calibrator.makeSingle(photo, coeffs);
+
+        }else if( cameraType.equals(CalibrationPrompt.SURVEY2_GREEN) ){
+          baseSummary = calibrator.getRefValues(bfs, "548");
+
+
+          if( useQR == true && rois != null ){
+            tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Green");
+            coeffs[0] = tmpcoeff[0];
+            coeffs[1] = tmpcoeff[1];
+          }else{
+            coeffs[0] = BASE_COEFF_SURVEY2_GREEN[0];
+            coeffs[1] = BASE_COEFF_SURVEY2_GREEN[1];
+          }
+
+          resultphoto = calibrator.makeSingle(photo, coeffs);
+
+        }else if( cameraType.equals(CalibrationPrompt.SURVEY2_BLUE) ){
+          baseSummary = calibrator.getRefValues(bfs, "450");
+
+
+          if( useQR == true && rois != null ){
+            tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Blue");
+            coeffs[0] = tmpcoeff[0];
+            coeffs[1] = tmpcoeff[1];
+          }else{
+            coeffs[0] = BASE_COEFF_SURVEY2_BLUE[0];
+            coeffs[1] = BASE_COEFF_SURVEY2_BLUE[1];
+          }
+
+          resultphoto = calibrator.makeSingle(photo, coeffs);
+
+        }else if( cameraType.equals(CalibrationPrompt.DJIX3_NDVI) ){
+          baseSummary = calibrator.getRefValues(bfs, "660/850");
+
+          if( useQR == true && rois != null ){
+            tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
+            coeffs[0] = tmpcoeff[0];
+            coeffs[1] = tmpcoeff[1];
+            tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Blue");
+            coeffs[2] = tmpcoeff[0];
+            coeffs[3] = tmpcoeff[1];
+          }else{
+            coeffs[0] = BASE_COEFF_DJIX3_NDVI[0];
+            coeffs[1] = BASE_COEFF_DJIX3_NDVI[1];
+            coeffs[2] = BASE_COEFF_DJIX3_NDVI[2];
+            coeffs[3] = BASE_COEFF_DJIX3_NDVI[3];
+          }
+
+
+          resultphoto = calibrator.makeNDVI(photo, coeffs);
+        }else if( cameraType.equals(CalibrationPrompt.GOPRO_HERO4_NDVI) ){
+          /*
+          baseSummary = calibrator.getRefValues(bfs, "660/850");
+
+          if( useQR == true && rois != null ){
+            tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
+            coeffs[0] = tmpcoeff[0];
+            coeffs[1] = tmpcoeff[1];
+            tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Blue");
+            coeffs[2] = tmpcoeff[0];
+            coeffs[3] = tmpcoeff[1];
+          }else{
+            coeffs[0] = BASE_COEFF_DJIX3_NDVI[0];
+            coeffs[1] = BASE_COEFF_DJIX3_NDVI[1];
+            coeffs[2] = BASE_COEFF_DJIX3_NDVI[2];
+            coeffs[3] = BASE_COEFF_DJIX3_NDVI[3];
+          }
+
+
+          resultphoto = calibrator.makeNDVI(photo, coeffs);*/
+
+          IJ.log("GoPro Hero 4 support coming soon!");
         }
 
+        //resultphoto.show();
 
-        resultphoto = calibrator.makeNDVI(photo, coeffs);*/
+        RGBStackConverter.convertToRGB(resultphoto.getImage());
+        resultphoto.copyFileData(photo);
+        //resultphoto.show();
+        //resultphoto.show();
+        IJ.log("Saving Image");
+        saveToDir(outputDir, resultphoto.getFileName(), resultphoto.getExtension(), resultphoto.getImage());
+        IJ.log("Saved");
 
-        IJ.log("GoPro Hero 4 support coming soon!");
+        // Write EXIF data
+        IJ.log("Copying EXIF data");
+        /*
+        exif = new EXIFTool(tmpfile, new File(outputDir+resultphoto.getFileName()), new File(outputDir+resultphoto.getFileName()+".tmp") );
+        exif.copyEXIF();
+        */
+        //EXIFTool.copyEXIF( (new File(outputDir+resultphoto.getFileName()+"_Calibrated"+"."+resultphoto.getExtension())), tmpfile );
+        //CopyEXIFData()
+        CopyEXIFData(OS, PATH_TO_EXIFTOOL, tmpfile.getAbsolutePath(), outputDir+resultphoto.getFileName()+"_Calibrated"+"."+resultphoto.getExtension());
+        //photo.close();
       }
 
-      //resultphoto.show();
-
-      RGBStackConverter.convertToRGB(resultphoto.getImage());
-      resultphoto.copyFileData(photo);
-      //resultphoto.show();
-      //resultphoto.show();
-      IJ.log("Saving Image");
-      saveToDir(outputDir, resultphoto.getFileName(), resultphoto.getExtension(), resultphoto.getImage());
-      IJ.log("Saved");
-
-      // Write EXIF data
-      IJ.log("Copying EXIF data");
-      /*
-      exif = new EXIFTool(tmpfile, new File(outputDir+resultphoto.getFileName()), new File(outputDir+resultphoto.getFileName()+".tmp") );
-      exif.copyEXIF();
-      */
-      //EXIFTool.copyEXIF( (new File(outputDir+resultphoto.getFileName()+"_Calibrated"+"."+resultphoto.getExtension())), tmpfile );
-      //CopyEXIFData()
-      CopyEXIFData(OS, PATH_TO_EXIFTOOL, tmpfile.getAbsolutePath(), outputDir+resultphoto.getFileName()+"_Calibrated"+"."+resultphoto.getExtension());
-      //photo.close();
+    if( prompts.showCalibrationFinishedDialog() ){
+      keepPluginAlive = true;
+      continue;
+    }else{
+      keepPluginAlive = false;
     }
+  } // End plugin execution
+    IJ.log("Goodbye!");
 
   }
 
@@ -404,6 +460,55 @@ public class CalibrateDirectory implements PlugIn{
 
     IJ.save((ImagePlus)image, (String)(String.valueOf(outdir) + filename + NDVIAppend + "." + ext));
     return;
+  }
+
+  public String GetEXIFCameraModel(String osType, String exiftoolpath, String refimg){
+      String console = null;
+      String c_arg = null;
+      String command = null;
+
+      if( this.OS.contains("Windows") ){
+        console = "cmd";
+        c_arg = "/c";
+        command = exiftoolpath + " -model -S " + "\""+refimg+"\"";
+      }else{
+        console = "sh";
+        c_arg = "-c";
+        command = exiftoolpath + " -model -S " + "\'"+refimg+"\'";
+      }
+
+
+      String line = null;
+      String model = "";
+      try{
+        ProcessBuilder bob = new ProcessBuilder(console, c_arg, command);
+        bob.redirectErrorStream(true);
+        final Process proc = bob.start();
+
+        BufferedReader proc_out = new BufferedReader( new InputStreamReader(proc.getInputStream()));
+        String [] values = null;
+
+        do{
+          line = proc_out.readLine();
+
+          if( line != null ){
+            values = line.split(".+: ");
+            if( values.length == 2 ){
+              model = values[1];
+            }
+          }
+        }while( line != null );
+
+      }catch( IOException e){
+        e.printStackTrace();
+      }
+
+      // Shitty post process
+      if( model.equals("Survey2_IR") ){
+        // Convert to match camera model selected from dialog
+        model = "Survey2_NIR";
+      }
+      return model.replaceAll("_", " ");
   }
 
   public void CopyEXIFData(String osType, String exiftoolpath, String refimg, String targimg ){

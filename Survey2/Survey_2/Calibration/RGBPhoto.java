@@ -40,13 +40,17 @@ public class RGBPhoto{
 
     image = new ImagePlus(imagePath);
 
-    /*
-    if( imageExt.toUpperCase().equals("TIF") ){
+    //IJ.log( Integer.toString(image.getNChannels()) );
+    // Fix tifs that come in with 3 channels only (from raw to tif conversion of pre-process)
+    if( imageExt.toUpperCase().equals("TIF") && image.getNChannels() != 1 ){
       //RGBStackConverter.convertToRGB(image);
-      (new StackConverter(image)).convertToRGB();
-    }*/
+      //(new StackConverter(image)).convertToRGB();
+      fixTif();
+    }
 
-    image.show();
+
+    // YOU NEED THIS FOR IT TO WORK!!
+    //image.show();
 
     // Get channels
     /*
@@ -122,6 +126,13 @@ public class RGBPhoto{
     greenChannel = imageBands[1];
     blueChannel = imageBands[2];
     */
+
+    if( imageExt.toUpperCase().equals("TIF") ){
+      //RGBStackConverter.convertToRGB(image);
+      //(new StackConverter(image)).convertToRGB();
+      fixTif();
+    }
+
     splitStack(image);
 
   }
@@ -157,6 +168,13 @@ public class RGBPhoto{
     redChannel = imageBands[0];
     greenChannel = imageBands[1];
     blueChannel = imageBands[2];*/
+
+    if( imageExt.toUpperCase().equals("TIF") ){
+      //RGBStackConverter.convertToRGB(image);
+      //(new StackConverter(image)).convertToRGB();
+      fixTif();
+    }
+
     splitStack(image);
 
     camera = valueMap.get(CalibrationPrompt.MAP_CAMERA);
@@ -207,6 +225,11 @@ public class RGBPhoto{
 
   public ImagePlus[] splitStack(ImagePlus img){
     ImagePlus[] imageBands = ChannelSplitter.split(img);
+
+    if( imageBands.length != 3 ){
+      IJ.log("Could not split bands for this image. I am skipping this image.");
+      return null;
+    }
 
     redChannel = imageBands[0];
     greenChannel = imageBands[1];
@@ -311,11 +334,20 @@ public class RGBPhoto{
     image.getProcessor().setMinAndMax(0,65535);
     image.setDefault16bitRange(16);
 
+    /*
     image.show();
     IJ.run("RGB Color");
-
+    */
     //(new StackConverter(image)).convertToRGB();
     //RGBStackConverter.convertToRGB(image);
+  }
+
+  public boolean checkChannels(){
+    if( redChannel == null || greenChannel == null || blueChannel == null ){
+      return false;
+    }else{
+      return true;
+    }
   }
 
 }

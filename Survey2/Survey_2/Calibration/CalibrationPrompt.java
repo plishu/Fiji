@@ -1,4 +1,5 @@
 import ij.gui.GenericDialog;
+import ij.gui.MessageDialog;
 import ij.io.OpenDialog;
 import ij.io.SaveDialog;
 import ij.IJ;
@@ -11,6 +12,8 @@ import java.awt.TextField;
 
 import java.util.Map;
 import java.util.HashMap;
+
+import java.io.IOException;
 
 public class CalibrationPrompt{
   private static CalibrationPrompt prompt = null;
@@ -44,9 +47,9 @@ public class CalibrationPrompt{
   public static String MAP_QRPATH = "QRPATH";
   */
 
-  public static final String SURVEY2_RED = "Survey2 Red";
-  public static final String SURVEY2_GREEN = "Survey2 Green";
-  public static final String SURVEY2_BLUE = "Survey2 Blue";
+  public static final String SURVEY2_RED = "Survey2 RED";
+  public static final String SURVEY2_GREEN = "Survey2 GREEN";
+  public static final String SURVEY2_BLUE = "Survey2 BLUE";
   public static final String SURVEY2_NDVI = "Survey2 NDVI";
   public static final String SURVEY2_NIR = "Survey2 NIR";
   public static final String DJIX3_NDVI = "DJI X3 NDVI";
@@ -54,9 +57,13 @@ public class CalibrationPrompt{
   public static final String OTHER_CAMERA = "OTHER";
 
 
+  /*
   private String[] cameras = new String[]{SURVEY2_RED, SURVEY2_GREEN,
-    SURVEY2_BLUE, SURVEY2_NDVI, SURVEY2_NIR, DJIX3_NDVI, GOPRO_HERO4_NDVI, OTHER_CAMERA};
-  private String[] dualBand = new String[]{SURVEY2_NDVI, DJIX3_NDVI, GOPRO_HERO4_NDVI};
+    SURVEY2_BLUE, SURVEY2_NDVI, SURVEY2_NIR, DJIX3_NDVI, GOPRO_HERO4_NDVI, OTHER_CAMERA};*/
+  private String[] cameras = new String[]{SURVEY2_NDVI, SURVEY2_NIR,
+    SURVEY2_RED, SURVEY2_GREEN, SURVEY2_BLUE};
+  //private String[] dualBand = new String[]{SURVEY2_NDVI, DJIX3_NDVI, GOPRO_HERO4_NDVI};
+  private String[] dualBand = new String[]{SURVEY2_NDVI};
   private double gamma = 2.2;
   private double nirsub = 80.0; // Percentage
 
@@ -67,7 +74,7 @@ public class CalibrationPrompt{
   public CalibrationPrompt(){
     mainDialog = new GenericDialog("Calibrate Image");
     mainDialog.addChoice("Camera: ", cameras, cameras[3]);
-    mainDialog.addCheckbox("Calibrate with QR Calibration Photo ", useQR);
+    mainDialog.addCheckbox("Calibrate with MAPIR Reflectance Ground Target image", useQR);
     mainDialog.addCheckbox("Remove gamma? (Only applies to JPG images) ", removeGamma);
     mainDialog.addNumericField("Gamma value: ", gamma, 3);
 
@@ -79,12 +86,18 @@ public class CalibrationPrompt{
 
 
     fullDialog = new GenericDialog("Calibrate Images in Directory");
-    fullDialog.addChoice("Select camera images were taken with", cameras, cameras[3]);
-    fullDialog.addCheckbox("Calibrate with QR Calibration Target photo", useQR);
+    fullDialog.addChoice("Select camera model", cameras, cameras[3]);
+    fullDialog.addCheckbox("Calibrate with MAPIR Reflectance Ground Target image", useQR);
+    /*
     fullDialog.addCheckbox("Remove Gamma (Applies to JPG images only)", removeGamma);
     fullDialog.addNumericField("Gamma value", gamma, 3);
     fullDialog.addCheckbox("Subtract NIR (Use this for NDVI only)", removeNIR);
     fullDialog.addNumericField("Subtract amount percentage", nirsub, 3);
+    */
+    fullDialog.addMessage("If a QR target image is not supplied, or the supplied");
+    fullDialog.addMessage("image fails to be detected, base calibration values taken");
+    fullDialog.addMessage("during a clear sunny day will be used.");
+
     fullDialog.centerDialog(true);
     fullDialog.setOKLabel("Begin");
     fullDialog.setCancelLabel("Quit");
@@ -124,7 +137,7 @@ public class CalibrationPrompt{
   }
 
   public void showQRFileDialog(){
-    qrFileDialog = new OpenDialog("Select Image wih Calibration Targets (QR code)");
+    qrFileDialog = new OpenDialog("Select Image with Calibration Targets (QR code)");
   }
 
   public void showImageFileDialog(){
@@ -133,6 +146,60 @@ public class CalibrationPrompt{
 
   public void showSaveFileDialog(String filename, String ext){
     saveFileDialog = new SaveDialog("Choose Directory to Save", filename, "");
+  }
+
+  public boolean showQRNotDetectedDialog() throws IOException{
+    GenericDialog dialog = new GenericDialog("QR not found");
+    dialog.addMessage("QR code unable to be detected, would you like to proceed");
+    dialog.addMessage("using the base calibration values?");
+    dialog.enableYesNoCancel("Proceed", "Choose New Image");
+    dialog.setCancelLabel("Quit");
+
+    dialog.showDialog();
+
+    if( dialog.wasOKed() ){
+      // Continue with base values
+      return false;
+    }else if( dialog.wasCanceled() ){
+      throw new IOException("No QR code selected. This means wants to quit program.");
+    }else{
+      // Choose QR code
+      return true;
+    }
+
+  }
+
+  public boolean showQRNotSameModelDialog(String qrModel, String selectedModel){
+    GenericDialog dialog = new GenericDialog("QR Calibration Image Does Not Match Selected Camera Model");
+    dialog.addMessage("It appears the QR target image camera model you supplied ("+qrModel+")");
+    dialog.addMessage("does not match the camera model choosen ("+selectedModel+")");
+    dialog.setOKLabel("Choose New Image");
+    dialog.setCancelLabel("Quit");
+
+    dialog.showDialog();
+
+    if( dialog.wasOKed() ){
+      return true;
+    }else if( dialog.wasCanceled() ){
+      return false;
+    }
+    return false;
+  }
+
+  public boolean showCalibrationFinishedDialog(){
+    GenericDialog dialog = new GenericDialog("Calibration Completed");
+    dialog.addMessage("Calibration successful for the choosen directory of images");
+    dialog.setOKLabel("Calibrate New Directory");
+    dialog.setCancelLabel("Quit");
+
+    dialog.showDialog();
+
+    if( dialog.wasOKed() ){
+      return true;
+    }else if( dialog.wasCanceled() ){
+      return false;
+    }
+    return false;
   }
 
   public HashMap<String, String> getMainDialogValues(){
@@ -152,10 +219,10 @@ public class CalibrationPrompt{
     String theCamera = fullDialog.getNextChoice();
     values.put( MAP_CAMERA, theCamera );
     values.put( MAP_USEQR, String.valueOf(fullDialog.getNextBoolean()) );
-    values.put( MAP_REMOVEGAMMA, String.valueOf(fullDialog.getNextBoolean()) );
-    values.put( MAP_GAMMA, String.valueOf(fullDialog.getNextNumber()) );
-    values.put( MAP_REMOVENIR, String.valueOf(fullDialog.getNextBoolean()) );
-    values.put( MAP_NIRSUB, String.valueOf(fullDialog.getNextNumber()) );
+    //values.put( MAP_REMOVEGAMMA, String.valueOf(fullDialog.getNextBoolean()) );
+    //values.put( MAP_GAMMA, String.valueOf(fullDialog.getNextNumber()) );
+    //values.put( MAP_REMOVENIR, String.valueOf(fullDialog.getNextBoolean()) );
+    //values.put( MAP_NIRSUB, String.valueOf(fullDialog.getNextNumber()) );
 
     return values;
   }
