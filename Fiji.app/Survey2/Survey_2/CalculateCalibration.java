@@ -47,48 +47,13 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-//import java.io.Reader;
+import java.io.Reader;
 import java.io.Writer;
 import java.util.Vector;
 
-import ij.*;
-import ij.plugin.*;
-import ij.process.*;
-import ij.gui.*;
-
-import java.awt.image.BufferedImage;
-import java.util.Hashtable;
-import java.awt.*;
-import java.io.File;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collections;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.lang.Runtime;
-import java.lang.ProcessBuilder;
-import java.lang.Process;
-import ij.io.*;
-
-import com.google.zxing.BinaryBitmap;
-import com.google.zxing.ChecksumException;
-import com.google.zxing.DecodeHintType;
-import com.google.zxing.FormatException;
-import com.google.zxing.LuminanceSource;
-import com.google.zxing.MultiFormatReader;
-import com.google.zxing.NotFoundException;
-import com.google.zxing.Reader;
-import com.google.zxing.Result;
-import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
-import com.google.zxing.common.HybridBinarizer;
-import com.google.zxing.qrcode.QRCodeReader;
-import com.google.zxing.ResultPoint;
-
-public class NewCalculateCalibration
-implements PlugIn, DialogListener {
+public class CalculateCalibration
+implements PlugIn,
+DialogListener {
     public void run(String arg) {
         double sum;
         Rectangle r;
@@ -128,57 +93,7 @@ implements PlugIn, DialogListener {
         visR_Squared = 0.0;
         nirR_Squared = 0.0;
 
-
-        // Create Roi
-        String imageDir = IJ.getFilePath("Input QR Code image");
-        ImagePlus qrimg = IJ.openImage(imageDir);
-        qrimg.show();
-
-        QRCalib qr = new QRCalib();
-
-        Result result = qr.attemptDecode(qrimg); // Blocking
-
-        if( result == null ){
-          IJ.log( "Could not find QR code. Skipping this image." );
-          return;
-        }
-
-        ImagePlus resimg = qr.getAttemptImg(); // Needed for processing
-
-        ResultPoint[] points = result.getResultPoints();
-
-        //PolygonRoi qrRoi = qr.createPolygon( polyXCoords, polyYCoords );
-        PolygonRoi qrRoi = qr.createPolygon( points );
-        qr.drawPolygonOn(qrRoi, resimg);
-        qr.setTargetsCenter(qrRoi);
-
-        float[] target1Center = qr.getTarget1Center();
-        float[] target2Center = qr.getTarget2Center();
-        float[] target3Center = qr.getTarget3Center();
-        float targetLength = qr.getTargetSize();
-
-        Roi target1Roi = qr.createRectangleRoi( target1Center, 0.3f );
-        qr.drawPolygonOn( target1Roi, resimg );
-        Roi target2Roi = qr.createRectangleRoi( target2Center, 0.3f );
-        qr.drawPolygonOn( target2Roi, resimg );
-        Roi target3Roi = qr.createRectangleRoi( target3Center, 0.3f );
-        qr.drawPolygonOn( target3Roi, resimg );
-
-        target1Roi = qr.mapRoiTo( qrimg, resimg, target1Center, 0.6f );
-        qr.drawPolygonOn( target1Roi, qrimg );
-        target2Roi = qr.mapRoiTo( qrimg, resimg, target2Center, 0.6f );
-        qr.drawPolygonOn( target2Roi, qrimg );
-        target3Roi = qr.mapRoiTo( qrimg, resimg, target3Center, 0.6f );
-        qr.drawPolygonOn( target3Roi, qrimg );
-
-        // Create Roi manager and add Roi
-        RoiManager mgr = new RoiManager();
-        //mgr.addRoi(target1Roi);
-        //mgr.addRoi(target2Roi);
-        //mgr.addRoi(target3Roi);
-        mgr.add(qrimg, target1Roi, 0);
-        mgr.add(qrimg, target2Roi, 1);
-        //mgr.add(qrimg, target3Roi, 2);
+        // Create RoiManager
 
         // Assumes RoiManager has been created and at least two Roi exist
         RoiManager manager = RoiManager.getInstance();
@@ -191,8 +106,7 @@ implements PlugIn, DialogListener {
             IJ.error((String)"At least 2 ROIs must be added to the ROI Tool before running plugin");
             return;
         }
-        //imp = IJ.getImage();
-        imp = qrimg;
+        imp = IJ.getImage();
         visBandIndex = (int)Prefs.get((String)"pm.calibrate.visBandIndex", (double)0.0);
         nirBandIndex = (int)Prefs.get((String)"pm.calibrate.nirBandIndex", (double)2.0);
         subtractNIR = Prefs.get((String)"pm.calibrate.subtractNIR", (boolean)true);
@@ -297,7 +211,7 @@ implements PlugIn, DialogListener {
                 try {
                     fileReader.close();
                 }
-                catch (IOException f) {
+                catch (IOException e) {
                     e.printStackTrace();
                 }
                 return;
@@ -320,19 +234,13 @@ implements PlugIn, DialogListener {
         ImagePlus[] imageBands = ChannelSplitter.split((ImagePlus)imp);
         ImagePlus visImage = this.scaleImage(imageBands[visBandIndex], "visImage");
         ImagePlus nirImage = this.scaleImage(imageBands[nirBandIndex], "nirImage");
-
-        visImage.show();
-        nirImage.show();
-
         if (removeGamma.booleanValue()) {
             double undoGamma = 1.0 / gamma;
             int y2 = 0;
             while (y2 < nirImage.getHeight()) {
                 int x2 = 0;
                 while (x2 < nirImage.getWidth()) {
-                    //IJ.log( "Old pixel value: " + String.valueOf(nirImage.getProcessor().getPixelValue(x2, y2)) );
                     nirPixel = Math.pow(nirImage.getProcessor().getPixelValue(x2, y2), undoGamma);
-                    //IJ.log( "New pixel value: " + String.valueOf(nirPixel) );
                     visPixel = Math.pow(visImage.getProcessor().getPixelValue(x2, y2), undoGamma);
                     visImage.getProcessor().putPixelValue(x2, y2, visPixel);
                     nirImage.getProcessor().putPixelValue(x2, y2, nirPixel);
@@ -372,7 +280,6 @@ implements PlugIn, DialogListener {
                 while (x < r.width) {
                     if (mask == null || mask.getPixel(x, y) != 0) {
                         ++count;
-                        // Is this staying at 0?
                         sum += (double)ip.getPixelValue(x + r.x, y + r.y);
                     }
                     ++x;
@@ -380,7 +287,6 @@ implements PlugIn, DialogListener {
                 ++y;
             }
             IJ.log((String)("count: " + count));
-            IJ.log((String)("sum: " + sum));
             IJ.log((String)("mean: " + IJ.d2s((double)(sum / (double)count), (int)4)));
             visImageValues[i] = sum / (double)count;
             ++i;
@@ -504,20 +410,9 @@ implements PlugIn, DialogListener {
             }
             ++y4;
         }
-        //newImage.show();
+        newImage.show();
         imp.changes = false;
         imp.close();
-    }
-
-    public double parseCSVLine(String fullLine){
-      //fullLine = fileReader.readLine();
-      String[] dataValues = fullLine.split(",");
-
-      //visRefValues[counter] = Double.parseDouble(dataValues[0]);
-      //nirRefValues[counter] = Double.parseDouble(dataValues[1]);
-
-
-      return 0.0;
     }
 
     public ImagePlus scaleImage(ImagePlus inImage, String imageName) {
@@ -525,10 +420,6 @@ implements PlugIn, DialogListener {
         double outPixel = 0.0;
         double minVal = inImage.getProcessor().getMin();
         double maxVal = inImage.getProcessor().getMax();
-
-        IJ.log("Pixel min: " + String.valueOf(minVal));
-        IJ.log("Pixel max: " + String.valueOf(maxVal));
-
         double inverseRange = 1.0 / (maxVal - minVal);
         ImagePlus newImage = NewImage.createFloatImage((String)imageName, (int)inImage.getWidth(), (int)inImage.getHeight(), (int)1, (int)1);
         int y = 0;
