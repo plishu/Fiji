@@ -700,11 +700,11 @@ public class Post_Process_Batch implements PlugIn{
     if( this.OS.contains("Windows") ){
       console = "cmd";
       c_arg = "/c";
-      command = "xcopy /Y " + "\""+dir+"*.jpg"+"\" " + "\""+dir+"original\\\"";
+      command = "xcopy /Y " + "\""+dir+"*.jpg"+"\" " + "\""+dir+"original_jpg\\\"";
     }else{
       console = "sh";
       c_arg = "-c";
-      command = "cp -f " + "\'"+dir+"*.jpg\' " + "\'"+dir+"original\\\'";
+      command = "cp -f " + "\'"+dir+"*.jpg\' " + "\'"+dir+"original_jpg\\\'";
     }
 
     try{

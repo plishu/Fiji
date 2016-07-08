@@ -41,6 +41,7 @@ public class CalibrationPrompt{
   public static final String MAP_IMAGEFILENAME = "IMAGEFILENAME";
   public static final String MAP_IMAGEPATH = "IMAGEPATH";
   public static final String MAP_SAVEDIR = "SAVEDIR";
+  public static final String MAP_TIFFTOJPG = "TIFFTOJPG";
   /* Treat QR image as an image - use same keys
   public static String MAP_QRDIR = "QRDIR";
   public static String MAP_QRFILENAME = "QRFILENAME";
@@ -70,6 +71,7 @@ public class CalibrationPrompt{
   private boolean useQR = false;
   private boolean removeGamma = true;
   private boolean removeNIR = true;
+  private boolean tifsToJpgs = false;
 
   public CalibrationPrompt(){
     mainDialog = new GenericDialog("Calibrate Image");
@@ -97,6 +99,8 @@ public class CalibrationPrompt{
     fullDialog.addMessage("If a QR target image is not supplied, or the supplied");
     fullDialog.addMessage("image fails to be detected, base calibration values taken");
     fullDialog.addMessage("during a clear sunny day will be used.");
+
+    fullDialog.addCheckbox("Convert calibrated TIFFs to JPGs", tifsToJpgs);
 
     fullDialog.centerDialog(true);
     fullDialog.setOKLabel("Begin");
@@ -219,6 +223,7 @@ public class CalibrationPrompt{
     String theCamera = fullDialog.getNextChoice();
     values.put( MAP_CAMERA, theCamera );
     values.put( MAP_USEQR, String.valueOf(fullDialog.getNextBoolean()) );
+    values.put( MAP_TIFFTOJPG, String.valueOf(fullDialog.getNextBoolean()) );
     //values.put( MAP_REMOVEGAMMA, String.valueOf(fullDialog.getNextBoolean()) );
     //values.put( MAP_GAMMA, String.valueOf(fullDialog.getNextNumber()) );
     //values.put( MAP_REMOVENIR, String.valueOf(fullDialog.getNextBoolean()) );

@@ -46,6 +46,7 @@ import java.util.ArrayList;
 public class CalibrateDirectory implements PlugIn{
 
   private boolean useQR = false;
+  private boolean tiffsToJpgs = false;
   private String qrDir = "";
   private String qrFilename = "";
   private String qrPath = "";
@@ -106,6 +107,7 @@ public class CalibrateDirectory implements PlugIn{
       //IJ.log(fullDialogValues.get(CalibrationPrompt.MAP_USEQR));
       //IJ.log( String.valueOf(useQR) );
       cameraType = fullDialogValues.get(CalibrationPrompt.MAP_CAMERA);
+      tiffsToJpgs = Boolean.parseBoolean( fullDialogValues.get(CalibrationPrompt.MAP_TIFFTOJPG) );
 
       String qrCameraModel = null;
       while( useQR == true ){
@@ -202,13 +204,17 @@ public class CalibrateDirectory implements PlugIn{
         }
 
         if( inImageExt.toUpperCase().equals("JPG") || inImageExt.toUpperCase().equals("TIF") ){
+          if( tiffsToJpgs && inImageExt.toUpperCase().equals("JPG") ){
+            // Don't add original jpgs, only tifs
+            continue;
+          }
           jpgToCalibrate.add(imagesToCalibrate[i]);
         }
       }
 
       //IJ.log("---------------Images To Calibrate---------------");
       for( int i=0; i<jpgToCalibrate.size(); i++ ){
-        //IJ.log(jpgToCalibrate.get(i).getName());
+        IJ.log(jpgToCalibrate.get(i).getName());
       }
       for( int i=0; i<tifToCalibrate.size(); i++ ){
         //IJ.log(tifToCalibrate.get(i).getName());
@@ -385,6 +391,11 @@ public class CalibrateDirectory implements PlugIn{
         //resultphoto.show();
         IJ.log("Saving Image");
         saveToDir(outputDir, resultphoto.getFileName(), resultphoto.getExtension(), resultphoto.getImage());
+        // Also save tif to jpg
+        if( tiffsToJpgs ){
+          saveToDir( outputDir, resultphoto.getFileName(), "jpg", resultphoto.getImage() );
+        }
+
         //IJ.log("Saved");
 
         // Write EXIF data
