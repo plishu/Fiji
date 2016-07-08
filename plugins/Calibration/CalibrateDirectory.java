@@ -34,6 +34,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.io.FilenameFilter;
 import java.io.InputStreamReader;
 import java.util.Vector;
 import java.util.Map;
@@ -58,6 +59,7 @@ public class CalibrateDirectory implements PlugIn{
 
   private String inputDir = "";
   private String outputDir = "";
+  private final String CALIBRATEDSAVEFOLDER = "Calibrated";
 
   private File fileInputDir = null;
   private File fileOutputDir = null;
@@ -178,13 +180,15 @@ public class CalibrateDirectory implements PlugIn{
         IJ.log("Goodbye!");
         return;
       }
-      outputDir = inputDir + "\\Calibrated\\";
+      outputDir = inputDir + "\\"+CALIBRATEDSAVEFOLDER+"\\";
+      // Scan for calibrated folder
 
       // Create output Folder
+      /*
       fileOutputDir = new File(outputDir);
       if( !fileOutputDir.exists() ){
         fileOutputDir.mkdir();
-      }
+      }*/
 
 
 
@@ -390,6 +394,17 @@ public class CalibrateDirectory implements PlugIn{
         //resultphoto.show();
         //resultphoto.show();
         IJ.log("Saving Image");
+        int numCalibratedFolders = calibratedFolderExists(inputDir, CALIBRATEDSAVEFOLDER);
+        if( numCalibratedFolders == 0 ){
+          File out = new File(outputDir);
+          if( out.exists() ){
+            outputDir = inputDir + "\\" + CALIBRATEDSAVEFOLDER + "_" + Integer.toString(1) + "\\";
+          }
+        }
+        else if( numCalibratedFolders > 0 ){
+          outputDir = inputDir + "\\" + CALIBRATEDSAVEFOLDER + "_" + Integer.toString(numCalibratedFolders+1) + "\\";
+          IJ.log( "Directory to save: " + outputDir);
+        }
         saveToDir(outputDir, resultphoto.getFileName(), resultphoto.getExtension(), resultphoto.getImage());
         // Also save tif to jpg
         if( tiffsToJpgs ){
@@ -477,6 +492,12 @@ public class CalibrateDirectory implements PlugIn{
 
   public void saveToDir(String outdir, String filename, String ext, ImagePlus image){
     String NDVIAppend = "_Calibrated";
+
+    // If output directory does not exist, create it
+    File outd = new File(outdir);
+    if( !outd.exists() ){
+      outd.mkdir();
+    }
 
     //IJ.log("Output Directory: " + outdir);
     //IJ.log("Filename: " + filename);
@@ -584,6 +605,48 @@ public class CalibrateDirectory implements PlugIn{
     //IJ.log("Finished writing EXIF data");
 
   }
+
+  /*
+   * Checks if any calibration folder exists.
+   * @param  inDir  Input directory to check for calibration folder
+   * @return Integer value representing which is the latest calibration folder.
+   *          Ex: 0 - none exist
+   *              1 - one exists; Calibrated
+   *              2 - two exists; Calibrated, Calibrated_1
+   *              3 = two exists; Calibrated, Calibrated_3; Calibrated_1 & Calibrated_2 were deleted
+   *              etc...
+   */
+  public int calibratedFolderExists(String inDir, final String calibFolderName){
+    // Assumptions:
+    // 1) Calibrated folder is placed inside the input directory
+    // 2) Naming conventions Calibrated, Calibrated_1, Calibrated_2, etc
+    File inFolder = new File(inDir);
+
+    String[] calibs = inFolder.list(new FilenameFilter(){
+      public boolean accept(File dir, String name){
+        if( name.contains(calibFolderName) ){
+          return true;
+        }
+        return false;
+        }
+      });
+
+    int num = 0;
+    int highestNum = 0;
+    String[] split = null;
+    for( int i=0; i<calibs.length; i++ ){
+      split = calibs[i].split(".+_");
+      if( split.length == 1 ){
+        highestNum = 0;
+      }else if( split.length == 2 ){
+        num = Integer.parseInt(split[1]);
+        highestNum = (num >= highestNum) ? num : highestNum;
+        }
+    }
+
+    return highestNum;
+  }
+
 
 
 }

@@ -34,6 +34,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
+import java.io.FilenameFilter;
 import java.io.InputStreamReader;
 import java.util.Vector;
 import java.util.Map;
@@ -58,6 +59,7 @@ public class CalibrateDirectory implements PlugIn{
 
   private String inputDir = "";
   private String outputDir = "";
+  private final String CALIBRATEDSAVEFOLDER = "Calibrated";
 
   private File fileInputDir = null;
   private File fileOutputDir = null;
@@ -70,11 +72,17 @@ public class CalibrateDirectory implements PlugIn{
   private boolean keepPluginAlive = true;
 
 
-  private final double[] BASE_COEFF_SURVEY2_RED = {-0.31238818, 2.35239490};
-  private final double[] BASE_COEFF_SURVEY2_GREEN = {-0.32874756, 5.44419416};
-  private final double[] BASE_COEFF_SURVEY2_BLUE = {-0.40351347, 1.58893643};
-  private final double[] BASE_COEFF_SURVEY2_NDVI = {-0.321163012, 1.81411080, -0.09248552, 3.05593169};
-  private final double[] BASE_COEFF_SURVEY2_NIR = {-1.18032326, 10.92737546};
+  private final double[] BASE_COEFF_SURVEY2_RED_JPG = {-0.31238818, 2.35239490};
+  private final double[] BASE_COEFF_SURVEY2_GREEN_JPG = {-0.32874756, 5.44419416};
+  private final double[] BASE_COEFF_SURVEY2_BLUE_JPG = {-0.40351347, 1.58893643};
+  private final double[] BASE_COEFF_SURVEY2_NDVI_JPG = {-0.321163012, 1.81411080, -0.09248552, 3.05593169};
+  private final double[] BASE_COEFF_SURVEY2_NIR_JPG = {-1.18032326, 10.92737546};
+  private final double[] BASE_COEFF_SURVEY2_RED_TIF = {};
+  private final double[] BASE_COEFF_SURVEY2_GREEN_TIF = {};
+  private final double[] BASE_COEFF_SURVEY2_BLUE_TIF = {};
+  private final double[] BASE_COEFF_SURVEY2_NDVI_TIF = {};
+  private final double[] BASE_COEFF_SURVEY2_NIR_TIF = {};
+
   private final double[] BASE_COEFF_DJIX3_NDVI = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
   private final double[] BASE_COEFF_GOPROHERO4_NDVI = {0,0};
 
@@ -178,13 +186,15 @@ public class CalibrateDirectory implements PlugIn{
         IJ.log("Goodbye!");
         return;
       }
-      outputDir = inputDir + "\\Calibrated\\";
+      outputDir = inputDir + "\\"+CALIBRATEDSAVEFOLDER+"\\";
+      // Scan for calibrated folder
 
       // Create output Folder
+      /*
       fileOutputDir = new File(outputDir);
       if( !fileOutputDir.exists() ){
         fileOutputDir.mkdir();
-      }
+      }*/
 
 
 
@@ -272,10 +282,10 @@ public class CalibrateDirectory implements PlugIn{
             coeffs[2] = tmpcoeff[0];
             coeffs[3] = tmpcoeff[1];
           }else{
-            coeffs[0] = BASE_COEFF_SURVEY2_NDVI[0];
-            coeffs[1] = BASE_COEFF_SURVEY2_NDVI[1];
-            coeffs[2] = BASE_COEFF_SURVEY2_NDVI[2];
-            coeffs[3] = BASE_COEFF_SURVEY2_NDVI[3];
+            coeffs[0] = BASE_COEFF_SURVEY2_NDVI_JPG[0];
+            coeffs[1] = BASE_COEFF_SURVEY2_NDVI_JPG[1];
+            coeffs[2] = BASE_COEFF_SURVEY2_NDVI_JPG[2];
+            coeffs[3] = BASE_COEFF_SURVEY2_NDVI_JPG[3];
           }
 
 
@@ -289,8 +299,8 @@ public class CalibrateDirectory implements PlugIn{
             coeffs[0] = tmpcoeff[0];
             coeffs[1] = tmpcoeff[1];
           }else{
-            coeffs[0] = BASE_COEFF_SURVEY2_NIR[0];
-            coeffs[1] = BASE_COEFF_SURVEY2_NIR[1];
+            coeffs[0] = BASE_COEFF_SURVEY2_NIR_JPG[0];
+            coeffs[1] = BASE_COEFF_SURVEY2_NIR_JPG[1];
           }
 
           resultphoto = calibrator.makeSingle(photo, coeffs);
@@ -304,8 +314,8 @@ public class CalibrateDirectory implements PlugIn{
             coeffs[0] = tmpcoeff[0];
             coeffs[1] = tmpcoeff[1];
           }else{
-            coeffs[0] = BASE_COEFF_SURVEY2_RED[0];
-            coeffs[1] = BASE_COEFF_SURVEY2_RED[1];
+            coeffs[0] = BASE_COEFF_SURVEY2_RED_JPG[0];
+            coeffs[1] = BASE_COEFF_SURVEY2_RED_JPG[1];
           }
 
           resultphoto = calibrator.makeSingle(photo, coeffs);
@@ -319,8 +329,8 @@ public class CalibrateDirectory implements PlugIn{
             coeffs[0] = tmpcoeff[0];
             coeffs[1] = tmpcoeff[1];
           }else{
-            coeffs[0] = BASE_COEFF_SURVEY2_GREEN[0];
-            coeffs[1] = BASE_COEFF_SURVEY2_GREEN[1];
+            coeffs[0] = BASE_COEFF_SURVEY2_GREEN_JPG[0];
+            coeffs[1] = BASE_COEFF_SURVEY2_GREEN_JPG[1];
           }
 
           resultphoto = calibrator.makeSingle(photo, coeffs);
@@ -334,8 +344,8 @@ public class CalibrateDirectory implements PlugIn{
             coeffs[0] = tmpcoeff[0];
             coeffs[1] = tmpcoeff[1];
           }else{
-            coeffs[0] = BASE_COEFF_SURVEY2_BLUE[0];
-            coeffs[1] = BASE_COEFF_SURVEY2_BLUE[1];
+            coeffs[0] = BASE_COEFF_SURVEY2_NDVI_JPG_JPG[0];
+            coeffs[1] = BASE_COEFF_SURVEY2_BLUE_JPG[1];
           }
 
           resultphoto = calibrator.makeSingle(photo, coeffs);
@@ -389,12 +399,28 @@ public class CalibrateDirectory implements PlugIn{
         resultphoto.copyFileData(photo);
         //resultphoto.show();
         //resultphoto.show();
+
+        // Calibrated output folder override prevention
         IJ.log("Saving Image");
+        int numCalibratedFolders = calibratedFolderExists(inputDir, CALIBRATEDSAVEFOLDER);
+        if( numCalibratedFolders == 0 ){
+          File out = new File(outputDir);
+          if( out.exists() ){
+            outputDir = inputDir + "\\" + CALIBRATEDSAVEFOLDER + "_" + Integer.toString(1) + "\\";
+          }
+        }
+        else if( numCalibratedFolders > 0 ){
+          outputDir = inputDir + "\\" + CALIBRATEDSAVEFOLDER + "_" + Integer.toString(numCalibratedFolders+1) + "\\";
+        }
+
+
+
         saveToDir(outputDir, resultphoto.getFileName(), resultphoto.getExtension(), resultphoto.getImage());
         // Also save tif to jpg
         if( tiffsToJpgs ){
           saveToDir( outputDir, resultphoto.getFileName(), "jpg", resultphoto.getImage() );
         }
+        IJ.log( "Saved image to " + outputDir);
 
         //IJ.log("Saved");
 
@@ -477,6 +503,12 @@ public class CalibrateDirectory implements PlugIn{
 
   public void saveToDir(String outdir, String filename, String ext, ImagePlus image){
     String NDVIAppend = "_Calibrated";
+
+    // If output directory does not exist, create it
+    File outd = new File(outdir);
+    if( !outd.exists() ){
+      outd.mkdir();
+    }
 
     //IJ.log("Output Directory: " + outdir);
     //IJ.log("Filename: " + filename);
@@ -584,6 +616,48 @@ public class CalibrateDirectory implements PlugIn{
     //IJ.log("Finished writing EXIF data");
 
   }
+
+  /*
+   * Checks if any calibration folder exists.
+   * @param  inDir  Input directory to check for calibration folder
+   * @return Integer value representing which is the latest calibration folder.
+   *          Ex: 0 - none exist
+   *              1 - one exists; Calibrated
+   *              2 - two exists; Calibrated, Calibrated_1
+   *              3 = two exists; Calibrated, Calibrated_3; Calibrated_1 & Calibrated_2 were deleted
+   *              etc...
+   */
+  public int calibratedFolderExists(String inDir, final String calibFolderName){
+    // Assumptions:
+    // 1) Calibrated folder is placed inside the input directory
+    // 2) Naming conventions Calibrated, Calibrated_1, Calibrated_2, etc
+    File inFolder = new File(inDir);
+
+    String[] calibs = inFolder.list(new FilenameFilter(){
+      public boolean accept(File dir, String name){
+        if( name.contains(calibFolderName) ){
+          return true;
+        }
+        return false;
+        }
+      });
+
+    int num = 0;
+    int highestNum = 0;
+    String[] split = null;
+    for( int i=0; i<calibs.length; i++ ){
+      split = calibs[i].split(".+_");
+      if( split.length == 1 ){
+        highestNum = 0;
+      }else if( split.length == 2 ){
+        num = Integer.parseInt(split[1]);
+        highestNum = (num >= highestNum) ? num : highestNum;
+        }
+    }
+
+    return highestNum;
+  }
+
 
 
 }

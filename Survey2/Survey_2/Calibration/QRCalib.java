@@ -156,7 +156,7 @@ public class QRCalib{
     LuminanceSource source = new BufferedImageLuminanceSource(bfimg);
     BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
     String resultstr = "";
-    print("Decoding...");
+    print("Decoding QR code...");
     Result result = null;
     try{
       Hashtable<DecodeHintType, Object> hints = new Hashtable<DecodeHintType, Object>();
@@ -166,9 +166,9 @@ public class QRCalib{
     } catch (NotFoundException nf){
       print( "Could not find QR code.");
     } catch (ChecksumException cs){
-      print("Checksum Error.");
+      print("Checksum Error on QR code.");
     } catch (FormatException fe){
-      print("Could not find QR format.");
+      print("Could not find QR code format.");
     }
 
     return result;
@@ -204,7 +204,7 @@ public class QRCalib{
       polygon.setStrokeColor(new Color(0,0,0));
       return polygon;
     }else{
-      IJ.log("Not enough points to create polygon. Required: 4");
+      //IJ.log("Not enough points to create polygon. Required: 4");
       return null;
     }
   }
@@ -219,7 +219,7 @@ public class QRCalib{
       polygon.setStrokeColor(new Color(0,0,0));
       return polygon;
     }else{
-      IJ.log("Not enough points to create polygon. Required: 4");
+      //IJ.log("Not enough points to create polygon. Required: 4");
       return null;
     }
 
@@ -321,7 +321,7 @@ public class QRCalib{
     float dy = righttarget[1] - lefttarget[1];
     float distance = (float)Math.sqrt(dx*dx + dy*dy)/2.0f;
 
-    IJ.log((String)("Angle: " + angle));
+    //IJ.log((String)("Angle: " + angle));
 
     float stdangle = (float)Math.toRadians(angle);
     float x = distance*(float)Math.cos(stdangle);
@@ -356,8 +356,8 @@ public class QRCalib{
     center[0] = xc + dx;
     center[1] = yc - dy; // Up in direction is subtracting. Hint: (0,0) at top-left.
 
-    IJ.log( (String)("QR Center: " + xcoord + ", " + ycoord) );
-    IJ.log( (String)("Target Center: " + center[0] + ", " + center[1]) );
+    //IJ.log( (String)("QR Center: " + xcoord + ", " + ycoord) );
+    //IJ.log( (String)("Target Center: " + center[0] + ", " + center[1]) );
 
     return center;
   }
@@ -475,7 +475,7 @@ public class QRCalib{
   public float getScaleFactor( ImagePlus oimg, ImagePlus simg ){
     float scalefactor = ( (float)(oimg.getWidth())/(float)(simg.getWidth()) );
     //float scalefactor = SQ_TO_TARG/qrToTargDistance;
-    IJ.log( "Scale factor: " + scalefactor );
+    //IJ.log( "Scale factor: " + scalefactor );
     return scalefactor;
   }
 

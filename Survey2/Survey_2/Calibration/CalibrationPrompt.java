@@ -141,7 +141,7 @@ public class CalibrationPrompt{
   }
 
   public void showQRFileDialog(){
-    qrFileDialog = new OpenDialog("Select Image with Calibration Targets (QR code)");
+    qrFileDialog = new OpenDialog("Select Image with Calibration Targets (QR Code)");
   }
 
   public void showImageFileDialog(){
@@ -153,7 +153,7 @@ public class CalibrationPrompt{
   }
 
   public boolean showQRNotDetectedDialog() throws IOException{
-    GenericDialog dialog = new GenericDialog("QR not found");
+    GenericDialog dialog = new GenericDialog("QR Not Found");
     dialog.addMessage("QR code unable to be detected, would you like to proceed");
     dialog.addMessage("using the base calibration values?");
     dialog.enableYesNoCancel("Proceed", "Choose New Image");
