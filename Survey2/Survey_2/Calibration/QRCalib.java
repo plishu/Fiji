@@ -152,6 +152,7 @@ public class QRCalib{
    *         detected after attempt to decode.
    */
   public Result decodeQR(ImagePlus inImg){
+    inImg.show();
     BufferedImage bfimg = inImg.getBufferedImage();
     LuminanceSource source = new BufferedImageLuminanceSource(bfimg);
     BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));

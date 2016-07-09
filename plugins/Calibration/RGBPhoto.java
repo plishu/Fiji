@@ -32,20 +32,21 @@ public class RGBPhoto{
    * @param: dir - Directory of photo
    * @return: none
    */
-  public RGBPhoto(String dir, String fname, String path, String cmodel){
+  public RGBPhoto(String dir, String fname, String path, String cmodel, boolean convertTo8Bit){
     imageDir = dir;
     imageName = getFileName(fname);
     imagePath = path;
     imageExt = getExtension(imagePath);
 
-    image = new ImagePlus(imagePath);
+    //image = new ImagePlus(imagePath);
+    image = IJ.openImage(imagePath);
 
     //IJ.log( Integer.toString(image.getNChannels()) );
     // Fix tifs that come in with 3 channels only (from raw to tif conversion of pre-process)
     if( imageExt.toUpperCase().equals("TIF") && image.getNChannels() != 1 ){
       //RGBStackConverter.convertToRGB(image);
       //(new StackConverter(image)).convertToRGB();
-      fixTif();
+      fixTif(convertTo8Bit);
     }
 
 
@@ -130,7 +131,7 @@ public class RGBPhoto{
     if( imageExt.toUpperCase().equals("TIF") ){
       //RGBStackConverter.convertToRGB(image);
       //(new StackConverter(image)).convertToRGB();
-      fixTif();
+      fixTif(false);
     }
 
     splitStack(image);
@@ -172,7 +173,7 @@ public class RGBPhoto{
     if( imageExt.toUpperCase().equals("TIF") ){
       //RGBStackConverter.convertToRGB(image);
       //(new StackConverter(image)).convertToRGB();
-      fixTif();
+      fixTif(false);
     }
 
     splitStack(image);
@@ -330,7 +331,7 @@ public class RGBPhoto{
     image.close();
   }
 
-  public void fixTif(){
+  public void fixTif(boolean convertTo8Bit){
     image.getProcessor().setMinAndMax(0,65535);
     image.setDefault16bitRange(16);
 
@@ -339,7 +340,9 @@ public class RGBPhoto{
     IJ.run("RGB Color");
     */
     //(new StackConverter(image)).convertToRGB();
-    //RGBStackConverter.convertToRGB(image);
+    if( convertTo8Bit ){
+      RGBStackConverter.convertToRGB(image);
+    }
   }
 
   public boolean checkChannels(){

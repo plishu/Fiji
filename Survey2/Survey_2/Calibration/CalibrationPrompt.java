@@ -75,7 +75,7 @@ public class CalibrationPrompt{
 
   public CalibrationPrompt(){
     mainDialog = new GenericDialog("Calibrate Image");
-    mainDialog.addChoice("Camera: ", cameras, cameras[3]);
+    mainDialog.addChoice("Camera: ", cameras, cameras[0]);
     mainDialog.addCheckbox("Calibrate with MAPIR Reflectance Ground Target image", useQR);
     mainDialog.addCheckbox("Remove gamma? (Only applies to JPG images) ", removeGamma);
     mainDialog.addNumericField("Gamma value: ", gamma, 3);
@@ -88,7 +88,8 @@ public class CalibrationPrompt{
 
 
     fullDialog = new GenericDialog("Calibrate Images in Directory");
-    fullDialog.addChoice("Select camera model", cameras, cameras[3]);
+    fullDialog.addChoice("Select camera model", cameras, cameras[0]);
+    fullDialog.addCheckbox("Convert calibrated TIFFs to JPGs", tifsToJpgs);
     fullDialog.addCheckbox("Calibrate with MAPIR Reflectance Ground Target image", useQR);
     /*
     fullDialog.addCheckbox("Remove Gamma (Applies to JPG images only)", removeGamma);
@@ -99,8 +100,6 @@ public class CalibrationPrompt{
     fullDialog.addMessage("If a QR target image is not supplied, or the supplied");
     fullDialog.addMessage("image fails to be detected, base calibration values taken");
     fullDialog.addMessage("during a clear sunny day will be used.");
-
-    fullDialog.addCheckbox("Convert calibrated TIFFs to JPGs", tifsToJpgs);
 
     fullDialog.centerDialog(true);
     fullDialog.setOKLabel("Begin");
@@ -140,8 +139,12 @@ public class CalibrationPrompt{
     dualBandDialog.showDialog();
   }
 
-  public void showQRFileDialog(){
-    qrFileDialog = new OpenDialog("Select Image with Calibration Targets (QR Code)");
+  public void showQRJPGFileDialog(){
+    qrFileDialog = new OpenDialog("Select JPG Image with Calibration Targets (QR Code)");
+  }
+
+  public void showQRTIFFileDialog(){
+    qrFileDialog = new OpenDialog("Select TIF Image with Calibration Targets (QR Code)");
   }
 
   public void showImageFileDialog(){
@@ -222,8 +225,8 @@ public class CalibrationPrompt{
     HashMap<String, String> values = new HashMap<String, String>();
     String theCamera = fullDialog.getNextChoice();
     values.put( MAP_CAMERA, theCamera );
-    values.put( MAP_USEQR, String.valueOf(fullDialog.getNextBoolean()) );
     values.put( MAP_TIFFTOJPG, String.valueOf(fullDialog.getNextBoolean()) );
+    values.put( MAP_USEQR, String.valueOf(fullDialog.getNextBoolean()) );
     //values.put( MAP_REMOVEGAMMA, String.valueOf(fullDialog.getNextBoolean()) );
     //values.put( MAP_GAMMA, String.valueOf(fullDialog.getNextNumber()) );
     //values.put( MAP_REMOVENIR, String.valueOf(fullDialog.getNextBoolean()) );

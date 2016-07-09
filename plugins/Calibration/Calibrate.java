@@ -73,7 +73,7 @@ public class Calibrate implements PlugIn{
     RGBPhoto qrscaled = null; // Use to feed into roi processing
 
     if( mainDialogValues.get(CalibrationPrompt.MAP_USEQR).equals("true") ){
-      prompt.showQRFileDialog(); // Get QR image
+      prompt.showQRJPGFileDialog(); // Get QR image
       qrFileDialogValues = prompt.getQRFileDialogValues();
       printAll( qrFileDialogValues.values() );
 
@@ -97,7 +97,7 @@ public class Calibrate implements PlugIn{
     RGBPhoto photo = new RGBPhoto( imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEDIR),
               imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEFILENAME),
               imageFileDialogValues.get(CalibrationPrompt.MAP_IMAGEPATH),
-              mainDialogValues.get(CalibrationPrompt.MAP_CAMERA) );
+              mainDialogValues.get(CalibrationPrompt.MAP_CAMERA), false );
 
     // Ask user where to save calibrated image
     prompt.showSaveFileDialog(photo.getFileName(), photo.getExtension());
