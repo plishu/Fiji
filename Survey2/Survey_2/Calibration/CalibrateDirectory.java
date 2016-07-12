@@ -17,6 +17,7 @@ import ij.plugin.PlugIn;
 import ij.plugin.frame.RoiManager;
 import ij.process.ImageProcessor;
 import ij.plugin.RGBStackConverter;
+import ij.plugin.ContrastEnhancer;
 
 
 import java.awt.AWTEvent;
@@ -79,7 +80,7 @@ public class CalibrateDirectory implements PlugIn{
 
   private boolean keepPluginAlive = true;
 
-
+  // {Intercept, Slope}
   private final double[] BASE_COEFF_SURVEY2_RED_JPG = {-0.31238818, 2.35239490};
   private final double[] BASE_COEFF_SURVEY2_GREEN_JPG = {-0.32874756, 5.44419416};
   private final double[] BASE_COEFF_SURVEY2_BLUE_JPG = {-0.40351347, 1.58893643};
@@ -89,7 +90,7 @@ public class CalibrateDirectory implements PlugIn{
   private final double[] BASE_COEFF_SURVEY2_RED_TIF = {-0.31238818, 2.35239490};
   private final double[] BASE_COEFF_SURVEY2_GREEN_TIF = {-0.32874756, 5.44419416};
   private final double[] BASE_COEFF_SURVEY2_BLUE_TIF = {-0.40351347, 1.58893643};
-  private final double[] BASE_COEFF_SURVEY2_NDVI_TIF = {-0.321163012, 1.81411080, -0.09248552, 3.05593169};
+  private final double[] BASE_COEFF_SURVEY2_NDVI_TIF = {-0.35359762, 19.35746650, -3.19877084, 33.25385061};
   private final double[] BASE_COEFF_SURVEY2_NIR_TIF = {-1.18032326, 10.92737546};
 
   private final double[] BASE_COEFF_DJIX3_NDVI_JPG = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
@@ -229,6 +230,7 @@ public class CalibrateDirectory implements PlugIn{
             }
 
             qrJPGScaled = calibrator.scaleChannels(qrJPGPhoto);
+            //qrJPGScaled = new RGBPhoto(qrJPGPhoto);
             jpgrois = calibrator.getRois(qrJPGPhoto.getImage());
 
             if( jpgrois == null ){
@@ -247,6 +249,10 @@ public class CalibrateDirectory implements PlugIn{
                 return;
               }
             }else{
+              if( !thereAreTIFs ){
+                // Don't ask for Tif QR bc we are not calibrating tifs
+                break;
+              }
               // QR code found!
             }
 
@@ -254,7 +260,6 @@ public class CalibrateDirectory implements PlugIn{
 
         }
 
-        IJ.log("THERE ARE TIFS, HERE IS THE BOOLEAN: " + Boolean.toString(thereAreTIFs));
         if( thereAreTIFs ){
           prompts.showQRTIFFileDialog();
           qrFileDialogValues = prompts.getQRFileDialogValues();
@@ -276,7 +281,10 @@ public class CalibrateDirectory implements PlugIn{
             continue;
           }
 
-          qrTIFScaled = calibrator.scaleChannels(qrTIFPhoto);
+          //qrTIFScaled = calibrator.scaleChannels(qrTIFPhoto);
+          qrTIFScaled = new RGBPhoto(qrTIFDir, qrTIFFilename, qrTIFPath, cameraType, true);
+          // Enhance for better QR detection
+          (new ContrastEnhancer()).equalize(qrTIFPhoto.getImage());
           tifrois = calibrator.getRois(qrTIFPhoto.getImage());
 
           if( tifrois == null ){
@@ -325,12 +333,13 @@ public class CalibrateDirectory implements PlugIn{
 
 
       //IJ.log("---------------Images To Calibrate---------------");
+      /*
       for( int i=0; i<jpgToCalibrate.size(); i++ ){
         IJ.log(jpgToCalibrate.get(i).getName());
       }
       for( int i=0; i<tifToCalibrate.size(); i++ ){
         //IJ.log(tifToCalibrate.get(i).getName());
-      }
+      }*/
 
       IJ.log("I will begin processing the " + jpgToCalibrate.size() + " images that were found.");
 
@@ -349,11 +358,15 @@ public class CalibrateDirectory implements PlugIn{
       double[] coeffs = new double[4];
       double[] tmpcoeff = null;
 
+      //qrJPGPhoto.show();
+      //qrTIFPhoto.show();
+
       while( jpgIterator.hasNext() ){
         tmpfile = jpgIterator.next();
 
         IJ.log("Opening image: " + tmpfile.getName());
         photo = new RGBPhoto(inputDir, tmpfile.getName(), tmpfile.getPath(), cameraType, false);
+        //photo = calibrator.scaleChannels(photo);
         if( !photo.checkChannels() ){
           // Could not split channels. Skip image;
           continue;
@@ -577,7 +590,7 @@ public class CalibrateDirectory implements PlugIn{
 
         //resultphoto.show();
 
-        RGBStackConverter.convertToRGB(resultphoto.getImage());
+        //RGBStackConverter.convertToRGB(resultphoto.getImage());
         resultphoto.copyFileData(photo);
         //resultphoto.show();
         //resultphoto.show();
@@ -590,6 +603,7 @@ public class CalibrateDirectory implements PlugIn{
         // Also save tif to jpg
         if( tifsToJpgs ){
           saveToDir( outputDir, resultphoto.getFileName(), "jpg", resultphoto.getImage() );
+          CopyEXIFData(OS, PATH_TO_EXIFTOOL, tmpfile.getAbsolutePath(), outputDir+resultphoto.getFileName()+"_Calibrated"+"."+"jpg");
         }
         IJ.log( "Saved image to " + outputDir);
 
@@ -605,6 +619,16 @@ public class CalibrateDirectory implements PlugIn{
         //CopyEXIFData()
         CopyEXIFData(OS, PATH_TO_EXIFTOOL, tmpfile.getAbsolutePath(), outputDir+resultphoto.getFileName()+"_Calibrated"+"."+resultphoto.getExtension());
         //photo.close();
+        /*
+        if( IJ.getInstance() != null ){
+          IJ.getImage().close();
+        }*/
+        if( qrTIFPhoto != null ){
+          qrTIFPhoto.close();
+        }
+        if( photo != null ){
+          photo.close();
+        }
       }
 
     if( prompts.showCalibrationFinishedDialog() ){
@@ -627,9 +651,11 @@ public class CalibrateDirectory implements PlugIn{
     double[] refmeans = new double[3];
 
     //baseSummary = calibrator.getRefValues(bfs, "660/850"); // <-----Change this!!
+    //qrphoto.show();
     if( qrphoto == null ){
 
     }else{
+      IJ.log("Processing band: " + channel);
       //rois = calibrator.getRois(qrphoto.getImage());
       if( channel.equals("Red") ){
         manager = calibrator.setupROIManager(qrphoto.getRedChannel(), rois);
@@ -663,6 +689,9 @@ public class CalibrateDirectory implements PlugIn{
         Double.parseDouble(bandSummary.get(2).get(Calibrator.MAP_MEAN))};
     //double[] refmeans = {baseSummary[0][0], baseSummary[1][0], baseSummary[2][0]};
 
+    for( int i=0; i<means.length; i++ ){
+      //IJ.log((String)"Mean: " + means[i]);
+    }
     coeff = calibrator.calculateCalibrationCoefficients( means, refmeans );
 
     manager.reset();

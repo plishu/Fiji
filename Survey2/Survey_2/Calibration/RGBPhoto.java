@@ -7,6 +7,7 @@ import ij.CompositeImage;
 import ij.gui.NewImage;
 import ij.plugin.RGBStackConverter;
 import ij.process.StackConverter;
+import ij.plugin.frame.ContrastAdjuster;
 
 import java.io.File;
 import java.util.HashMap;
@@ -110,7 +111,6 @@ public class RGBPhoto{
       }
     }*/
     setFilter(camera);
-
   }
 
   public RGBPhoto( ImagePlus image ){
@@ -138,15 +138,35 @@ public class RGBPhoto{
 
   }
 
-  public RGBPhoto( ImagePlus[] channels, String cam ){
+  public RGBPhoto( RGBPhoto ref){
+    this.image = ref.getImage();
+
+    imageDir = ref.getDir();
+    imageName = ref.getFileName();
+    imagePath = ref.getPath();
+    imageExt = ref.getExtension();
+
+    splitStack(image);
+  }
+
+  public RGBPhoto( ImagePlus[] channels, String cam, RGBPhoto ref ){
     redChannel = channels[0];
     greenChannel = channels[1];
     blueChannel = channels[2];
 
     RGBStackMerge merger = new RGBStackMerge();
     image = merger.mergeChannels(channels, false);
+    //image.flattenStack();
+    //image.show();
+    //here!!
+    RGBStackConverter.convertToRGB(image);
+    //(new StackConverter(image)).convertToRGB();
 
     camera = cam;
+    imageDir = ref.getDir();
+    imageName = ref.getFileName();
+    imagePath = ref.getPath();
+    imageExt = ref.getExtension();
     setFilter(camera);
   }
 
@@ -332,17 +352,24 @@ public class RGBPhoto{
   }
 
   public void fixTif(boolean convertTo8Bit){
+    IJ.log("Fixing tif image");
     image.getProcessor().setMinAndMax(0,65535);
     image.setDefault16bitRange(16);
+    ContrastAdjuster.update();
 
-    /*
+
     image.show();
+    ImagePlus tmpimg = IJ.getImage();
     IJ.run("RGB Color");
-    */
+    image = IJ.getImage();
+    tmpimg.close();
+    //image.close();
     //(new StackConverter(image)).convertToRGB();
+    /*
     if( convertTo8Bit ){
       RGBStackConverter.convertToRGB(image);
-    }
+    }*/
+    //image.show();
   }
 
   public boolean checkChannels(){

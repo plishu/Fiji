@@ -93,8 +93,8 @@ public class QRCalib{
      *         detected after attempt to decode.
      */
     public Result adaptiveResize(ImagePlus qrimg){
-      int baseResize = 600;
-      int attempts = 50;
+      int baseResize = 200;
+      int attempts = 60;
       int attempt = 1;
       ImagePlus resimg = resize(qrimg, baseResize);
       //resimg.show();
@@ -152,12 +152,12 @@ public class QRCalib{
    *         detected after attempt to decode.
    */
   public Result decodeQR(ImagePlus inImg){
-    inImg.show();
+    //inImg.show();
     BufferedImage bfimg = inImg.getBufferedImage();
     LuminanceSource source = new BufferedImageLuminanceSource(bfimg);
     BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
     String resultstr = "";
-    print("Decoding QR code...");
+    print("Detecting QR code. Please wait...");
     Result result = null;
     try{
       Hashtable<DecodeHintType, Object> hints = new Hashtable<DecodeHintType, Object>();
@@ -165,11 +165,11 @@ public class QRCalib{
       result = qrReader.decode(bitmap, hints);
 
     } catch (NotFoundException nf){
-      print( "Could not find QR code.");
+      //print( "Could not find QR code.");
     } catch (ChecksumException cs){
-      print("Checksum Error on QR code.");
+      //print("Checksum Error on QR code.");
     } catch (FormatException fe){
-      print("Could not find QR code format.");
+      //print("Could not find QR code format.");
     }
 
     return result;

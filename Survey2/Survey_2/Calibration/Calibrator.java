@@ -73,9 +73,13 @@ public class Calibrator{
     greenChannel = scaleImage(greenChannel, "green");
     blueChannel = scaleImage(blueChannel, "blue");
 
+    //redChannel.show();
+    //greenChannel.show();
+    //blueChannel.show();
+
     ImagePlus[] rgb = {redChannel, greenChannel, blueChannel};
 
-    return ( new RGBPhoto(rgb, inPhoto.getCameraType()) );
+    return ( new RGBPhoto(rgb, inPhoto.getCameraType(), inPhoto) );
   }
 
 
@@ -89,6 +93,8 @@ public class Calibrator{
       //IJ.log("Pixel max: " + String.valueOf(maxVal));
 
       double inverseRange = 1.0 / (maxVal - minVal);
+
+
       ImagePlus newImage = NewImage.createFloatImage((String)imageName, (int)inImage.getWidth(), (int)inImage.getHeight(), (int)1, (int)1);
       int y = 0;
       int x = 0;
@@ -170,7 +176,7 @@ public class Calibrator{
 
 
     ImagePlus[] rgb = {redChannel, greenChannel, blueChannel};
-    return (new RGBPhoto(rgb, inImage.getCameraType()) );
+    return (new RGBPhoto(rgb, inImage.getCameraType(), inImage) );
 
   }
 
@@ -199,6 +205,11 @@ public class Calibrator{
     double[] regressionParams = null;
     double r_Squared = 0.0;
 
+    /* For experimenting
+    for( int i=0; i<calcValues.length; i++ ){
+      calcValues[i] = (double)calcValues[i]/100.0;
+    }*/
+
     CurveFitter visRegression = new CurveFitter(calcValues, refValues);
     visRegression.doFit(0, true);
     regressionParams = visRegression.getParams();
@@ -207,11 +218,12 @@ public class Calibrator{
     double intercept = (double)regressionParams[0];
     double slope = (double)regressionParams[1];
 
-    //IJ.log((String)("intercept: " + IJ.d2s((double)regressionParams[0], (int)8)));
-    //IJ.log((String)("slope: " + IJ.d2s((double)regressionParams[1], (int)8)));
+    IJ.log((String)("intercept: " + IJ.d2s((double)regressionParams[0], (int)8)));
+    IJ.log((String)("slope: " + IJ.d2s((double)regressionParams[1], (int)8)));
 
     PlotWindow.noGridLines = false;
     Plot visPlot = new Plot("Visible band regression", "Image values", "Reflectance values");
+    //visPlot.setLimits(10.0/100f, 30.0/100f, 0.0, 1.0);
     visPlot.setLimits(0.0, 1.0, 0.0, 1.0);
     visPlot.setColor(Color.RED);
     visPlot.addPoints(calcValues, refValues, 0);
@@ -220,7 +232,7 @@ public class Calibrator{
     double[] yVis = new double[]{regressionParams[0], regressionParams[1] + regressionParams[0]};
     visPlot.addPoints(xVis, yVis, 2);
     visPlot.addLabel(0.05, 0.1, "R squared = " + Double.toString(r_Squared));
-    //visPlot.show();
+    visPlot.show();
 
     //HashMap<String, double[]> values = new HashMap<String, double[]>();
     double[] values = {intercept, slope};
@@ -335,7 +347,7 @@ public class Calibrator{
 
     ImagePlus[] nchan = {rimg, gimg, bimg};
 
-    RGBPhoto nphoto = new RGBPhoto(nchan, photo.getCameraType());
+    RGBPhoto nphoto = new RGBPhoto(nchan, photo.getCameraType(), photo);
     //nphoto.show();
 
     return nphoto;
@@ -347,6 +359,7 @@ public class Calibrator{
       ImagePlus gimg = photo.getGreenChannel();
       ImagePlus bimg = photo.getBlueChannel();
 
+      //img.show();
       //rimg.show();
       //gimg.show();
       //bimg.show();
@@ -369,7 +382,7 @@ public class Calibrator{
       }
 
       ImagePlus[] nchan = {rimg, gimg, bimg};
-      RGBPhoto nphoto = new RGBPhoto(nchan, CalibrationPrompt.SURVEY2_NDVI);
+      RGBPhoto nphoto = new RGBPhoto(nchan, CalibrationPrompt.SURVEY2_NDVI, photo);
 
       return nphoto;
   }
@@ -409,6 +422,8 @@ public class Calibrator{
     ip = channel.getProcessor();
     mask = (roi != null) ? roi.getMask() : null;
     r = (roi != null) ? roi.getBounds() : new Rectangle(0, 0, ip.getWidth(), ip.getHeight());
+
+
     while (y < r.height) {
         x = 0;
         while (x < r.width) {
@@ -421,15 +436,20 @@ public class Calibrator{
         }
         ++y;
     }
-    //IJ.log((String)("count: " + count));
-    //IJ.log((String)("sum: " + sum));
-    //IJ.log((String)("mean: " + IJ.d2s((double)(sum / (double)count), (int)4)));
+    IJ.log((String)("Pixel count: " + count));
+    IJ.log((String)("Pixel sum: " + sum));
+    IJ.log((String)("Pixel mean value: " + IJ.d2s((double)(sum / (double)count), (int)4)));
     mean = (double)(sum/(double)count);
 
     values = new HashMap<String, String>();
     values.put(MAP_COUNT, String.valueOf(count) );
     values.put(MAP_SUM, String.valueOf(sum) );
     values.put(MAP_MEAN, String.valueOf(mean) );
+
+
+    channel.show();
+    channel.getProcessor().drawRoi(roi);
+    channel.updateAndDraw();
 
     return values;
   }
@@ -440,7 +460,8 @@ public class Calibrator{
       IJ.log("Roi manager was not created correctly");
       return null;
     }
-
+    //channel.show();
+    //roiManager.selectAndMakeVisible(channel, 1);
     Roi[] rois = roiManager.getRoisAsArray();
     HashMap<String, String> value = null;
     //HashMap<String, String>[] values = new HashMap<String, String>[rois.length];
@@ -467,6 +488,10 @@ public class Calibrator{
 
     ImagePlus resimg = qr.getAttemptImg(); // Needed for processing
 
+    if( resimg == null ){
+      return null;
+    }
+
     ResultPoint[] points = result.getResultPoints();
 
     //PolygonRoi qrRoi = qr.createPolygon( polyXCoords, polyYCoords );
@@ -486,11 +511,11 @@ public class Calibrator{
     Roi target3Roi = qr.createRectangleRoi( target3Center, 0.3f );
     qr.drawPolygonOn( target3Roi, resimg );
 
-    target1Roi = qr.mapRoiTo( qrimg, resimg, target1Center, 1.0f );
+    target1Roi = qr.mapRoiTo( qrimg, resimg, target1Center, 0.5f );
     qr.drawPolygonOn( target1Roi, qrimg );
-    target2Roi = qr.mapRoiTo( qrimg, resimg, target2Center, 1.0f );
+    target2Roi = qr.mapRoiTo( qrimg, resimg, target2Center, 0.5f );
     qr.drawPolygonOn( target2Roi, qrimg );
-    target3Roi = qr.mapRoiTo( qrimg, resimg, target3Center, 1.0f );
+    target3Roi = qr.mapRoiTo( qrimg, resimg, target3Center, 0.5f );
     qr.drawPolygonOn( target3Roi, qrimg );
 
     Roi[] rois = {target1Roi, target2Roi, target3Roi};
