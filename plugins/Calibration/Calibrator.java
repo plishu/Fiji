@@ -231,7 +231,7 @@ public class Calibrator{
     double[] yVis = new double[]{regressionParams[0], regressionParams[1] + regressionParams[0]};
     visPlot.addPoints(xVis, yVis, 2);
     visPlot.addLabel(0.05, 0.1, "R squared = " + Double.toString(r_Squared));
-    visPlot.show();
+    //visPlot.show();
 
     //HashMap<String, double[]> values = new HashMap<String, double[]>();
     double[] values = {intercept, slope};
@@ -333,35 +333,76 @@ public class Calibrator{
     double intercept = (double)regressionParams[0];
     double slope = (double)regressionParams[1];
 
+    ImagePlus newRedImage = NewImage.createFloatImage((String)"redImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
+    ImagePlus newBlueImage = NewImage.createFloatImage((String)"blueImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
+    ImagePlus newGreenImage = NewImage.createFloatImage((String)"greenImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
+
+    double redReflectMax = (double)rimg.getDisplayRangeMax() * calibrationCeofs[1] + calibrationCeofs[0];
+    double redReflectMin = (double)rimg.getDisplayRangeMin() * calibrationCeofs[1] + calibrationCeofs[0];
+    double greenReflectMax = (double)gimg.getDisplayRangeMax() * calibrationCeofs[1] + calibrationCeofs[0];
+    double greenReflectMin = (double)gimg.getDisplayRangeMin() * calibrationCeofs[1] + calibrationCeofs[0];
+    double blueReflectMax = (double)bimg.getDisplayRangeMax() * calibrationCeofs[1] + calibrationCeofs[0];
+    double blueReflectMin = (double)bimg.getDisplayRangeMin() * calibrationCeofs[1] + calibrationCeofs[0];
 
     double pixel = 0.0;
     double reflect = 0.0;
     double outPixel = 0.0;
     int x = 0;
     int y = 0;
+
     while (y < img.getHeight()) {
         x = 0;
         while (x < img.getWidth()) {
 
             if( photo.getCameraType().equals(CalibrationPrompt.SURVEY2_RED) ){
-              //pixel = (double)rimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0];
-              //reflect = (double)rimg.getProcessor().getPixelValue(x, y) * slope + intercept;
-              pixel = (slope/calibrationCeofs[1])*(double)rimg.getProcessor().getPixelValue(x, y) + (intercept - calibrationCeofs[0])/calibrationCeofs[1];
-              rimg.getProcessor().putPixelValue(x, y, pixel);
+              pixel = (double)rimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0];
+
+              pixel = (int)( (pixel - redReflectMin)/(redReflectMax-redReflectMin)*255 );
+              // histogram stretch map to float-point THIS ONE WORKS!!
+              pixel = (double)(pixel - 0)/(255-0)*1;
+
+              newRedImage.getProcessor().putPixelValue(x, y, pixel);
+              newBlueImage.getProcessor().putPixelValue(x, y, 0.0);
+              newGreenImage.getProcessor().putPixelValue(x, y, 0.0);
             }else if( photo.getCameraType().equals(CalibrationPrompt.SURVEY2_GREEN) ){
-              //pixel = (double)gimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0];
-              pixel = (slope/calibrationCeofs[1])*(double)gimg.getProcessor().getPixelValue(x, y) + (intercept - calibrationCeofs[0])/calibrationCeofs[1];
+              pixel = (double)gimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0];
+              pixel = (int)( (pixel - greenReflectMin)/(greenReflectMax-greenReflectMin)*255 );
+              // histogram stretch map to float-point THIS ONE WORKS!!
+              pixel = (double)(pixel - 0)/(255-0)*1;
+
+              newRedImage.getProcessor().putPixelValue(x, y, 0.0);
+              newGreenImage.getProcessor().putPixelValue(x, y, pixel);
+              newBlueImage.getProcessor().putPixelValue(x, y, 0.0);
             }else if( photo.getCameraType().equals(CalibrationPrompt.SURVEY2_BLUE) ){
-              //pixel = (double)bimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0];
-              pixel = (slope/calibrationCeofs[1])*(double)bimg.getProcessor().getPixelValue(x, y) + (intercept - calibrationCeofs[0])/calibrationCeofs[1];
+              pixel = (double)bimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0];
+              pixel = (int)( (pixel - blueReflectMin)/(blueReflectMax-blueReflectMin)*255 );
+              // histogram stretch map to float-point THIS ONE WORKS!!
+              pixel = (double)(pixel - 0)/(255-0)*1;
+
+              newRedImage.getProcessor().putPixelValue(x, y, 0.0);
+              newGreenImage.getProcessor().putPixelValue(x, y, 0.0);
+              newBlueImage.getProcessor().putPixelValue(x, y, pixel);
             }else if( photo.getCameraType().equals(CalibrationPrompt.SURVEY2_NIR) ){
-              //pixel = (double)rimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0];
-              pixel = (slope/calibrationCeofs[1])*(double)rimg.getProcessor().getPixelValue(x, y) + (intercept - calibrationCeofs[0])/calibrationCeofs[1];
+              pixel = (double)rimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[1] + calibrationCeofs[0];
+              pixel = (int)( (pixel - redReflectMin)/(redReflectMax-redReflectMin)*255 );
+              // histogram stretch map to float-point THIS ONE WORKS!!
+              pixel = (double)(pixel - 0)/(255-0)*1;
+
+              newRedImage.getProcessor().putPixelValue(x, y, pixel);
+              newBlueImage.getProcessor().putPixelValue(x, y, 0.0);
+              newGreenImage.getProcessor().putPixelValue(x, y, 0.0);
             }
+
+
+
             x++;
         }
         y++;
     }
+
+    rimg = newRedImage;
+    gimg = newGreenImage;
+    bimg = newBlueImage;
 
     ImagePlus[] nchan = {rimg, gimg, bimg};
 
@@ -423,8 +464,8 @@ public class Calibrator{
       ImagePlus newRedImage = NewImage.createFloatImage((String)"redImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
       ImagePlus newBlueImage = NewImage.createFloatImage((String)"blueImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
       ImagePlus newGreenImage = NewImage.createFloatImage((String)"greenImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
-      rimg.show();
-      bimg.show();
+      //rimg.show();
+      //bimg.show();
       IJ.log((String)"Red Slope: " + calibrationCeofs[1]);
       IJ.log((String)"Red Intercept: " + calibrationCeofs[0]);
       IJ.log((String)"Blue Slope: " + calibrationCeofs[3]);
@@ -439,10 +480,10 @@ public class Calibrator{
           while (x < img.getWidth()) {
 
 
-
+              // NIR remove
               redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 0.8 * bimg.getProcessor().getPixelValue(x, y);
 
-
+              // Apply reflectance mapping
               redPixel = (double)redPixel * calibrationCeofs[1] + calibrationCeofs[0];
               bluePixel = (double)bimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[3] + calibrationCeofs[2];
 
@@ -459,11 +500,12 @@ public class Calibrator{
                 bluePixel = 0;
               }*/
 
-
+              // THIS ONE WORKS!!
               redPixel = (int)( (redPixel - redReflectMin)/(redReflectMax-redReflectMin)*255 );
               bluePixel = (int)( (bluePixel - blueReflectMin)/(blueReflectMax-blueReflectMin)*255 );
 
-              // histogram stretch map to float-point
+
+              // histogram stretch map to float-point THIS ONE WORKS!!
               redPixel = (double)(redPixel - 0)/(255-0)*1;
               bluePixel = (double)(bluePixel - 0)/(255-0)*1;
 
@@ -522,8 +564,8 @@ public class Calibrator{
       gimg = newGreenImage;
       bimg = newBlueImage;
 
-      rimg.show();
-      bimg.show();
+      //rimg.show();
+      //bimg.show();
 
       ImagePlus[] nchan = {rimg, gimg, bimg};
       RGBPhoto nphoto = new RGBPhoto(nchan, CalibrationPrompt.SURVEY2_NDVI, photo);
@@ -634,15 +676,26 @@ public class Calibrator{
 
     ImagePlus resimg = qr.getAttemptImg(); // Needed for processing
 
-    if( resimg == null ){
+    if( resimg == null || resimg.getProcessor() == null ){
+      IJ.log("Could not create a resulting image.");
       return null;
     }
 
     ResultPoint[] points = result.getResultPoints();
 
+    if( points == null ){
+      IJ.log("Could not find resulting points.");
+      return null;
+    }
+
     //PolygonRoi qrRoi = qr.createPolygon( polyXCoords, polyYCoords );
     PolygonRoi qrRoi = qr.createPolygon( points );
-    qr.drawPolygonOn(qrRoi, resimg);
+
+    if( qrRoi == null ){
+      IJ.log("Could not create QR ROI.");
+      return null;
+    }
+    //qr.drawPolygonOn(qrRoi, resimg);
     qr.setTargetsCenter(qrRoi);
 
     float[] target1Center = qr.getTarget1Center();
@@ -651,18 +704,18 @@ public class Calibrator{
     float targetLength = qr.getTargetSize();
 
     Roi target1Roi = qr.createRectangleRoi( target1Center, 0.3f );
-    qr.drawPolygonOn( target1Roi, resimg );
+    //qr.drawPolygonOn( target1Roi, resimg );
     Roi target2Roi = qr.createRectangleRoi( target2Center, 0.3f );
-    qr.drawPolygonOn( target2Roi, resimg );
+    //qr.drawPolygonOn( target2Roi, resimg );
     Roi target3Roi = qr.createRectangleRoi( target3Center, 0.3f );
-    qr.drawPolygonOn( target3Roi, resimg );
+    //qr.drawPolygonOn( target3Roi, resimg );
 
     target1Roi = qr.mapRoiTo( qrimg, resimg, target1Center, 0.5f );
-    qr.drawPolygonOn( target1Roi, qrimg );
+    //qr.drawPolygonOn( target1Roi, qrimg );
     target2Roi = qr.mapRoiTo( qrimg, resimg, target2Center, 0.5f );
-    qr.drawPolygonOn( target2Roi, qrimg );
+    //qr.drawPolygonOn( target2Roi, qrimg );
     target3Roi = qr.mapRoiTo( qrimg, resimg, target3Center, 0.5f );
-    qr.drawPolygonOn( target3Roi, qrimg );
+    //qr.drawPolygonOn( target3Roi, qrimg );
 
     Roi[] rois = {target1Roi, target2Roi, target3Roi};
 

@@ -102,7 +102,7 @@ public class QRCalib{
       Result result = decodeQR(qrimg);
 
       while( attempt <= attempts && result == null ){
-        resimg.close();
+        //resimg.close();
         attempt += 1;
         baseResize += 100;
 
@@ -110,6 +110,7 @@ public class QRCalib{
         //resimg.show();
         result = decodeQR(resimg);
       }
+
       manipImg = resimg;
       return result;
     }
@@ -214,7 +215,7 @@ public class QRCalib{
     setQRBlockPoints(points);
 
     PolygonRoi polygon = null;
-    if( polyXCoords.length == 4 && polyYCoords.length == 4 ){
+    if( (polyXCoords.length == 4 && polyYCoords.length == 4) || (polyXCoords.length == 3 && polyYCoords.length == 3) ){
       polygon = new PolygonRoi(polyXCoords, polyYCoords, Roi.POLYGON);
       polygon.setStrokeWidth(3);
       polygon.setStrokeColor(new Color(0,0,0));

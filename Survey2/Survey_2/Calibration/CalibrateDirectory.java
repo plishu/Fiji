@@ -81,6 +81,7 @@ public class CalibrateDirectory implements PlugIn{
   private boolean keepPluginAlive = true;
 
   // {Intercept, Slope}
+  // @TODO Update this
   private final double[] BASE_COEFF_SURVEY2_RED_JPG = {-0.31238818, 2.35239490};
   private final double[] BASE_COEFF_SURVEY2_GREEN_JPG = {-0.32874756, 5.44419416};
   private final double[] BASE_COEFF_SURVEY2_BLUE_JPG = {-0.40351347, 1.58893643};
@@ -230,6 +231,9 @@ public class CalibrateDirectory implements PlugIn{
             }
 
             qrJPGScaled = calibrator.scaleChannels(qrJPGPhoto);
+            if( qrJPGPhoto.getCameraType().equals(CalibrationPrompt.SURVEY2_NDVI) ){
+              calibrator.subtractNIR(qrJPGScaled.getBlueChannel(), qrJPGScaled.getRedChannel(), 80 );
+            }
             //qrJPGScaled = new RGBPhoto(qrJPGPhoto);
             jpgrois = calibrator.getRois(qrJPGPhoto.getImage());
 
@@ -283,7 +287,9 @@ public class CalibrateDirectory implements PlugIn{
 
           //qrTIFScaled = calibrator.scaleChannels(qrTIFPhoto);
           qrTIFScaled = new RGBPhoto(qrTIFDir, qrTIFFilename, qrTIFPath, cameraType, true);
-          calibrator.subtractNIR(qrTIFScaled.getBlueChannel(), qrTIFScaled.getRedChannel(), 80 );
+          if( qrTIFPhoto.getCameraType().equals(CalibrationPrompt.SURVEY2_NDVI) ){
+            calibrator.subtractNIR(qrTIFScaled.getBlueChannel(), qrTIFScaled.getRedChannel(), 80 );
+          }
           // Enhance for better QR detection
           (new ContrastEnhancer()).equalize(qrTIFPhoto.getImage());
           tifrois = calibrator.getRois(qrTIFPhoto.getImage());
