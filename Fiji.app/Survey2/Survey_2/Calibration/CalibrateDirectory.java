@@ -110,7 +110,6 @@ public class CalibrateDirectory implements PlugIn{
 
   private boolean thereAreJPGs = false;
   private boolean thereAreTIFs = false;
-  private boolean thereAreDNGs = false;
 
 
 
@@ -206,11 +205,6 @@ public class CalibrateDirectory implements PlugIn{
             thereAreTIFs = true;
           }
 
-        }
-
-        if( inImageExt.toUpperCase().equals("DNG") ){
-          jpgToCalibrate.add(imagesToCalibrate[i]);
-          thereAreDNGs = true;
         }
       }
 
