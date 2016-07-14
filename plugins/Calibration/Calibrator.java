@@ -217,8 +217,8 @@ public class Calibrator{
     double intercept = (double)regressionParams[0];
     double slope = (double)regressionParams[1];
 
-    IJ.log((String)("intercept: " + IJ.d2s((double)regressionParams[0], (int)8)));
-    IJ.log((String)("slope: " + IJ.d2s((double)regressionParams[1], (int)8)));
+    //IJ.log((String)("intercept: " + IJ.d2s((double)regressionParams[0], (int)8)));
+    //IJ.log((String)("slope: " + IJ.d2s((double)regressionParams[1], (int)8)));
 
     PlotWindow.noGridLines = false;
     Plot visPlot = new Plot("Visible band regression", "Image values", "Reflectance values");
@@ -466,10 +466,10 @@ public class Calibrator{
       ImagePlus newGreenImage = NewImage.createFloatImage((String)"greenImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
       //rimg.show();
       //bimg.show();
-      IJ.log((String)"Red Slope: " + calibrationCeofs[1]);
-      IJ.log((String)"Red Intercept: " + calibrationCeofs[0]);
-      IJ.log((String)"Blue Slope: " + calibrationCeofs[3]);
-      IJ.log((String)"Blue Intercept: " + calibrationCeofs[2]);
+      //IJ.log((String)"Red Slope: " + calibrationCeofs[1]);
+      //IJ.log((String)"Red Intercept: " + calibrationCeofs[0]);
+      //IJ.log((String)"Blue Slope: " + calibrationCeofs[3]);
+      //IJ.log((String)"Blue Intercept: " + calibrationCeofs[2]);
 
 
 
@@ -622,9 +622,9 @@ public class Calibrator{
         }
         ++y;
     }
-    IJ.log((String)("Pixel count: " + count));
-    IJ.log((String)("Pixel sum: " + sum));
-    IJ.log((String)("Pixel mean value: " + IJ.d2s((double)(sum / (double)count), (int)4)));
+    //IJ.log((String)("Pixel count: " + count));
+    //IJ.log((String)("Pixel sum: " + sum));
+    //IJ.log((String)("Pixel mean value: " + IJ.d2s((double)(sum / (double)count), (int)4)));
     mean = (double)(sum/(double)count);
 
     values = new HashMap<String, String>();

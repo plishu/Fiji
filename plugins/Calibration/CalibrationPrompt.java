@@ -212,7 +212,7 @@ public class CalibrationPrompt{
   public HashMap<String, String> getMainDialogValues(){
     HashMap<String, String> values = new HashMap<String, String>();
     String theCamera = mainDialog.getNextChoice();
-    IJ.log("THe camera selected is: " + theCamera);
+    IJ.log("The camera selected is: " + theCamera);
     values.put( MAP_CAMERA, theCamera );
     values.put( MAP_USEQR, String.valueOf(mainDialog.getNextBoolean()) );
     values.put( MAP_REMOVEGAMMA, String.valueOf(mainDialog.getNextBoolean()) );

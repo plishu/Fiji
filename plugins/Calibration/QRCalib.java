@@ -158,7 +158,7 @@ public class QRCalib{
     LuminanceSource source = new BufferedImageLuminanceSource(bfimg);
     BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
     String resultstr = "";
-    print("Detecting QR code. Please wait...");
+    //print("Detecting QR code. Please wait...");
     Result result = null;
     try{
       Hashtable<DecodeHintType, Object> hints = new Hashtable<DecodeHintType, Object>();

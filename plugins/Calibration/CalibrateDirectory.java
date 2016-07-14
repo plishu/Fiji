@@ -68,6 +68,9 @@ public class CalibrateDirectory implements PlugIn{
 
   private String inputDir = "";
   private String outputDir = "";
+  private String jpgOutputDir = "";
+  private String tifOutputDir = "";
+
   private final String CALIBRATEDSAVEFOLDER = "Calibrated";
 
   private File fileInputDir = null;
@@ -81,17 +84,19 @@ public class CalibrateDirectory implements PlugIn{
   private boolean keepPluginAlive = true;
 
   // {Intercept, Slope}
-  private final double[] BASE_COEFF_SURVEY2_RED_JPG = {-0.31238818, 2.35239490};
-  private final double[] BASE_COEFF_SURVEY2_GREEN_JPG = {-0.32874756, 5.44419416};
-  private final double[] BASE_COEFF_SURVEY2_BLUE_JPG = {-0.40351347, 1.58893643};
-  private final double[] BASE_COEFF_SURVEY2_NDVI_JPG = {-0.321163012, 1.81411080, -0.09248552, 3.05593169};
-  private final double[] BASE_COEFF_SURVEY2_NIR_JPG = {-1.18032326, 10.92737546};
+  // @TODO Update this
+  // @TODO Create progress dialog for user
+  private final double[] BASE_COEFF_SURVEY2_RED_JPG = {-2.55421832, 16.01240929};//
+  private final double[] BASE_COEFF_SURVEY2_GREEN_JPG = {-0.60437250, 4.82869470};//
+  private final double[] BASE_COEFF_SURVEY2_BLUE_JPG = {-0.39268985, 2.67916884};//
+  private final double[] BASE_COEFF_SURVEY2_NDVI_JPG = {-0.29870245, 6.51199915, -0.65112026, 10.30416005};//
+  private final double[] BASE_COEFF_SURVEY2_NIR_JPG = {-0.46967653, 7.13619139};//
 
-  private final double[] BASE_COEFF_SURVEY2_RED_TIF = {-0.31238818, 2.35239490};
-  private final double[] BASE_COEFF_SURVEY2_GREEN_TIF = {-0.32874756, 5.44419416};
-  private final double[] BASE_COEFF_SURVEY2_BLUE_TIF = {-0.40351347, 1.58893643};
-  private final double[] BASE_COEFF_SURVEY2_NDVI_TIF = {-0.35359762, 19.35746650, -3.19877084, 33.25385061};
-  private final double[] BASE_COEFF_SURVEY2_NIR_TIF = {-1.18032326, 10.92737546};
+  private final double[] BASE_COEFF_SURVEY2_RED_TIF = {-5.09645820, 0.24177528};//
+  private final double[] BASE_COEFF_SURVEY2_GREEN_TIF = {-1.39528479, 0.07640011};//
+  private final double[] BASE_COEFF_SURVEY2_BLUE_TIF = {-0.67299134, 0.03943339};//
+  private final double[] BASE_COEFF_SURVEY2_NDVI_TIF = {-0.60138990, 0.14454211, -3.51691589, 0.21536524};//
+  private final double[] BASE_COEFF_SURVEY2_NIR_TIF = {-2.24216724, 0.12962333};//
 
   private final double[] BASE_COEFF_DJIX3_NDVI_JPG = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
 
@@ -157,14 +162,15 @@ public class CalibrateDirectory implements PlugIn{
       else if( numCalibratedFolders > 0 ){
         outputDir = inputDir + "\\" + CALIBRATEDSAVEFOLDER + "_" + Integer.toString(numCalibratedFolders+1) + "\\";
       }
+
+      jpgOutputDir = outputDir + "\\Jpgs\\";
+      tifOutputDir = outputDir + "\\Tifs\\";
+
       // Scan for calibrated folder
 
       // Create output Folder
-      /*
-      fileOutputDir = new File(outputDir);
-      if( !fileOutputDir.exists() ){
-        fileOutputDir.mkdir();
-      }*/
+
+
 
 
 
@@ -208,6 +214,7 @@ public class CalibrateDirectory implements PlugIn{
         if( !tifsToJpgs ){
           // User want to calibate JPGs present in directory
           if( thereAreJPGs ){
+
             prompts.showQRJPGFileDialog();
             qrFileDialogValues = prompts.getQRFileDialogValues();
             qrJPGDir = qrFileDialogValues.get(CalibrationPrompt.MAP_IMAGEDIR);
@@ -220,6 +227,7 @@ public class CalibrateDirectory implements PlugIn{
               IJ.log("Goodbye!");
               return;
             }
+            IJ.log("Detecting QR code. Please Wait.");
 
             qrJPGPhoto = new RGBPhoto(qrJPGDir, qrJPGFilename, qrJPGPath, cameraType, false);
             qrCameraModel = GetEXIFCameraModel("Windows", PATH_TO_EXIFTOOL, qrJPGPath);
@@ -276,6 +284,7 @@ public class CalibrateDirectory implements PlugIn{
             return;
           }
 
+          IJ.log("Detecting QR code. Please Wait.");
           qrTIFPhoto = new RGBPhoto(qrTIFDir, qrTIFFilename, qrTIFPath, cameraType, true);
           qrCameraModel = GetEXIFCameraModel("Windows", PATH_TO_EXIFTOOL, qrTIFPath);
 
@@ -360,15 +369,32 @@ public class CalibrateDirectory implements PlugIn{
       //File bfs = new File(baseFileDialog.getPath());
       File bfs = new File(PATH_TO_VALUES);
 
+      fileOutputDir = new File(outputDir);
+      if( !fileOutputDir.exists() ){
+        fileOutputDir.mkdir();
+      }
+
+      File jpgout = new File(jpgOutputDir);
+      if( !jpgout.exists() ){
+        jpgout.mkdir();
+      }
+      File tifout = new File(tifOutputDir);
+      if( !tifout.exists() ){
+        tifout.mkdir();
+      }
+
       double[][] baseSummary = null;
       double[] coeffs = new double[4];
       double[] tmpcoeff = null;
 
       //qrJPGPhoto.show();
       //qrTIFPhoto.show();
-
+      int imgcounter = 0;
       while( jpgIterator.hasNext() ){
+        imgcounter++;
         tmpfile = jpgIterator.next();
+
+        IJ.log( (String)"Processing image " + tmpfile.getName() + " (" + imgcounter + " of " + jpgToCalibrate.size() + " - " + (int)((double)imgcounter/((double)jpgToCalibrate.size())*100) + "%" + ")" );
 
         IJ.log("Opening image: " + tmpfile.getName());
         photo = new RGBPhoto(inputDir, tmpfile.getName(), tmpfile.getPath(), cameraType, false);
@@ -594,36 +620,29 @@ public class CalibrateDirectory implements PlugIn{
           IJ.log("GoPro Hero 4 support coming soon!");
         }
 
-        //resultphoto.show();
-
-        //RGBStackConverter.convertToRGB(resultphoto.getImage());
         resultphoto.copyFileData(photo);
-        //resultphoto.show();
-        //resultphoto.show();
+
+
 
         // Calibrated output folder override prevention
         IJ.log("Saving Image");
 
-
-        saveToDir(outputDir, resultphoto.getFileName(), resultphoto.getExtension(), resultphoto.getImage());
+        if( resultphoto.getExtension().toUpperCase().equals("TIF") ){
+          saveToDir(tifOutputDir, resultphoto.getFileName(), resultphoto.getExtension(), resultphoto.getImage());
+          CopyEXIFData(OS, PATH_TO_EXIFTOOL, tmpfile.getAbsolutePath(), tifOutputDir+resultphoto.getFileName()+"_Calibrated"+"."+resultphoto.getExtension());
+        }else if( resultphoto.getExtension().toUpperCase().equals("JPG") ){
+          saveToDir(jpgOutputDir, resultphoto.getFileName(), resultphoto.getExtension(), resultphoto.getImage());
+          CopyEXIFData(OS, PATH_TO_EXIFTOOL, tmpfile.getAbsolutePath(), jpgOutputDir+resultphoto.getFileName()+"_Calibrated"+"."+resultphoto.getExtension());
+        }
         // Also save tif to jpg
         if( tifsToJpgs ){
-          saveToDir( outputDir, resultphoto.getFileName(), "jpg", resultphoto.getImage() );
-          CopyEXIFData(OS, PATH_TO_EXIFTOOL, tmpfile.getAbsolutePath(), outputDir+resultphoto.getFileName()+"_Calibrated"+"."+"jpg");
+          saveToDir( jpgOutputDir, resultphoto.getFileName(), "jpg", resultphoto.getImage() );
+          CopyEXIFData(OS, PATH_TO_EXIFTOOL, tmpfile.getAbsolutePath(), jpgOutputDir+resultphoto.getFileName()+"_Calibrated"+"."+"jpg");
         }
         IJ.log( "Saved image to " + outputDir);
 
-        //IJ.log("Saved");
 
-        // Write EXIF data
-        //IJ.log("Copying EXIF data");
-        /*
-        exif = new EXIFTool(tmpfile, new File(outputDir+resultphoto.getFileName()), new File(outputDir+resultphoto.getFileName()+".tmp") );
-        exif.copyEXIF();
-        */
-        //EXIFTool.copyEXIF( (new File(outputDir+resultphoto.getFileName()+"_Calibrated"+"."+resultphoto.getExtension())), tmpfile );
-        //CopyEXIFData()
-        CopyEXIFData(OS, PATH_TO_EXIFTOOL, tmpfile.getAbsolutePath(), outputDir+resultphoto.getFileName()+"_Calibrated"+"."+resultphoto.getExtension());
+
         //photo.close();
         /*
         if( IJ.getInstance() != null ){
@@ -661,7 +680,7 @@ public class CalibrateDirectory implements PlugIn{
     if( qrphoto == null ){
 
     }else{
-      IJ.log("Processing band: " + channel);
+      //IJ.log("Processing band: " + channel);
       //rois = calibrator.getRois(qrphoto.getImage());
       if( channel.equals("Red") ){
         manager = calibrator.setupROIManager(qrphoto.getRedChannel(), rois);

@@ -352,7 +352,7 @@ public class RGBPhoto{
   }
 
   public void fixTif(boolean convertTo8Bit){
-    IJ.log("Fixing tif image");
+    //IJ.log("Fixing tif image");
     image.getProcessor().setMinAndMax(0,65535);
     image.setDefault16bitRange(16);
     ContrastAdjuster.update();
