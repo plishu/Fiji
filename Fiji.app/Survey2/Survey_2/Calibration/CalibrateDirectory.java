@@ -189,7 +189,7 @@ public class CalibrateDirectory implements PlugIn{
           inImageExt = inImageParts[1];
         }
 
-        if( inImageExt.toUpperCase().equals("JPG") || inImageExt.toUpperCase().equals("TIF") ){
+        if( inImageExt.toUpperCase().equals("JPG") || inImageExt.toUpperCase().equals("TIF") || inImageExt.toUpperCase().equals("DNG") ){
           if( tifsToJpgs && inImageExt.toUpperCase().equals("JPG") ){
             // Don't add original jpgs, only tifs
             continue;
@@ -206,6 +206,8 @@ public class CalibrateDirectory implements PlugIn{
           }
 
         }
+
+
       }
 
       // Ask for QR images and load them

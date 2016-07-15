@@ -1,6 +1,10 @@
 ## Change Log
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2016-07-?
+### Added
+- Support pre-processing of DJIX3 and Phantom cameras
+
 ## [1.1.0] - 2016-07-14
 ### Added
 - Calibration progress information displayed to ImageJ log
