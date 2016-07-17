@@ -3,8 +3,8 @@ This repository contains the Fiji distribution for use with MAPIR cameras. The d
 
 Camera supported:
 - MAPIR Survey2 (all filter models)
-- DJI Inspire X3 with 3.97mm NDVI (Red+NIR) lens installed
-- DJI Phantom 4 & 3 with 3.97mm NDVI (Red+NIR) lens installed
+- DJI Inspire X3 with [PEAU 3.97mm NDVI (Red+NIR) lens](http://www.peauproductions.com/products/gp39728) installed
+- DJI Phantom 4 & 3 with [PEAU 3.97mm NDVI (Red+NIR) lens](http://www.peauproductions.com/products/gp39728) installed
 
 Functionality for above supported cameras includes:
 - Convert Survey2 RAW to TIFF, converts DJI DNG to TIFF
