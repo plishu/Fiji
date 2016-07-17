@@ -1,10 +1,15 @@
 # Fiji Distribution for MAPIR Cameras
 This repository contains the Fiji distribution for use with MAPIR cameras. The distribution contains various plugins and resources such as luts, flat-fields, and calibration files.
 
-Functionality for MAPIR cameras includes:
-- Convert Survey2 RAW to TIFF
-- Correct vignette of Survey2 RAW and JPG images
-- Calibrates Survey2 camera images using [MAPIR Reflectance Target](http://www.mapir.camera/collections/accessories/products/mapir-camera-calibration-ground-target-package) image taken before survey or built-in reflectance values
+Camera supported:
+- MAPIR Survey2 (all filter models)
+- DJI Inspire X3 with 3.97mm NDVI (Red+NIR) lens installed
+- DJI Phantom 4 & 3 with 3.97mm NDVI (Red+NIR) lens installed
+
+Functionality for above supported cameras includes:
+- Convert Survey2 RAW to TIFF, converts DJI DNG to TIFF
+- Correct vignette
+- Calibrate directory of images using [MAPIR Reflectance Target](http://www.mapir.camera/collections/accessories/products/mapir-camera-calibration-ground-target-package) image taken before survey or uses built-in reflectance values if no target image supplied
 - Converts TIFF to JPG after calibration if desired
 
 ### Installation
