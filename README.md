@@ -24,7 +24,7 @@ If you already have your version of Fiji, but would like to extend its functiona
 ### Using Plugin
 Within Fiji's Plugin submenu, you will see a MAPIR option. The MAPIR plugin contains tools that aids with post processing.
 - Post Process Images From Directory: Automatically corrects vignette on RAW and JPG based on camera model used. RAW images are converted to TIFF format.
-- Calibrate Images From Directory: Automatically detects pixels of user supplied [MAPIR Reflectance Target](http://www.mapir.camera/collections/accessories/products/mapir-camera-calibration-ground-target-package) image taken just before survey and applies calibration to user supplied directory of images captured during survey. If photo of target is not provided the hard-coded values (taken during a clear sunny day) will be used instead to claibrate survey images. User can also choose to convert TIFF to JPG format, helpful for ortho-mosaic generating software that does not accept the preferred TIFF format (such as Drone Deploy).
+- Calibrate Images From Directory: Automatically detects pixels of user supplied [MAPIR Reflectance Target](http://www.mapir.camera/collections/accessories/products/mapir-camera-calibration-ground-target-package) image taken just before survey and applies calibration to directory of images captured during survey. If photo of target is not provided the hard-coded values (taken during a clear sunny day) will be used instead to claibrate survey images. User can also choose to convert TIFF to JPG format, helpful for ortho-mosaic generating software that does not accept the preferred TIFF format (such as Drone Deploy).
 
 ### Directory
 - [Calibration](/Calibration): Contains files for the calibration plugin.
