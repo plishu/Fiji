@@ -22,7 +22,7 @@ For easy installation, download the .zip for your system in the [Packages](/Pack
 If you already have your version of Fiji, but would like to extend its functionality to support our MAPIR cameras, you may do so by downloading the plugins and its dependencies. Download the [Calibration](/Calibration), [Survey2](/Survey2), [luts](/luts), and [plugins](/plugins) directories and place them at the root of your Fiji installation; this is the directory where the ImageJ-xxx executable resides. The plugins and luts directories should already exist, simply replace these directories with the ones in this repository.
 
 ### Using Plugin
-Within Fiji's Plugin submenu, you will see a MAPIR option. The MAPIR plugin contains tools that aids with post processing.
+Within Fiji's Plugin submenu, you will see a MAPIR option. The MAPIR plugin contains tools that aid with post processing:
 - Post Process Images From Directory: Automatically corrects vignette on RAW and JPG based on camera model used. RAW images are converted to TIFF format.
 - Calibrate Images From Directory: Automatically detects pixels of user supplied [MAPIR Reflectance Target](http://www.mapir.camera/collections/accessories/products/mapir-camera-calibration-ground-target-package) image taken just before survey and applies calibration to directory of images captured during survey. If photo of target is not provided the hard-coded values (taken during a clear sunny day) will be used instead to claibrate survey images. User can also choose to convert TIFF to JPG format, helpful for ortho-mosaic generating software that does not accept the preferred TIFF format (such as Drone Deploy).
 
