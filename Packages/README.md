@@ -36,3 +36,5 @@ All notable changes to this project will be documented in this file.
 ####[Fiji Windows 32-bit (2016-06-14)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160614.zip)
 
 ####[Fiji Windows 64-bit (2016-06-14)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160614.zip)
+
+Notice: All Fiji packages containing the MAPIR plugins and additional resources are under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International license. For more information, please visit: https://github.com/mapircamera/Fiji/blob/master/LICENSE.md
