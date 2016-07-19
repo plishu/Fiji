@@ -189,7 +189,7 @@ public class CalibrateDirectory implements PlugIn{
           inImageExt = inImageParts[1];
         }
 
-        if( inImageExt.toUpperCase().equals("JPG") || inImageExt.toUpperCase().equals("TIF") ){
+        if( inImageExt.toUpperCase().equals("JPG") || inImageExt.toUpperCase().equals("TIF") || inImageExt.toUpperCase().equals("DNG") ){
           if( tifsToJpgs && inImageExt.toUpperCase().equals("JPG") ){
             // Don't add original jpgs, only tifs
             continue;
@@ -206,6 +206,8 @@ public class CalibrateDirectory implements PlugIn{
           }
 
         }
+
+
       }
 
       // Ask for QR images and load them
@@ -789,7 +791,16 @@ public class CalibrateDirectory implements PlugIn{
       // Shitty post process
       if( model.equals("Survey2_IR") ){
         // Convert to match camera model selected from dialog
-        model = "Survey2_NIR";
+        model = CalibrationPrompt.SURVEY2_NIR;
+      }
+
+      // More shitty fixes for DJI
+      if( model.equals("FC300X") ){
+        model = CalibrationPrompt.DJIPHANTOM_NDVI;
+      }
+
+      if( model.equals("FC350") ){
+        model = CalibrationPrompt.DJIX3_NDVI;
       }
       return model.replaceAll("_", " ");
   }

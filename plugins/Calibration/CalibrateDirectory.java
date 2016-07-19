@@ -99,8 +99,11 @@ public class CalibrateDirectory implements PlugIn{
   private final double[] BASE_COEFF_SURVEY2_NIR_TIF = {-2.24216724, 0.12962333};//
 
   private final double[] BASE_COEFF_DJIX3_NDVI_JPG = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
-
   private final double[] BASE_COEFF_DJIX3_NDVI_TIF = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
+
+  private final double[] BASE_COEFF_DJIPHANTOM4_NDVI_JPG = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
+  private final double[] BASE_COEFF_DJIPHANTOM4_NDVI_TIF = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
+
   private final double[] BASE_COEFF_GOPROHERO4_NDVI = {0,0};
 
   private String OS = System.getProperty("os.name");
@@ -190,7 +193,7 @@ public class CalibrateDirectory implements PlugIn{
           inImageExt = inImageParts[1];
         }
 
-        if( inImageExt.toUpperCase().equals("JPG") || inImageExt.toUpperCase().equals("TIF") ){
+        if( inImageExt.toUpperCase().equals("JPG") || inImageExt.toUpperCase().equals("TIF") || inImageExt.toUpperCase().equals("DNG") ){
           if( tifsToJpgs && inImageExt.toUpperCase().equals("JPG") ){
             // Don't add original jpgs, only tifs
             continue;
@@ -208,10 +211,14 @@ public class CalibrateDirectory implements PlugIn{
 
         }
 
+<<<<<<< HEAD
         if( inImageExt.toUpperCase().equals("DNG") ){
           jpgToCalibrate.add(imagesToCalibrate[i]);
           thereAreDNGs = true;
         }
+=======
+
+>>>>>>> dngsupport
       }
 
       // Ask for QR images and load them
@@ -599,8 +606,6 @@ public class CalibrateDirectory implements PlugIn{
               coeffs[3] = BASE_COEFF_DJIX3_NDVI_JPG[3];
             }
           }
-
-
           resultphoto = calibrator.makeNDVI(photo, coeffs);
         }else if( cameraType.equals(CalibrationPrompt.GOPRO_HERO4_NDVI) ){
           /*
@@ -624,6 +629,39 @@ public class CalibrateDirectory implements PlugIn{
           resultphoto = calibrator.makeNDVI(photo, coeffs);*/
 
           IJ.log("GoPro Hero 4 support coming soon!");
+        }else if( cameraType.equals(CalibrationPrompt.DJIPHANTOM4_NDVI) ){
+          baseSummary = calibrator.getRefValues(bfs, "660/850");
+
+          if( photo.getExtension().toUpperCase().equals("TIF") ){
+            if( useQR == true && tifrois != null ){
+              tmpcoeff = calculateCoefficients(qrTIFScaled, tifrois, calibrator, baseSummary, "Red");
+              coeffs[0] = tmpcoeff[0];
+              coeffs[1] = tmpcoeff[1];
+              tmpcoeff = calculateCoefficients(qrTIFScaled, tifrois, calibrator, baseSummary, "Blue");
+              coeffs[2] = tmpcoeff[0];
+              coeffs[3] = tmpcoeff[1];
+            }else{
+              coeffs[0] = BASE_COEFF_DJIPHANTOM4_NDVI_TIF[0];
+              coeffs[1] = BASE_COEFF_DJIPHANTOM4_NDVI_TIF[1];
+              coeffs[2] = BASE_COEFF_DJIPHANTOM4_NDVI_TIF[2];
+              coeffs[3] = BASE_COEFF_DJIPHANTOM4_NDVI_TIF[3];
+            }
+          }else if( photo.getExtension().toUpperCase().equals("JPG") ){
+            if( useQR == true && jpgrois != null ){
+              tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Red");
+              coeffs[0] = tmpcoeff[0];
+              coeffs[1] = tmpcoeff[1];
+              tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Blue");
+              coeffs[2] = tmpcoeff[0];
+              coeffs[3] = tmpcoeff[1];
+            }else{
+              coeffs[0] = BASE_COEFF_DJIPHANTOM4_NDVI_JPG[0];
+              coeffs[1] = BASE_COEFF_DJIPHANTOM4_NDVI_JPG[1];
+              coeffs[2] = BASE_COEFF_DJIPHANTOM4_NDVI_JPG[2];
+              coeffs[3] = BASE_COEFF_DJIPHANTOM4_NDVI_JPG[3];
+            }
+          }
+          resultphoto = calibrator.makeNDVI(photo, coeffs);
         }
 
         resultphoto.copyFileData(photo);
@@ -795,7 +833,18 @@ public class CalibrateDirectory implements PlugIn{
       // Shitty post process
       if( model.equals("Survey2_IR") ){
         // Convert to match camera model selected from dialog
-        model = "Survey2_NIR";
+        model = CalibrationPrompt.SURVEY2_NIR;
+      }
+
+      // More shitty fixes for DJI
+      // Phantom4 option supports phantom 4 and phantom 3
+      // Phantom 4 = FC330; Phantom 3 = FC300X
+      if( model.equals("FC300X") || model.equals("FC330") ){
+        model = CalibrationPrompt.DJIPHANTOM4_NDVI;
+      }
+
+      if( model.equals("FC350") ){
+        model = CalibrationPrompt.DJIX3_NDVI;
       }
       return model.replaceAll("_", " ");
   }

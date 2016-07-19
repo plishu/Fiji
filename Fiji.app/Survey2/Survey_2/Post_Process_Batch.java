@@ -124,6 +124,10 @@ public class Post_Process_Batch implements PlugIn{
         raw_jpgBatchToProcess.add(filesToProcess[i]);
         raw_jpgBatchToProcess.add(filesToProcess[i+1]);
         i++; // Skip following JPG in the search
+      }else if( inImageExt.toUpperCase().equals("DNG") ){
+        raw_jpgBatchToProcess.add(filesToProcess[i]);
+        raw_jpgBatchToProcess.add(filesToProcess[i+1]);
+        i++; // Skip following JPG in the search
       }else if( inImageExt.toUpperCase().equals("JPG") ){
         jpgBatchToProcess.add(filesToProcess[i]);
       }
@@ -185,16 +189,33 @@ public class Post_Process_Batch implements PlugIn{
         // Process RAW
         IJ.log("Processing: " + raw_jpgBatchToProcess.get(i).getAbsolutePath());
         // CALL MACRO HERE
-        String margs = "";
-        margs += "path_ff="+FLAT_FIELD_DIRECTORY+FlatField+"\\"+FlatField+".RAW";
-        margs += "|";
-        margs += "path_raw="+raw_jpgBatchToProcess.get(i).getAbsolutePath();
-        margs += "|";
-        margs += "path_out="+outDirStr;
-        margs += "|";
-        margs += "filter_radius="+"1";
-        IJ.log(margs);
-        IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessRAW.ijm", margs);
+        if( inImageExt.toUpperCase().equals("RAW") ){
+          String margs = "";
+          margs += "path_ff="+FLAT_FIELD_DIRECTORY+FlatField+"\\"+FlatField+".RAW";
+          margs += "|";
+          margs += "path_raw="+raw_jpgBatchToProcess.get(i).getAbsolutePath();
+          margs += "|";
+          margs += "path_out="+outDirStr;
+          margs += "|";
+          margs += "filter_radius="+"1";
+          IJ.log(margs);
+          IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessRAW.ijm", margs);
+        }
+
+        // CALL MACRO FOR DNG HERE
+        if( inImageExt.toUpperCase().equals("DNG") ){
+          String margs = "";
+          margs += "path_ff="+FLAT_FIELD_DIRECTORY+FlatField+"\\"+FlatField+".DNG";
+          margs += "|";
+          margs += "path_raw="+raw_jpgBatchToProcess.get(i).getAbsolutePath();
+          margs += "|";
+          margs += "path_out="+outDirStr;
+          margs += "|";
+          margs += "filter_radius="+"1";
+          IJ.log(margs);
+          IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessRAW.ijm", margs);
+        }
+
 
         String[] inImageParts = (raw_jpgBatchToProcess.get(i).getName()).split("\\.(?=[^\\.]+$)");
         String inImageNoExt = inImageParts[0];
@@ -325,7 +346,7 @@ public class Post_Process_Batch implements PlugIn{
 
 
         if( line != null ){
-          if( line.matches( ".*Survey2_(BLUE|RED|GREEN|RGB|IR|NDVI)" )){
+          if( line.matches( ".*Survey2_(BLUE|RED|GREEN|RGB|IR|NDVI)|.*FC350|.*FC300X" )){
             break;
           }
         }
@@ -350,6 +371,10 @@ public class Post_Process_Batch implements PlugIn{
       return "Survey2_IR";
     }else if( line.matches(".*Survey2_NDVI") ){
       return "Survey2_NDVI";
+    }else if( line.matches(".*FC350") ){
+      return "FC350";
+    }else if( line.matches(".*FC300X") ){
+      return "FC300X";
     }else{
       return "CAMERA_NOT_SUPPORTED";
     }
@@ -500,6 +525,10 @@ public class Post_Process_Batch implements PlugIn{
       file = "ir";
     }else if( model.equals("Survey2_NDVI") ){
       file = "ndvi";
+    }else if( model.equals("FC300X") ){
+      file = "FC330_ndvi";
+    }else if( model.equals("FC350") ){
+      file = "FC350_ndvi";
     }
 
     return file;
