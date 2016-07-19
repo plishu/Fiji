@@ -54,7 +54,7 @@ public class CalibrationPrompt{
   public static final String SURVEY2_NDVI = "Survey2 NDVI";
   public static final String SURVEY2_NIR = "Survey2 NIR";
   public static final String DJIX3_NDVI = "DJI X3 NDVI";
-  public static final String DJIPHANTOM_NDVI = "DJI Phantom NDVI";
+  public static final String DJIPHANTOM4_NDVI = "DJI Phantom 4 NDVI";
   public static final String GOPRO_HERO4_NDVI = "GoPro Hero 4 NDVI";
   public static final String OTHER_CAMERA = "OTHER";
 
@@ -63,9 +63,9 @@ public class CalibrationPrompt{
   private String[] cameras = new String[]{SURVEY2_RED, SURVEY2_GREEN,
     SURVEY2_BLUE, SURVEY2_NDVI, SURVEY2_NIR, DJIX3_NDVI, GOPRO_HERO4_NDVI, OTHER_CAMERA};*/
   private String[] cameras = new String[]{SURVEY2_NDVI, SURVEY2_NIR,
-    SURVEY2_RED, SURVEY2_GREEN, SURVEY2_BLUE, DJIX3_NDVI, DJIPHANTOM_NDVI};
+    SURVEY2_RED, SURVEY2_GREEN, SURVEY2_BLUE, DJIX3_NDVI, DJIPHANTOM4_NDVI};
   //private String[] dualBand = new String[]{SURVEY2_NDVI, DJIX3_NDVI, GOPRO_HERO4_NDVI};
-  private String[] dualBand = new String[]{SURVEY2_NDVI, DJIX3_NDVI, DJIPHANTOM_NDVI};
+  private String[] dualBand = new String[]{SURVEY2_NDVI, DJIX3_NDVI, DJIPHANTOM4_NDVI};
   private double gamma = 2.2;
   private double nirsub = 80.0; // Percentage
 

@@ -1,0 +1,11 @@
+task compile(type: Exec){
+    commandLine 'cmd', '/c', 'javac -source 1.6 -target 1.6 -classpath C:\\Users\\Peau\\Documents\\GitHub\\Fiji\\Fiji.app\\jars\\* C:\\Users\\Peau\\Documents\\GitHub\\Fiji\\Survey2\\Survey_2\\Calibration\\*.java'
+}
+
+task jar( type: Exec ){
+    commandLine 'cmd', '/c', 'jar cvfM C:\\Users\\Peau\\Documents\\GitHub\\Fiji\\Survey2\\PP_MAPIR.jar C:\\Users\\Peau\\Documents\\GitHub\\Fiji\\Survey2\\Survey_2\\plugins.config'
+}
+
+task copyToPlugins( type: Exec){
+    commandLine 'cmd', '/c', 'XCOPY /Y C:\\Users\\Peau\\Documents\\GitHub\\Fiji\\Survey2\\Survey_2\\Calibration\\ C:\\Users\\Peau\\Documents\\GitHub\\Fiji\\plugins\\ /e'
+}
