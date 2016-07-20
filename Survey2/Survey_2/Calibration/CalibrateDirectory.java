@@ -98,6 +98,7 @@ public class CalibrateDirectory implements PlugIn{
   private final double[] BASE_COEFF_SURVEY2_NDVI_TIF = {-0.60138990, 0.14454211, -3.51691589, 0.21536524};//
   private final double[] BASE_COEFF_SURVEY2_NIR_TIF = {-2.24216724, 0.12962333};//
 
+  // @TODO: We don't have reliable calibration coefficients. Tell user this in prompt.
   private final double[] BASE_COEFF_DJIX3_NDVI_JPG = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
   private final double[] BASE_COEFF_DJIX3_NDVI_TIF = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
 
@@ -195,6 +196,7 @@ public class CalibrateDirectory implements PlugIn{
         if( inImageExt.toUpperCase().equals("JPG") || inImageExt.toUpperCase().equals("TIF") || inImageExt.toUpperCase().equals("DNG") ){
           if( tifsToJpgs && inImageExt.toUpperCase().equals("JPG") ){
             // Don't add original jpgs, only tifs
+            thereAreJPGs = false;
             continue;
           }
           jpgToCalibrate.add(imagesToCalibrate[i]);
@@ -303,6 +305,9 @@ public class CalibrateDirectory implements PlugIn{
           if( qrTIFPhoto.getCameraType().equals(CalibrationPrompt.SURVEY2_NDVI) ){
             calibrator.subtractNIR(qrTIFScaled.getBlueChannel(), qrTIFScaled.getRedChannel(), 80 );
           }
+          if( qrTIFPhoto.getCameraType().equals(CalibrationPrompt.DJIPHANTOM4_NDVI) ){
+              calibrator.subtractNIR(qrTIFScaled.getBlueChannel(), qrTIFScaled.getRedChannel(), 80);
+          }
           // Enhance for better QR detection
           (new ContrastEnhancer()).equalize(qrTIFPhoto.getImage());
           tifrois = calibrator.getRois(qrTIFPhoto.getImage());
@@ -315,6 +320,11 @@ public class CalibrateDirectory implements PlugIn{
                 useQR = true;
                 continue;
               }else{
+                if (cameraType.equals(CalibrationPrompt.DJIX3_NDVI)){
+                    IJ.log("ATTENTION: We currently do not have base calibration values for the DJI X3. You must supply a calibation target to proceed.");
+                    IJ.log("The plugin will now terminate. Goodbye!");
+                    return;
+                }
                 useQR = false;
               }
 
@@ -440,6 +450,8 @@ public class CalibrateDirectory implements PlugIn{
               coeffs[2] = BASE_COEFF_SURVEY2_NDVI_TIF[2];
               coeffs[3] = BASE_COEFF_SURVEY2_NDVI_TIF[3];
             }
+
+            //photo = calibrator.subtractNIR(photo, 0.8);
 
           }else if( photo.getExtension().toUpperCase().equals("JPG") ){
             if( useQR == true && jpgrois != null ){
@@ -638,6 +650,10 @@ public class CalibrateDirectory implements PlugIn{
               coeffs[2] = BASE_COEFF_DJIPHANTOM4_NDVI_TIF[2];
               coeffs[3] = BASE_COEFF_DJIPHANTOM4_NDVI_TIF[3];
             }
+
+
+            //photo = calibrator.subtractNIR(photo, 0.8);
+
           }else if( photo.getExtension().toUpperCase().equals("JPG") ){
             if( useQR == true && jpgrois != null ){
               tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Red");

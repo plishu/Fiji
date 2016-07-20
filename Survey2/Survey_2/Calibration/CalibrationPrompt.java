@@ -53,8 +53,8 @@ public class CalibrationPrompt{
   public static final String SURVEY2_BLUE = "Survey2 BLUE";
   public static final String SURVEY2_NDVI = "Survey2 NDVI";
   public static final String SURVEY2_NIR = "Survey2 NIR";
-  public static final String DJIX3_NDVI = "DJI X3 NDVI";
-  public static final String DJIPHANTOM4_NDVI = "DJI Phantom 4 NDVI";
+  public static final String DJIX3_NDVI = "DJI X3 NDVI (Red + NIR)";
+  public static final String DJIPHANTOM4_NDVI = "DJI Phantom 3/4 NDVI (Red + NIR)";
   public static final String GOPRO_HERO4_NDVI = "GoPro Hero 4 NDVI";
   public static final String OTHER_CAMERA = "OTHER";
 

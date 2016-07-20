@@ -123,10 +123,13 @@ if (filter_radius == 0) {
   rename("ResultB");
 
   print("Merging channels");
-  run("Merge Channels...", "c1=ResultR c2=ResultG c3=ResultB create"); // @TODO <--Remove create to fix tif!!
+
+  run("Merge Channels...", "c1=ResultR c2=ResultG c3=ResultB");
+  //run("Merge Channels...", "c1=ResultR c2=ResultG c3=ResultB create"); // @TODO <--Remove create to fix tif!!
   print("Finished merging " + getTitle());
 
-  selectWindow("RGB");
+  selectWindow("RGB"); // @TODO If you removed create, then use this one
+  //selectWindow("Composite");
 
   print("Saving " + getTitle());
   saveAs("Tiff", path_out + fileNameNoExt_raw + ".tif");

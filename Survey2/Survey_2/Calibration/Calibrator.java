@@ -199,6 +199,38 @@ public class Calibrator{
     }
   }
 
+  public RGBPhoto subtractNIR(RGBPhoto photo, double percent){
+      ImagePlus img = photo.getImage();
+      ImagePlus rimg = photo.getRedChannel();
+      ImagePlus gimg = photo.getGreenChannel();
+      ImagePlus bimg = photo.getBlueChannel();
+
+      double redPixel = 0.0;
+      double bluePixel = 0.0;
+      double greenPixel = 0.0;
+
+
+      int x = 0;
+      int y = 0;
+      while (y < img.getHeight()) {
+          x = 0;
+          while (x < img.getWidth()) {
+              // NIR remove
+              redPixel = (double)(rimg.getProcessor().getPixelValue(x, y) - percent*bimg.getProcessor().getPixelValue(x, y));
+              //IJ.log((String)"NIR removed: " + redPixel);
+
+              rimg.getProcessor().putPixelValue(x, y, (int)(redPixel));
+              x++;
+          }
+          y++;
+      }
+
+      ImagePlus[] nchan = {rimg, gimg, bimg};
+      RGBPhoto nphoto = new RGBPhoto(nchan, CalibrationPrompt.SURVEY2_NDVI, photo);
+
+      return nphoto;
+  }
+
 
   public double[] calculateCalibrationCoefficients(double[] calcValues, double[] refValues){
     double[] regressionParams = null;
@@ -231,7 +263,7 @@ public class Calibrator{
     double[] yVis = new double[]{regressionParams[0], regressionParams[1] + regressionParams[0]};
     visPlot.addPoints(xVis, yVis, 2);
     visPlot.addLabel(0.05, 0.1, "R squared = " + Double.toString(r_Squared));
-    //visPlot.show();
+    visPlot.show();
 
     //HashMap<String, double[]> values = new HashMap<String, double[]>();
     double[] values = {intercept, slope};
@@ -312,7 +344,7 @@ public class Calibrator{
     ImagePlus gimg = photo.getGreenChannel();
     ImagePlus bimg = photo.getBlueChannel();
 
-    //rimg.show();
+    rimg.show();
     //gimg.show();
     //bimg.show();
 
@@ -349,6 +381,9 @@ public class Calibrator{
     double outPixel = 0.0;
     int x = 0;
     int y = 0;
+
+    //IJ.log( (String)"Slope:" + calibrationCeofs[1] );
+    //IJ.log( (String)"Intecept: " + calibrationCeofs[0] );
 
     while (y < img.getHeight()) {
         x = 0;
@@ -403,6 +438,8 @@ public class Calibrator{
     rimg = newRedImage;
     gimg = newGreenImage;
     bimg = newBlueImage;
+
+    rimg.show();
 
     ImagePlus[] nchan = {rimg, gimg, bimg};
 
@@ -481,7 +518,12 @@ public class Calibrator{
 
 
               // NIR remove
-              redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 0.8 * bimg.getProcessor().getPixelValue(x, y);
+              if( photo.getCameraType().equals(CalibrationPrompt.SURVEY2_NDVI) ){
+                  redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 1.0 * bimg.getProcessor().getPixelValue(x, y);
+              }else if( photo.getCameraType().equals(CalibrationPrompt.DJIPHANTOM4_NDVI) ){
+                  redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 1.0 * bimg.getProcessor().getPixelValue(x, y);
+              }
+              //redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 0.8 * bimg.getProcessor().getPixelValue(x, y);
 
               // Apply reflectance mapping
               redPixel = (double)redPixel * calibrationCeofs[1] + calibrationCeofs[0];
