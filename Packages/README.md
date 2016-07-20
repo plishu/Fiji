@@ -1,13 +1,21 @@
 This directory contains the download links to the various pre-packaged Fiji distribution with the MAPIR plugin pre-installed
 
-## Latest Version (1.1.0)
+## Latest Version (1.2.0)
 
-####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160714.zip)
+####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160719.zip)
 
-####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160714.zip)
+####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160719.zip)
 
 ## Change Log
 All notable changes to this project will be documented in this file.
+
+## [1.2.0] - 2016-07-19
+### Added 
+- Support for DJI X3 and DJI Phantom 3 & Phantom 4
+
+### TODO
+- Generate base calibration values for DJI X3 and Phantom 3/Phantom 4
+- QR code detection optimization for calibration targets
 
 ## [1.1.0] - 2016-07-14
 ### Added
@@ -33,6 +41,12 @@ All notable changes to this project will be documented in this file.
 
 ## Older versions
 
+####[Fiji Windows 32-bit (1.1.0)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160714.zip)
+
+####[Fiji Windows 64-bit (1.1.0)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160714.zip)
+
 ####[Fiji Windows 32-bit (2016-06-14)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160614.zip)
 
 ####[Fiji Windows 64-bit (2016-06-14)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160614.zip)
+
+Notice: All Fiji packages containing the MAPIR plugins and additional resources are under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International license. For more information, please visit: https://github.com/mapircamera/Fiji/blob/master/LICENSE.md
