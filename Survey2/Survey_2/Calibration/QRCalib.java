@@ -217,8 +217,8 @@ public class QRCalib{
     PolygonRoi polygon = null;
     if( (polyXCoords.length == 4 && polyYCoords.length == 4) || (polyXCoords.length == 3 && polyYCoords.length == 3) ){
       polygon = new PolygonRoi(polyXCoords, polyYCoords, Roi.POLYGON);
-      polygon.setStrokeWidth(3);
-      polygon.setStrokeColor(new Color(0,0,0));
+      polygon.setStrokeWidth(10);
+      polygon.setStrokeColor(new Color(87,208,235));
       return polygon;
     }else{
       //IJ.log("Not enough points to create polygon. Required: 4");

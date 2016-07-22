@@ -25,6 +25,8 @@ public class Post_Process_Batch implements PlugIn{
 
   private final int FILTER_RADIUS_RAW = 1;
   private final int FILTER_RADIUS_JPG = 10;
+  private String filter_radius_raw = "1";
+  private String filter_radius_jpg = "10";
 
   private String OS = null;
 
@@ -53,7 +55,20 @@ public class Post_Process_Batch implements PlugIn{
     //PATH_TO_EXIFTOOL = "/usr/bin/exiftool";
     FLAT_FIELD_DIRECTORY = WorkingDirectory+"Survey2\\Flat-Fields\\";
 
-    //@TODO: Ask user if he/she wants to replace original if inDir = outDir
+
+    YesNoCancelDialog removeVignetteDialog = new YesNoCancelDialog(null, "Attention", "Do you want to apply vignette removal to the pre-process procedure?");
+    if( removeVignetteDialog.yesPressed() ){
+        filter_radius_raw = "1";
+        filter_radius_jpg = "10";
+    }else if( removeVignetteDialog.cancelPressed() ){
+        return;
+    }else{
+        filter_radius_raw = "0";
+        filter_radius_jpg = "0";
+    }
+
+    // @TODO: Camera settings changed detection
+
     inDirStr = IJ.getDirectory("Select Folder with Images to Process");
     outDirStr = IJ.getDirectory("Select Output Folder");
     //GenericDialog gd = new GenericDialog("");
@@ -78,8 +93,8 @@ public class Post_Process_Batch implements PlugIn{
     // save as TIFF, and copy JPG EXIF data to TIFF.
     //runMacro("macro","args");
 
-    IJ.log("Input Directory: " + inDirStr);
-    IJ.log("Output Directory: " + outDirStr);
+    //IJ.log("Input Directory: " + inDirStr);
+    //IJ.log("Output Directory: " + outDirStr);
 
     // Get all files to process
     File inDir = new File(inDirStr);
@@ -122,11 +137,27 @@ public class Post_Process_Batch implements PlugIn{
       // If RAW is found, then add RAW+JPG to raw_jpgBatchToProcess and skip following JPG
       if( inImageExt.toUpperCase().equals("RAW") ){
         raw_jpgBatchToProcess.add(filesToProcess[i]);
-        raw_jpgBatchToProcess.add(filesToProcess[i+1]);
+
+        if( filesToProcess[i+1].getName().contains("jpg") || filesToProcess[i+1].getName().contains("JPG") ){
+            raw_jpgBatchToProcess.add(filesToProcess[i+1]);
+        }else{
+            // Does not comply to directory file structure
+            showNotCorrectFileStructure();
+            return;
+        }
+
         i++; // Skip following JPG in the search
       }else if( inImageExt.toUpperCase().equals("DNG") ){
         raw_jpgBatchToProcess.add(filesToProcess[i]);
-        raw_jpgBatchToProcess.add(filesToProcess[i+1]);
+
+        if( filesToProcess[i+1].getName().contains("jpg") || filesToProcess[i+1].getName().contains("JPG") ){
+            raw_jpgBatchToProcess.add(filesToProcess[i+1]);
+        }else{
+            // Does not comply to directory file structure
+            showNotCorrectFileStructure();
+            return;
+        }
+
         i++; // Skip following JPG in the search
       }else if( inImageExt.toUpperCase().equals("JPG") ){
         jpgBatchToProcess.add(filesToProcess[i]);
@@ -142,22 +173,22 @@ public class Post_Process_Batch implements PlugIn{
     */
 
     //IJ.log("------------------------------------------------------------");
+    /*
     IJ.log("Images that will be proccessed: ");
     for( int i=0; i<raw_jpgBatchToProcess.size(); i++ ){
       IJ.log(raw_jpgBatchToProcess.get(i).getName());
     }
     for( int i=0; i<jpgBatchToProcess.size(); i++ ){
       IJ.log(jpgBatchToProcess.get(i).getName());
-    }
-    IJ.log("-----------------------------------------------------------------");
-    IJ.log("I will begin to process the images mentioned above. Please wait.");
+    }*/
 
-    IJ.log("\n\n");
+    //IJ.log("-----------------------------------------------------------------");
+    IJ.log("I will begin to process the images. Please wait.");
 
 
     // Begin to process all images in input directory
     //CurrentModel = ( GetCameraModel(jpgFilesToProcess.get(0).getAbsolutePath()) );
-    IJ.log("Working Directory: " + WorkingDirectory);
+    //IJ.log("Working Directory: " + WorkingDirectory);
 
 
     CurrentModel = "";
@@ -173,14 +204,15 @@ public class Post_Process_Batch implements PlugIn{
     String inImageNoExt = null;
 
 
-
+    int imgcounter = 1;
     if( !raw_jpgBatchToProcess.isEmpty() ){
       // Process RAW + JPG
+
 
       // Iterate through each RAW file only!
       // Index JPG by i+1 each time.
       for( int i=0; i<raw_jpgBatchToProcess.size(); i=i+2 ){
-        IJ.log("\n\n");
+
 
         inImageParts = (filesToProcess[i].getName()).split("\\.(?=[^\\.]+$)");
         if( inImageParts.length < 2 ){
@@ -192,7 +224,7 @@ public class Post_Process_Batch implements PlugIn{
         }
 
         NextModel = GetCameraModel(raw_jpgBatchToProcess.get(i+1).getAbsolutePath());
-        IJ.log("Camera Model for " + raw_jpgBatchToProcess.get(i+1).getAbsolutePath() + ": " + NextModel);
+        //IJ.log("Camera Model for " + raw_jpgBatchToProcess.get(i+1).getAbsolutePath() + ": " + NextModel);
 
         if( NextModel.equals("CAMERA_NOT_SUPPORTED") ){
           IJ.log("The image you are trying to process was not taken with a compatable camera. I will skip this image");
@@ -202,7 +234,8 @@ public class Post_Process_Batch implements PlugIn{
           FlatField = getFFFile(CurrentModel);
 
         // Process RAW
-        IJ.log("Processing: " + raw_jpgBatchToProcess.get(i).getAbsolutePath());
+        IJ.log( (String)"Processing image " + raw_jpgBatchToProcess.get(i).getName() + " (" + imgcounter + " of " + raw_jpgBatchToProcess.size() + " - " + (int)((double)imgcounter/((double)raw_jpgBatchToProcess.size())*100) + "% complete" + ")" );
+        imgcounter++;
         // CALL MACRO HERE
         if( inImageExt.toUpperCase().equals("RAW") ){
           String margs = "";
@@ -212,8 +245,8 @@ public class Post_Process_Batch implements PlugIn{
           margs += "|";
           margs += "path_out="+outDirStr;
           margs += "|";
-          margs += "filter_radius="+"1";
-          IJ.log(margs);
+          margs += "filter_radius="+filter_radius_raw;
+          //IJ.log(margs);
           IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessRAW.ijm", margs);
         }
 
@@ -226,8 +259,8 @@ public class Post_Process_Batch implements PlugIn{
           margs += "|";
           margs += "path_out="+outDirStr;
           margs += "|";
-          margs += "filter_radius="+"1";
-          IJ.log(margs);
+          margs += "filter_radius="+filter_radius_raw;
+          //IJ.log(margs);
           IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessDNG.ijm", margs);
         }
 
@@ -237,7 +270,8 @@ public class Post_Process_Batch implements PlugIn{
 
         // Process JPG
         // CALL MACRO HERE
-        IJ.log("Processing: " + raw_jpgBatchToProcess.get(i+1).getAbsolutePath());
+        IJ.log( (String)"Processing image " + raw_jpgBatchToProcess.get(i+1).getName() + " (" + imgcounter + " of " + raw_jpgBatchToProcess.size() + " - " + (int)((double)imgcounter/((double)raw_jpgBatchToProcess.size())*100) + "% complete" + ")" );
+        imgcounter++;
         String margs = "";
         margs = "";
         margs += "path_ff="+FLAT_FIELD_DIRECTORY+FlatField+"\\"+FlatField+".JPG";
@@ -246,8 +280,8 @@ public class Post_Process_Batch implements PlugIn{
         margs += "|";
         margs += "path_out="+outDirStr;
         margs += "|";
-        margs += "filter_radius="+"10";
-        IJ.log(margs);
+        margs += "filter_radius="+filter_radius_jpg;
+        //IJ.log(margs);
         IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessJPG.ijm", margs);
 
         inImageParts = (raw_jpgBatchToProcess.get(i+1).getName()).split("\\.(?=[^\\.]+$)");
@@ -269,7 +303,6 @@ public class Post_Process_Batch implements PlugIn{
       // JPG only case
 
       for( int i=0; i<jpgBatchToProcess.size(); i++ ){
-        IJ.log("\n\n");
 
         inImageParts = (filesToProcess[i].getName()).split("\\.(?=[^\\.]+$)");
         if( inImageParts.length < 2 ){
@@ -282,7 +315,7 @@ public class Post_Process_Batch implements PlugIn{
 
 
         NextModel = GetCameraModel(jpgBatchToProcess.get(i).getAbsolutePath());
-        IJ.log("Camera Model for " + jpgBatchToProcess.get(i).getAbsolutePath() + ": " + NextModel);
+        //IJ.log("Camera Model for " + jpgBatchToProcess.get(i).getAbsolutePath() + ": " + NextModel);
 
         if( NextModel.equals("CAMERA_NOT_SUPPORTED") ){
           IJ.log("The image you are trying to process was not taken with a compatable camera. I will skip this image");
@@ -293,7 +326,8 @@ public class Post_Process_Batch implements PlugIn{
 
         // Process JPG
         // CALL MACRO HERE
-        IJ.log("Processing: " + jpgBatchToProcess.get(i).getAbsolutePath());
+        IJ.log( (String)"Processing image " + jpgBatchToProcess.get(i).getName() + " (" + imgcounter + " of " + jpgBatchToProcess.size() + " - " + (int)((double)imgcounter/((double)jpgBatchToProcess.size())*100) + "% complete" + ")" );
+        imgcounter++;
         String margs = "";
         margs += "path_ff="+FLAT_FIELD_DIRECTORY+FlatField+"\\"+FlatField+".JPG";
         margs += "|";
@@ -302,7 +336,7 @@ public class Post_Process_Batch implements PlugIn{
         margs += "path_out="+outDirStr;
         margs += "|";
         margs += "filter_radius="+"10";
-        IJ.log(margs);
+        //IJ.log(margs);
         IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessJPG.ijm", margs);
 
         //String[] inImageParts = (jpgBatchToProcess.get(i).getName()).split("\\.(?=[^\\.]+$)");
@@ -313,7 +347,7 @@ public class Post_Process_Batch implements PlugIn{
           // Get the exif data from original Folder if output directory is input directory
           CopyEXIFData(OS, PATH_TO_EXIFTOOL, outDirStr+"original\\"+inImageNoExt+".jpg", outDirStr+inImageNoExt+".jpg");
         }else{
-          CopyEXIFData(OS, PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath(), outDirStr+inImageNoExt+".jpg");
+          CopyEXIFData(OS, PATH_TO_EXIFTOOL, jpgBatchToProcess.get(i).getAbsolutePath(), outDirStr+inImageNoExt+".jpg");
         }
 
       }
@@ -326,6 +360,9 @@ public class Post_Process_Batch implements PlugIn{
     if( DeleteOriginals == true ){
       deleteOriginals(outDirStr+"original");
     }
+
+    // Delete any tmp files that might exists
+    deleteTmps(outDirStr);
     IJ.log("I am done processing images. Goodbye!");
 
   }
@@ -353,9 +390,9 @@ public class Post_Process_Batch implements PlugIn{
 
     String line = null;
     try{
-      IJ.log(PATH_TO_EXIFTOOL);
-      IJ.log(command);
-      IJ.log(this.OS);
+      //IJ.log(PATH_TO_EXIFTOOL);
+      //IJ.log(command);
+      //IJ.log(this.OS);
       ProcessBuilder bob = new ProcessBuilder(console, c_arg, command);
       bob.redirectErrorStream(true);
       final Process proc = bob.start();
@@ -405,6 +442,19 @@ public class Post_Process_Batch implements PlugIn{
     }
   }
 
+  public GenericDialog showNotCorrectFileStructure(){
+      GenericDialog dialog = new GenericDialog("Problem with Input Directory");
+      dialog.addMessage("It seems RAW images are not followed by JPG images (or no JPG images exist in the directory). ");
+      dialog.addMessage("In order for this plugin to function correctly, you must supply a RAW followed By its corresponding JPG.");
+      dialog.addMessage("Please supply JPGs as required and try again.");
+      dialog.hideCancelButton();
+      dialog.setOKLabel("Quit");
+
+      dialog.showDialog();
+
+      return dialog;
+  }
+
   public ImagePlus[] OpenFF(String path, int filterRadius){
     String[] inImageParts = path.split("\\.(?=[^\\.]+$)");
     String inImageExt = inImageParts[1];
@@ -418,7 +468,7 @@ public class Post_Process_Batch implements PlugIn{
 
 
   	if( (inImageExt.toUpperCase()).equals("JPG") ) {
-      IJ.log("Opening " + path);
+      //IJ.log("Opening " + path);
 
       IJ.run("Open [Image IO]", "image="+ "[" + path + "]");
       ImagePlus jpg = IJ.getImage();
@@ -459,7 +509,7 @@ public class Post_Process_Batch implements PlugIn{
     }
 
     if( (inImageExt.toUpperCase()).equals("RAW") ){
-      IJ.log("Opening " + path);
+      //IJ.log("Opening " + path);
 
       IJ.run("Raw...", "open="+ "[" + path + "]" + "image=[16-bit Unsigned] width=4608 height=3456 offset=0 number=1 gap=0 little-endian");
       ImagePlus raw = IJ.getImage();
@@ -707,7 +757,7 @@ public class Post_Process_Batch implements PlugIn{
       c_arg = "/c";
       try{
         command = exiftoolpath + " -overwrite_original -tagsfromfile " + "\""+refimg+"\"" + " " + "\""+targimg+"\"";
-        IJ.log("Executing command: " + command);
+        //IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(false);
         proc = bob.start();
@@ -726,7 +776,7 @@ public class Post_Process_Batch implements PlugIn{
       try{
         // directory spaces
         command = exiftoolpath + " -overwrite_original -tagsfromfile " + "\'"+refimg+"\'" + " " + "\'"+targimg+"\'";
-        IJ.log("Executing command: " + command);
+        //IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(true);
         proc = bob.start();
@@ -764,7 +814,7 @@ public class Post_Process_Batch implements PlugIn{
 
     try{
       //command = "xcopy " + "\""+dir+"*.jpg"+"\" " + "\""+dir+"original\\\"";
-      IJ.log("Executing Command: " + command);
+      //IJ.log("Executing Command: " + command);
       bob = new ProcessBuilder(console, c_arg, command);
       bob.redirectErrorStream(false);
       proc = bob.start();
@@ -786,6 +836,21 @@ public class Post_Process_Batch implements PlugIn{
 
     IJ.log("Finished backing up images");
 
+  }
+
+  public void deleteTmps(String path){
+      File dir = new File(path);
+
+      String[] fileStr = dir.list();
+      File deleteFile = null;
+
+      for( int i=0; i<fileStr.length; i++ ){
+          deleteFile = new File(fileStr[i]);
+          if( deleteFile.getName().contains("tmp") ){
+              deleteFile.delete();
+          }
+      }
+      return;
   }
 
   public void deleteOriginals(String path){

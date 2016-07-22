@@ -25,10 +25,10 @@ for( i=0; i<tmpstr1.length; i++ ){
   }
 }
 
-print("path_ff: " + path_ff);
-print("path_jpg: " + path_jpg);
-print("path_out: " + path_out);
-print("filter_radius: " + filter_radius);
+//print("path_ff: " + path_ff);
+//print("path_jpg: " + path_jpg);
+//print("path_out: " + path_out);
+//print("filter_radius: " + filter_radius);
 
 // Open FF
 run("Open [Image IO]", "image="+ "[" + path_ff + "]");

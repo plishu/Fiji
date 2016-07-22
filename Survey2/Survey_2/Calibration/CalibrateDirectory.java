@@ -83,6 +83,8 @@ public class CalibrateDirectory implements PlugIn{
 
   private boolean keepPluginAlive = true;
 
+  private Debugger debugger = Debugger.getInstance();
+
   // {Intercept, Slope}
   // @TODO Update this
   // @TODO Create progress dialog for user
@@ -118,6 +120,7 @@ public class CalibrateDirectory implements PlugIn{
 
 
   public void run(String arg){
+      debugger.DEBUGMODE = false;
 
     while( keepPluginAlive ){
       Calibrator calibrator = new Calibrator();
@@ -248,8 +251,31 @@ public class CalibrateDirectory implements PlugIn{
             if( qrJPGPhoto.getCameraType().equals(CalibrationPrompt.SURVEY2_NDVI) ){
               calibrator.subtractNIR(qrJPGScaled.getBlueChannel(), qrJPGScaled.getRedChannel(), 80 );
             }
+
+            //@TODO TRYING TO GET THE SQUARES TO SHOW UP!!
             //qrJPGScaled = new RGBPhoto(qrJPGPhoto);
             jpgrois = calibrator.getRois(qrJPGPhoto.getImage());
+
+            /*
+            qrJPGPhoto.getImage().getProcessor().drawRoi(jpgrois[0]);
+            qrJPGPhoto.getImage().updateAndDraw();
+            qrJPGScaled.getImage().getProcessor().drawRoi(jpgrois[0]);
+            qrJPGScaled.getImage().updateAndDraw();
+
+
+            RoiManager mgr = new RoiManager();
+
+            for( int i=0; i<jpgrois.length; i++){
+              mgr.add(qrJPGPhoto.getImage(), jpgrois[i], i);
+            }
+
+            mgr =  RoiManager.getInstance();
+            */
+
+            if( debugger.getDebugMode() ){
+                qrJPGPhoto.show();
+                qrJPGScaled.show();
+            }
 
             if( jpgrois == null ){
               //IJ.log("ATTN: QR calibration targets could not be found. I will use default coefficient values.");
@@ -409,7 +435,7 @@ public class CalibrateDirectory implements PlugIn{
         imgcounter++;
         tmpfile = jpgIterator.next();
 
-        IJ.log( (String)"Processing image " + tmpfile.getName() + " (" + imgcounter + " of " + jpgToCalibrate.size() + " - " + (int)((double)imgcounter/((double)jpgToCalibrate.size())*100) + "%" + ")" );
+        IJ.log( (String)"Processing image " + tmpfile.getName() + " (" + imgcounter + " of " + jpgToCalibrate.size() + " - " + (int)((double)imgcounter/((double)jpgToCalibrate.size())*100) + "% complete" + ")" );
 
         IJ.log("Opening image: " + tmpfile.getName());
         photo = new RGBPhoto(inputDir, tmpfile.getName(), tmpfile.getPath(), cameraType, false);
@@ -708,6 +734,7 @@ public class CalibrateDirectory implements PlugIn{
         }
       }
 
+    IJ.run("Close All");
     if( prompts.showCalibrationFinishedDialog() ){
       keepPluginAlive = true;
       continue;

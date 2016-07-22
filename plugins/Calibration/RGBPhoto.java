@@ -154,13 +154,14 @@ public class RGBPhoto{
     greenChannel = channels[1];
     blueChannel = channels[2];
 
+
     RGBStackMerge merger = new RGBStackMerge();
     image = merger.mergeChannels(channels, false);
     //image.flattenStack();
     //image.show();
-    //here!!
     RGBStackConverter.convertToRGB(image);
     //(new StackConverter(image)).convertToRGB();
+
 
     camera = cam;
     imageDir = ref.getDir();
