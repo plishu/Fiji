@@ -101,11 +101,11 @@ public class CalibrateDirectory implements PlugIn{
   private final double[] BASE_COEFF_SURVEY2_NIR_TIF = {-2.24216724, 0.12962333};//
 
   // @TODO: We don't have reliable calibration coefficients. Tell user this in prompt.
-  private final double[] BASE_COEFF_DJIX3_NDVI_JPG = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
-  private final double[] BASE_COEFF_DJIX3_NDVI_TIF = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
+  private final double[] BASE_COEFF_DJIX3_NDVI_JPG = {-1.17016961, 0.03333209, -0.99455214, 0.05373502};
+  private final double[] BASE_COEFF_DJIX3_NDVI_TIF = {-1.17016961, 0.03333209, -0.99455214, 0.05373502};
 
-  private final double[] BASE_COEFF_DJIPHANTOM4_NDVI_JPG = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
-  private final double[] BASE_COEFF_DJIPHANTOM4_NDVI_TIF = {-0.11216727, 44.37533995, -0.11216727, 497.19423086};
+  private final double[] BASE_COEFF_DJIPHANTOM4_NDVI_JPG = {-1.17016961, 0.03333209, -0.99455214, 0.05373502};
+  private final double[] BASE_COEFF_DJIPHANTOM4_NDVI_TIF = {-1.17016961, 0.03333209, -0.99455214, 0.05373502}; //
 
   private final double[] BASE_COEFF_GOPROHERO4_NDVI = {0,0};
 

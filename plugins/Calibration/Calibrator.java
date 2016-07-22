@@ -47,7 +47,7 @@ public class Calibrator{
   public static String MAP_TARG2 = "TARGET2";
   public static String MAP_TARG3 = "TARGET3";
 
-  private Debugger debugger = Debugger.getInstance(true);
+  private Debugger debugger = Debugger.getInstance(false);
   private boolean ReflectanceImageOnly = false;
 
 
