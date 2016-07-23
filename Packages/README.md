@@ -1,21 +1,36 @@
 This directory contains the download links to the various pre-packaged Fiji distribution with the MAPIR plugin pre-installed
 
-## Latest Version (1.2.0)
+## Latest Version (1.2.1)
 
-####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160719.zip)
+####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160722.zip)
 
-####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160719.zip)
+####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160722.zip)
 
 ## Change Log
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - 2016-07-22
+### Added
+- In pre-process: option to toggle vignette removal
+- In pre-process: added fail-safe if no JPG images are provided for RAW processing
+- In pre-process: added progress notification of processing
+- In calibration: calibration target image now closing after calibration process completes
+- In calibration: base tif calibration coefficients for Phantom3/Phantom4
+
+### Changed
+- In pre-process: cleaned up output log so that extraneous information is not shown anymore
+
+### Fixed
+- In pre-process: Fixed index out of bounds exception when processing JPG images only (see: https://github.com/mapircamera/Fiji/issues/1)
+- In pre-process: Fixed issue where tmp files during EXIF copying are not being removed properly
+
+
 ## [1.2.0] - 2016-07-19
-### Added 
+### Added
 - Support for DJI X3 and DJI Phantom 3 & Phantom 4
 
 ### TODO
-- Generate base calibration values for DJI X3 and Phantom 3/Phantom 4
-- QR code detection optimization for calibration targets
+- Generate base calibration values for DJI X3 and Phantom3/Phantom 4
 
 ## [1.1.0] - 2016-07-14
 ### Added
@@ -39,7 +54,12 @@ All notable changes to this project will be documented in this file.
 - Tif 3 stack to 1 fix for Fiji
 - Fixed tif calibration not calibrating correctly
 
+
 ## Older versions
+
+####[Fiji Windows 32-bit (1.2.0)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160719.zip)
+
+####[Fiji Windows 64-bit (1.2.0)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160719.zip)
 
 ####[Fiji Windows 32-bit (1.1.0)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160714.zip)
 
