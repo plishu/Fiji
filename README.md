@@ -55,6 +55,9 @@ All notable changes to this project will be documented in this file.
 - In pre-process: Fixed index out of bounds exception when processing JPG images only (see: https://github.com/mapircamera/Fiji/issues/1)
 - In pre-process: Fixed issue where tmp files during EXIF copying are not being removed properly
 
+### TODO
+- Generate base calibratino values for DJI X3
+- QR detection optimization
 
 ## [1.2.0] - 2016-07-19
 ### Added
