@@ -276,6 +276,8 @@ public class RGBPhoto{
         this.filter = "660/850";
       }else if( camera.equals(CalibrationPrompt.DJIX3_NDVI) ){
         this.filter = "660/850";
+      }else if( camera.equals(CalibrationPrompt.DJIPHANTOM3_NDVI) ){
+        this.filter = "660/850";
       }else if( camera.equals(CalibrationPrompt.OTHER_CAMERA) ){
         //this.filter = valueMap.get(CalibrationPrompt.MAP_FILTER);
         filter = null; // User will input filter

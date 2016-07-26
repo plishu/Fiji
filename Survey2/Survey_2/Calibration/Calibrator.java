@@ -517,6 +517,8 @@ public class Calibrator{
                   redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 1.0 * bimg.getProcessor().getPixelValue(x, y);
               }else if( photo.getCameraType().equals(CalibrationPrompt.DJIPHANTOM4_NDVI) ){
                   redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 1.0 * bimg.getProcessor().getPixelValue(x, y);
+              }else if( photo.getCameraType().equals(CalibrationPrompt.DJIPHANTOM3_NDVI) ){
+                  redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 1.0 * bimg.getProcessor().getPixelValue(x, y);
               }
               //redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 0.8 * bimg.getProcessor().getPixelValue(x, y);
 
@@ -699,7 +701,6 @@ public class Calibrator{
     Roi target3Roi = qr.createRectangleRoi( target3Center, 0.3f );
     qr.drawPolygonOn( target3Roi, resimg );
 
-    IJ.log("Testing remove me :)");
     target1Roi = qr.mapRoiTo( qrimg, resimg, target1Center, 0.5f );
     qr.drawPolygonOn( target1Roi, qrimg );
     target2Roi = qr.mapRoiTo( qrimg, resimg, target2Center, 0.5f );

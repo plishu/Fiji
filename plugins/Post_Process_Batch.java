@@ -37,6 +37,8 @@ public class Post_Process_Batch implements PlugIn{
 
   private Boolean DeleteOriginals = true;
 
+  private final String VERSION = "1.3.0";
+
 
   class FileComparator implements Comparator<File>{
     @Override
@@ -47,6 +49,7 @@ public class Post_Process_Batch implements PlugIn{
 
 
   public void run(String args){
+      IJ.log("Build: " + VERSION);
     //IJ.showMessage("Post_Process", "Hello world");
     WorkingDirectory = IJ.getDirectory("imagej");
     OS = System.getProperty("os.name");
@@ -142,7 +145,14 @@ public class Post_Process_Batch implements PlugIn{
             raw_jpgBatchToProcess.add(filesToProcess[i+1]);
         }else{
             // Does not comply to directory file structure
-            showNotCorrectFileStructure();
+            if( showNotCorrectFileStructure().wasOKed() ){
+                IJ.log("Current File: " + filesToProcess[i].getName());
+                IJ.log("Error --> " + filesToProcess[i+1].getName());
+                IJ.log("File structure detected: ");
+                for( int j=0; j<filesToProcess.length; j++ ){
+                    IJ.log(filesToProcess[j].getName());
+                }
+            }
             return;
         }
 
@@ -154,7 +164,14 @@ public class Post_Process_Batch implements PlugIn{
             raw_jpgBatchToProcess.add(filesToProcess[i+1]);
         }else{
             // Does not comply to directory file structure
-            showNotCorrectFileStructure();
+            if( showNotCorrectFileStructure().wasOKed() ){
+                IJ.log("Current File: " + filesToProcess[i].getName());
+                IJ.log("Error --> " + filesToProcess[i+1].getName());
+                IJ.log("File structure detected: ");
+                for( int j=0; j<filesToProcess.length; j++ ){
+                    IJ.log(filesToProcess[j].getName());
+                }
+            }
             return;
         }
 
@@ -405,7 +422,7 @@ public class Post_Process_Batch implements PlugIn{
 
 
         if( line != null ){
-          if( line.matches( ".*Survey2_(BLUE|RED|GREEN|RGB|IR|NDVI)|.*FC350|.*FC300X|.*FC330" )){
+          if( line.matches( ".*Survey2_(BLUE|RED|GREEN|RGB|IR|NDVI)|.*FC350|.*FC300(S|X)|.*FC330" )){
             break;
           }
         }
@@ -431,12 +448,12 @@ public class Post_Process_Batch implements PlugIn{
       return "Survey2_NDVI";
     }else if( line.matches(".*FC350") ){
       return "FC350";
-    }else if( line.matches(".*FC300X|.*FC330") ){
-      // Phantom 4 or Phandom 3 support
-      if( line.matches(".*FC330") ){
-        return "FC330";
-      }
+    }else if( line.matches(".*FC330") ){
+      return "FC330";
+    }else if( line.matches(".*FC300X") ){
       return "FC300X";
+    }else if( line.matches(".*FC300S") ){
+      return "FC300S";
     }else{
       return "CAMERA_NOT_SUPPORTED";
     }
@@ -445,10 +462,11 @@ public class Post_Process_Batch implements PlugIn{
   public GenericDialog showNotCorrectFileStructure(){
       GenericDialog dialog = new GenericDialog("Problem with Input Directory");
       dialog.addMessage("It seems RAW images are not followed by JPG images (or no JPG images exist in the directory). ");
-      dialog.addMessage("In order for this plugin to function correctly, you must supply a RAW followed By its corresponding JPG.");
-      dialog.addMessage("Please supply JPGs as required and try again.");
-      dialog.hideCancelButton();
-      dialog.setOKLabel("Quit");
+      dialog.addMessage("If you supply RAW images, they must be followed by its corrisponding JPG version.");
+      dialog.addMessage("Please fix the input file directory by supplying JPG files.");
+      //dialog.hideCancelButton();
+      dialog.setOKLabel("Debug");
+      dialog.setCancelLabel("Quit");
 
       dialog.showDialog();
 
@@ -600,9 +618,15 @@ public class Post_Process_Batch implements PlugIn{
       file = "ir";
     }else if( model.equals("Survey2_NDVI") ){
       file = "ndvi";
-    }else if( model.equals("FC300X") || model.equals("FC330") ){
-      // Phantom 4 and Phantom 3 support
+    }else if( model.equals("FC330") ){
+        // Phantom 4
       file = "FC330_ndvi";
+    }else if( model.equals("FC300X") ){
+        // Using model S for now
+      file = "FC300S_ndvi";
+    }else if( model.equals("FC300S") ){
+        // Phantom 3
+      file = "FC300S_ndvi";
     }else if( model.equals("FC350") ){
       file = "FC350_ndvi";
     }

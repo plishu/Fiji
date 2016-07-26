@@ -107,6 +107,9 @@ public class CalibrateDirectory implements PlugIn{
   private final double[] BASE_COEFF_DJIPHANTOM4_NDVI_JPG = {-1.17016961, 0.03333209, -0.99455214, 0.05373502};
   private final double[] BASE_COEFF_DJIPHANTOM4_NDVI_TIF = {-1.17016961, 0.03333209, -0.99455214, 0.05373502}; //
 
+  private final double[] BASE_COEFF_DJIPHANTOM3_NDVI_JPG = {-1.54494979, 3.44708472, -1.40606832, 6.35407929};//
+  private final double[] BASE_COEFF_DJIPHANTOM3_NDVI_TIF = {-1.37495554, 0.01752340, -1.41073753, 0.03700812};//
+
   private final double[] BASE_COEFF_GOPROHERO4_NDVI = {0,0};
 
   private String OS = System.getProperty("os.name");
@@ -117,10 +120,14 @@ public class CalibrateDirectory implements PlugIn{
   private boolean thereAreJPGs = false;
   private boolean thereAreTIFs = false;
 
+  private final String VERSION = "1.3.0";
+  private final boolean DEBUG = false;
+
 
 
   public void run(String arg){
-      debugger.DEBUGMODE = false;
+      IJ.log("Build: " + VERSION);
+      debugger.DEBUGMODE = true;
 
     while( keepPluginAlive ){
       Calibrator calibrator = new Calibrator();
@@ -170,8 +177,8 @@ public class CalibrateDirectory implements PlugIn{
         outputDir = inputDir + "\\" + CALIBRATEDSAVEFOLDER + "_" + Integer.toString(numCalibratedFolders+1) + "\\";
       }
 
-      jpgOutputDir = outputDir + "\\Jpgs\\";
-      tifOutputDir = outputDir + "\\Tifs\\";
+      jpgOutputDir = outputDir + "\\JPG\\";
+      tifOutputDir = outputDir + "\\TIF\\";
 
       // Scan for calibrated folder
 
@@ -416,11 +423,11 @@ public class CalibrateDirectory implements PlugIn{
       }
 
       File jpgout = new File(jpgOutputDir);
-      if( !jpgout.exists() ){
+      if( !jpgout.exists() && thereAreJPGs ){
         jpgout.mkdir();
       }
       File tifout = new File(tifOutputDir);
-      if( !tifout.exists() ){
+      if( !tifout.exists() && thereAreTIFs ){
         tifout.mkdir();
       }
 
@@ -696,7 +703,44 @@ public class CalibrateDirectory implements PlugIn{
             }
           }
           resultphoto = calibrator.makeNDVI(photo, coeffs);
-        }
+      }else if( cameraType.equals(CalibrationPrompt.DJIPHANTOM3_NDVI) ){
+          baseSummary = calibrator.getRefValues(bfs, "660/850");
+
+          if( photo.getExtension().toUpperCase().equals("TIF") ){
+            if( useQR == true && tifrois != null ){
+              tmpcoeff = calculateCoefficients(qrTIFScaled, tifrois, calibrator, baseSummary, "Red");
+              coeffs[0] = tmpcoeff[0];
+              coeffs[1] = tmpcoeff[1];
+              tmpcoeff = calculateCoefficients(qrTIFScaled, tifrois, calibrator, baseSummary, "Blue");
+              coeffs[2] = tmpcoeff[0];
+              coeffs[3] = tmpcoeff[1];
+            }else{
+              coeffs[0] = BASE_COEFF_DJIPHANTOM3_NDVI_TIF[0];
+              coeffs[1] = BASE_COEFF_DJIPHANTOM3_NDVI_TIF[1];
+              coeffs[2] = BASE_COEFF_DJIPHANTOM3_NDVI_TIF[2];
+              coeffs[3] = BASE_COEFF_DJIPHANTOM3_NDVI_TIF[3];
+            }
+
+
+            //photo = calibrator.subtractNIR(photo, 0.8);
+
+          }else if( photo.getExtension().toUpperCase().equals("JPG") ){
+            if( useQR == true && jpgrois != null ){
+              tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Red");
+              coeffs[0] = tmpcoeff[0];
+              coeffs[1] = tmpcoeff[1];
+              tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Blue");
+              coeffs[2] = tmpcoeff[0];
+              coeffs[3] = tmpcoeff[1];
+            }else{
+              coeffs[0] = BASE_COEFF_DJIPHANTOM3_NDVI_JPG[0];
+              coeffs[1] = BASE_COEFF_DJIPHANTOM3_NDVI_JPG[1];
+              coeffs[2] = BASE_COEFF_DJIPHANTOM3_NDVI_JPG[2];
+              coeffs[3] = BASE_COEFF_DJIPHANTOM3_NDVI_JPG[3];
+            }
+          }
+          resultphoto = calibrator.makeNDVI(photo, coeffs);
+      }
 
         resultphoto.copyFileData(photo);
 
@@ -874,11 +918,15 @@ public class CalibrateDirectory implements PlugIn{
       // More shitty fixes for DJI
       // Phantom4 option supports phantom 4 and phantom 3
       // Phantom 4 = FC330; Phantom 3 = FC300X
-      if( model.equals("FC300X") || model.equals("FC330") ){
+      if( model.contains("FC330") ){
         model = CalibrationPrompt.DJIPHANTOM4_NDVI;
       }
 
-      if( model.equals("FC350") ){
+      if( model.contains("FC300") ){
+          model = CalibrationPrompt.DJIPHANTOM3_NDVI;
+      }
+
+      if( model.contains("FC350") ){
         model = CalibrationPrompt.DJIX3_NDVI;
       }
       return model.replaceAll("_", " ");

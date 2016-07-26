@@ -1,10 +1,13 @@
 import ij.ImagePlus;
 import java.util.Iterator;
+import java.util.Map;
 import ij.plugin.ChannelSplitter;
 import ij.gui.NewImage;
 import ij.IJ;
 
 public class NDVIIndex implements Index{
+
+
     @Override
     public double calculate(double visPix, double nirPix){
 
@@ -62,8 +65,37 @@ public class NDVIIndex implements Index{
 
     // @TODO For seperate band calculation
     @Override
-    public ImagePlus calculateIndex(Iterator<ImagePlus> inImgs){
-        return null;
+    public ImagePlus calculateIndex(Map<String, ImagePlus> inImgs){
+        // Red channel = visImg
+        // Blue channel = nirImg
+
+        int x = 0;
+        int y = 0;
+
+        ImagePlus visImg = inImgs.get("visImg");
+        ImagePlus nirImg = inImgs.get("nirImg");
+        ImagePlus newImage = NewImage.createFloatImage("ndviIndex", visImg.getWidth(), visImg.getHeight(), 1, 1);
+
+        double visPixel = 0.0;
+        double nirPixel = 0.0;
+        double outPixel = 0.0;
+
+        while( y < visImg.getHeight() ){
+            x = 0; // Reset for new row of pixels
+            while( x < visImg.getWidth() ){
+                visPixel = visImg.getProcessor().getPixelValue(x,y);
+                nirPixel = nirImg.getProcessor().getPixelValue(x,y);
+
+                outPixel = calculate(visPixel, nirPixel);
+
+                newImage.getProcessor().putPixelValue(x, y, outPixel);
+
+                x++;
+            }
+            y++;
+        }
+
+        return newImage;
     }
 
     public ImagePlus getVisImage(ImagePlus inImg, int visIndex){
@@ -74,6 +106,11 @@ public class NDVIIndex implements Index{
     public ImagePlus getNIRImage(ImagePlus inImg, int nirIndex){
         ImagePlus[] imageBands = ChannelSplitter.split(inImg);
         return imageBands[nirIndex];
+    }
+
+    @Override
+    public String getIndexType(){
+        return "NDVI";
     }
 
 
