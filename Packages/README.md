@@ -1,13 +1,32 @@
 This directory contains the download links to the various pre-packaged Fiji distribution with the MAPIR plugin pre-installed
 
-## Latest Version (1.2.1)
+## Latest Version (1.3.0)
 
-####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160722.zip)
+####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160726.zip)
 
-####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160722.zip)
+####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160726.zip)
 
 ## Change Log
 All notable changes to this project will be documented in this file.
+
+## [1.3.0] - 2016-07-26
+### Added
+- Base calibration values for Phantom 3 & Phantom 4
+- Support for Phantom 3 X/S models in pre-process, and calibration.
+- Index/Lut plugin
+- Log file displays version number of plugin
+- Debug button in pre-process to aid users in case something goes wrong
+
+### Changed
+- JPG/TIF folders are only created if there are JPG/TIF images to calibrate/apply LUT
+- In calibration: Separated Phantom 3/4 to two options: Phantom 3 (397mm), Phantom 4 (397mm)
+- Changed lut name Survey2_NDVI_0_1 to Survey2_NDVI
+- Changed lut name Survey1_NDVI_0_1 to Survey1_NDVI
+
+### TODO
+- Generate base calibration values for DJI X3
+- QR Code recognition optimization for Red and NIR images
+- Improve calibration for dual camera NDVI calibration
 
 ## [1.2.1] - 2016-07-22
 ### Added
@@ -60,6 +79,10 @@ All notable changes to this project will be documented in this file.
 
 
 ## Older versions
+
+####[Fiji Windows 32-bit (1.2.1)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160722.zip)
+
+####[Fiji Windows 64-bit (1.2.1)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160722.zip)
 
 ####[Fiji Windows 32-bit (1.2.0)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160719.zip)
 
