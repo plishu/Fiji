@@ -1,6 +1,25 @@
 ## Change Log
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2016-07-26
+### Added
+- Base calibration values for Phantom 3 & Phantom 4
+- Support for Phantom 3 X/S models in pre-process, and calibration.
+- Index/Lut plugin
+- Log file displays version number of plugin
+- Debug button in pre-process to aid users in case something goes wrong
+
+### Changed
+- JPG/TIF folders are only created if there are JPG/TIF images to calibrate/apply LUT
+- In calibration: Separated Phantom 3/4 to two options: Phantom 3 (397mm), Phantom 4 (397mm)
+- Changed lut name Survey2_NDVI_0_1 to Survey2_NDVI
+- Changed lut name Survey1_NDVI_0_1 to Survey1_NDVI
+
+### TODO
+- Generate base calibration values for DJI X3
+- QR Code recognition optimization for Red and NIR images
+- Improve calibration for dual camera NDVI calibration
+
 ## [1.2.1] - 2016-07-22
 ### Added
 - In pre-process: option to toggle vignette removal
@@ -15,6 +34,10 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - In pre-process: Fixed index out of bounds exception when processing JPG images only (see: https://github.com/mapircamera/Fiji/issues/1)
 - In pre-process: Fixed issue where tmp files during EXIF copying are not being removed properly
+
+### TODO
+- Generate base calibration values for DJI X3
+- QR detection optimization
 
 
 ## [1.2.0] - 2016-07-19
