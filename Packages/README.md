@@ -1,13 +1,36 @@
 This directory contains the download links to the various pre-packaged Fiji distribution with the MAPIR plugin pre-installed
 
-## Latest Version (1.3.0)
+## Latest Version (1.3.1)
 
-####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160726.zip)
+####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160808.zip)
 
-####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160726.zip)
+####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160808.zip)
 
 ## Change Log
 All notable changes to this project will be documented in this file.
+
+## Change Log
+All notable changes to this project will be documented in this file.
+
+## [1.3.1] - 2016-08-05
+### Added
+- In pre-process: Added warning to user if camera settings are different than those in Flat-Fields
+- In calibration: Added warning to user if calibration target image camera settings are different than those of the image to be calibrated
+- Added support for Survey1 NDVI
+- Added calibration coefficients for the X3
+- Added image sharpening for better qr detection in calibration target
+- Added new luts: MAPIR_NDVI and MAPIR_NDVI_CB.
+- In apply LUT: If lut reference image exists, then it will be copied to the output folder.
+- Auto-Adjust NIR subtraction percent for more accurate calibration
+- User can now save the plots and calibration target image used in calibration (for debugging purposes)
+
+
+### Changed
+- Histogram equalization to histogram stretch for qr detection. Histogram stretch seems to produce better qr detection
+- Removed other MAPIR luts so that only MAPIR_NDVI and MAPIR_NDVI_CB are available.
+
+### Fixed
+- Calibration plugin crashing when an ROI exists beforehand.
 
 ## [1.3.0] - 2016-07-26
 ### Added
@@ -78,7 +101,12 @@ All notable changes to this project will be documented in this file.
 - Fixed tif calibration not calibrating correctly
 
 
+
 ## Older versions
+
+####[Fiji Windows 32-bit (1.3.1)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160726.zip)
+
+####[Fiji Windows 64-bit (1.3.1)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160726.zip)
 
 ####[Fiji Windows 32-bit (1.2.1)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160722.zip)
 
