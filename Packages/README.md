@@ -9,9 +9,6 @@ This directory contains the download links to the various pre-packaged Fiji dist
 ## Change Log
 All notable changes to this project will be documented in this file.
 
-## Change Log
-All notable changes to this project will be documented in this file.
-
 ## [1.3.1] - 2016-08-05
 ### Added
 - In pre-process: Added warning to user if camera settings are different than those in Flat-Fields
