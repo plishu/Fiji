@@ -107,6 +107,12 @@ public class QRCalib{
         baseResize += 100;
 
         resimg = resize(qrimg, baseResize);
+
+        // enhance contrast
+        //(new ContrastEnhancer()).equalize(resimg);
+        (new ContrastEnhancer()).stretchHistogram(resimg, 0.0);
+        //sharpen
+        resimg.getProcessor().sharpen();
         //resimg.show();
         result = decodeQR(resimg);
       }

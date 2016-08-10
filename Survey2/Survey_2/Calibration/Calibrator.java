@@ -47,7 +47,7 @@ public class Calibrator{
   public static String MAP_TARG2 = "TARGET2";
   public static String MAP_TARG3 = "TARGET3";
 
-  private Debugger debugger = Debugger.getInstance(true);
+  private Debugger debugger = Debugger.getInstance(false);
   private boolean ReflectanceImageOnly = false;
 
 
@@ -280,6 +280,38 @@ public class Calibrator{
     return values;
   }
 
+  public ImagePlus makePlot(double[] calcValues, double[] refValues){
+      double[] regressionParams = null;
+      double r_Squared = 0.0;
+
+
+      CurveFitter visRegression = new CurveFitter(calcValues, refValues);
+      visRegression.doFit(0, true);
+      regressionParams = visRegression.getParams();
+      r_Squared = visRegression.getRSquared();
+
+      double intercept = (double)regressionParams[0];
+      double slope = (double)regressionParams[1];
+
+      //IJ.log((String)("intercept: " + IJ.d2s((double)regressionParams[0], (int)8)));
+      //IJ.log((String)("slope: " + IJ.d2s((double)regressionParams[1], (int)8)));
+
+      PlotWindow.noGridLines = false;
+      Plot visPlot = new Plot("Band Regression Line", "Image values", "Reflectance values");
+      //visPlot.setLimits(10.0/100f, 30.0/100f, 0.0, 1.0);
+      visPlot.setLimits(0.0, 255.0, 0.0, 1.0);
+      visPlot.setColor(Color.RED);
+      visPlot.addPoints(calcValues, refValues, 0);
+      visPlot.draw();
+      double[] xVis = new double[]{0.0, 1.0};
+      double[] yVis = new double[]{regressionParams[0], regressionParams[1] + regressionParams[0]};
+      visPlot.addPoints(xVis, yVis, 2);
+      visPlot.addLabel(0.05, 0.1, "R squared = " + Double.toString(r_Squared));
+
+
+      return visPlot.getImagePlus();
+  }
+
 
   public ImagePlus createIndexImage(){
     return null;
@@ -465,6 +497,171 @@ public class Calibrator{
     return nphoto;
   }
 
+
+  public RGBPhoto makeNDVI(RGBPhoto photo, RGBPhoto refphoto, double[] coeff, Roi[] rois){
+
+      ImagePlus img = photo.getImage();
+      ImagePlus imgRed = photo.getRedChannel();
+      ImagePlus imgGreen = photo.getGreenChannel();
+      ImagePlus imgBlue = photo.getBlueChannel();
+
+      ImagePlus refImg = refphoto.getImage();
+      ImagePlus refImgRed = refphoto.getRedChannel();
+      ImagePlus refImgGreen = refphoto.getGreenChannel();
+      ImagePlus refImgBlue = refphoto.getBlueChannel();
+
+      double redPixel = 0.0;
+      double greenPixel = 0.0;
+      double bluePixel = 0.0;
+
+
+      double redReflectMax = (double)imgRed.getDisplayRangeMax() * coeff[1] + coeff[0];
+      double redReflectMin = (double)imgRed.getDisplayRangeMin() * coeff[1] + coeff[0];
+      double blueReflectMax = (double)imgBlue.getDisplayRangeMax() * coeff[3] + coeff[2];
+      double blueReflectMin = (double)imgBlue.getDisplayRangeMin() * coeff[3] + coeff[2];
+
+      ImagePlus newRedImage = NewImage.createFloatImage((String)"redImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
+      ImagePlus newBlueImage = NewImage.createFloatImage((String)"blueImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
+      ImagePlus newGreenImage = NewImage.createFloatImage((String)"greenImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
+
+      // Setup ROI Manager for the reference image in order to calculate the NIR percent to subtractNIR
+
+      RoiManager manager = setupROIManager(refImgRed, rois);
+      List<HashMap<String, String>> bandSummary = null;
+      double[] refmeans = new double[3];
+
+
+      double eightySevenTargetMean = 0.0;
+      double fiftyOneTargetMean = 0.0;
+      double twentyThreeTargetMean = 0.0;
+
+      bandSummary = processRois(refImgRed, manager); // <--- This is the key
+      double[] redRefMean = {Double.parseDouble(bandSummary.get(0).get(Calibrator.MAP_MEAN)),
+          Double.parseDouble(bandSummary.get(1).get(Calibrator.MAP_MEAN)),
+          Double.parseDouble(bandSummary.get(2).get(Calibrator.MAP_MEAN))};
+
+      manager.reset();
+      manager.close();
+      if( debugger.DEBUGMODE ){
+          IJ.log( (String)"Red channel 87% target mean: " + redRefMean[0] );
+          IJ.log( (String)"Red channel 51% target mean: " + redRefMean[1] );
+          IJ.log( (String)"Red channel 23% target mean: " + redRefMean[2] );
+
+          IJ.log( (String)"Red Intecept: " + coeff[0] );
+          IJ.log( (String)"Red Slope: " + coeff[1] );
+      }
+
+
+      manager = setupROIManager(refImgBlue, rois);
+      // bandSummary[0] = 87% target summary
+      bandSummary = processRois(refImgBlue, manager);
+      double[] blueRefMean = {Double.parseDouble(bandSummary.get(0).get(Calibrator.MAP_MEAN)),
+          Double.parseDouble(bandSummary.get(1).get(Calibrator.MAP_MEAN)),
+          Double.parseDouble(bandSummary.get(2).get(Calibrator.MAP_MEAN))};
+
+      if( debugger.DEBUGMODE ){
+          IJ.log( (String)"Blue channel 87% target mean: " + blueRefMean[0] );
+          IJ.log( (String)"Blue channel 51% target mean: " + blueRefMean[1] );
+          IJ.log( (String)"Blue channel 23% target mean: " + blueRefMean[2] );
+
+          IJ.log( (String)"Blue Intercept: " + coeff[2] );
+          IJ.log( (String)"Blue Slope: " + coeff[3] );
+      }
+
+      manager.reset();
+      manager.close();
+
+      // coeff[0] = red intercept
+      // coeff[1] = red slope
+      // coeff[2] = blue intercept
+      // coeff[3] = blue slope
+      double NDVI87 = -0.0117532235;
+      double NDVI51 = 0.0031666667;
+      double NDVI23 = -0.0233926435;
+      //double nirSubtract87 = (blueRefMean[0]*coeff[3]+coeff[2])/(blueRefMean[0]*coeff[1]) * (NDVI87-1)/(NDVI87+1) + (redRefMean[0]*coeff[1]+coeff[0])/(blueRefMean[0]*coeff[1]);
+      double nirSubtract87 = (coeff[3]/coeff[1] + coeff[2]/(coeff[1]*blueRefMean[0]))*((NDVI87-1)/(NDVI87+1)) + (coeff[0]/(coeff[1]*blueRefMean[0])) + (redRefMean[0]/blueRefMean[0]);
+      double nirSubtract51 = (blueRefMean[1]*coeff[3]+coeff[2])/(blueRefMean[1]*coeff[1]) * (NDVI51-1)/(NDVI51+1) + (redRefMean[1]*coeff[1]+coeff[0])/(blueRefMean[1]*coeff[1]);
+      double nirSubtract23 = (blueRefMean[2]*coeff[3]+coeff[2])/(blueRefMean[2]*coeff[1]) * (NDVI23-1)/(NDVI23+1) + (redRefMean[2]*coeff[1]+coeff[0])/(blueRefMean[2]*coeff[1]);
+
+      if( debugger.DEBUGMODE ){
+          IJ.log((String)"87 Target Reported Subtraction Percent: " + nirSubtract87);
+          IJ.log((String)"51 Target Reported Subtraction Percent: " + nirSubtract51);
+          IJ.log((String)"23 Target Reported Subtraction Percent: " + nirSubtract23);
+      }
+
+
+      int x = 0;
+      int y = 0;
+      while( y < img.getHeight() ){
+          x = 0;
+          while( x < img.getWidth() ){
+              // @TODO Survey 1 support (remember that the bands are switched)
+              redPixel = (double)imgRed.getProcessor().getPixelValue(x, y);
+              bluePixel = (double)imgBlue.getProcessor().getPixelValue(x, y);
+
+              // NIR remove
+              if( photo.getCameraType().equals(CalibrationPrompt.SURVEY2_NDVI) ){
+                  redPixel = (double)redPixel - nirSubtract87 * bluePixel;
+              }else if( photo.getCameraType().equals(CalibrationPrompt.DJIPHANTOM4_NDVI) ){
+                  redPixel = (double)redPixel - nirSubtract87 * bluePixel;
+              }else if( photo.getCameraType().equals(CalibrationPrompt.DJIPHANTOM3_NDVI) ){
+                  redPixel = (double)redPixel - nirSubtract87 * bluePixel;
+              }else if( photo.getCameraType().equals(CalibrationPrompt.SURVEY1_NDVI) ){
+                  bluePixel = bluePixel - redPixel;
+              }else if( photo.getCameraType().equals(CalibrationPrompt.DJIX3_NDVI) ){
+                 redPixel = (double)redPixel - nirSubtract87 * bluePixel;
+              }
+              //redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 0.8 * bimg.getProcessor().getPixelValue(x, y);
+
+              // Apply reflectance mapping
+              redPixel = (double)redPixel * coeff[1] + coeff[0];
+                  //bluePixel = (double)bimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[3] + calibrationCeofs[2];
+              bluePixel = (double)bluePixel * coeff[3] + coeff[2];
+
+
+              // THIS ONE WORKS!!
+
+              if( !ReflectanceImageOnly ){
+                redPixel = (double)( (redPixel - redReflectMin)/(redReflectMax-redReflectMin)*255.0 );
+                bluePixel = (double)( (bluePixel - blueReflectMin)/(blueReflectMax-blueReflectMin)*255.0 );
+
+
+                // histogram stretch map to float-point THIS ONE WORKS!!
+                redPixel = (double)(redPixel - 0.0)/(255.0-0.0)*1.0;
+                bluePixel = (double)(bluePixel - 0.0)/(255.0-0.0)*1.0;
+              }
+
+              newRedImage.getProcessor().putPixelValue(x, y, redPixel);
+              newBlueImage.getProcessor().putPixelValue(x, y, bluePixel);
+              newGreenImage.getProcessor().putPixelValue(x, y, greenPixel);
+
+
+              x++;
+          }
+          y++;
+      }
+
+      imgRed = newRedImage;
+      imgGreen = newGreenImage;
+      imgBlue = newBlueImage;
+
+      if( ReflectanceImageOnly ){
+          IJ.save((ImagePlus)imgRed, (String)(String.valueOf(photo.getDir() + photo.getFileName() + "_reflectance_red." + photo.getExtension())));
+          IJ.save((ImagePlus)imgGreen, (String)(String.valueOf(photo.getDir() + photo.getFileName() + "_reflectance_green." + photo.getExtension())));
+          IJ.save((ImagePlus)imgBlue, (String)(String.valueOf(photo.getDir() + photo.getFileName() + "_reflectance_blue." + photo.getExtension())));
+      }
+
+
+      ImagePlus[] nchan = {imgRed, imgGreen, imgBlue};
+      RGBPhoto nphoto = new RGBPhoto(nchan, CalibrationPrompt.SURVEY2_NDVI, photo);
+
+      if( ReflectanceImageOnly ){
+          //IJ.save((ImagePlus)nphoto.getImage(), (String)(String.valueOf("C:\\Users\\Peau\\Desktop\\") + nphoto.getFileName() + "_index" + "." + nphoto.getExtension()));
+      }
+
+      return nphoto;
+  }
+
   public RGBPhoto makeNDVI(RGBPhoto photo, double[] calibrationCeofs) {
       ImagePlus img = photo.getImage();
       ImagePlus rimg = photo.getRedChannel();
@@ -510,33 +707,40 @@ public class Calibrator{
       while (y < img.getHeight()) {
           x = 0;
           while (x < img.getWidth()) {
-
+              // @TODO Survey 1 support (remember that the bands are switched)
+              redPixel = (double)rimg.getProcessor().getPixelValue(x, y);
+              bluePixel = (double)bimg.getProcessor().getPixelValue(x, y);
 
               // NIR remove
               if( photo.getCameraType().equals(CalibrationPrompt.SURVEY2_NDVI) ){
-                  redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 1.0 * bimg.getProcessor().getPixelValue(x, y);
+                  redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - .62 * bimg.getProcessor().getPixelValue(x, y);
               }else if( photo.getCameraType().equals(CalibrationPrompt.DJIPHANTOM4_NDVI) ){
                   redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 1.0 * bimg.getProcessor().getPixelValue(x, y);
               }else if( photo.getCameraType().equals(CalibrationPrompt.DJIPHANTOM3_NDVI) ){
                   redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 1.0 * bimg.getProcessor().getPixelValue(x, y);
+              }else if( photo.getCameraType().equals(CalibrationPrompt.SURVEY1_NDVI) ){
+                  bluePixel = bluePixel - redPixel;
+              }else if( photo.getCameraType().equals(CalibrationPrompt.DJIX3_NDVI) ){
+                 redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 1.0 * bimg.getProcessor().getPixelValue(x, y);
               }
               //redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 0.8 * bimg.getProcessor().getPixelValue(x, y);
 
               // Apply reflectance mapping
               redPixel = (double)redPixel * calibrationCeofs[1] + calibrationCeofs[0];
-              bluePixel = (double)bimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[3] + calibrationCeofs[2];
+                  //bluePixel = (double)bimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[3] + calibrationCeofs[2];
+              bluePixel = (double)bluePixel * calibrationCeofs[3] + calibrationCeofs[2];
 
 
               // THIS ONE WORKS!!
 
               if( !ReflectanceImageOnly ){
-                redPixel = (int)( (redPixel - redReflectMin)/(redReflectMax-redReflectMin)*255 );
-                bluePixel = (int)( (bluePixel - blueReflectMin)/(blueReflectMax-blueReflectMin)*255 );
+                redPixel = (double)( (redPixel - redReflectMin)/(redReflectMax-redReflectMin)*255.0 );
+                bluePixel = (double)( (bluePixel - blueReflectMin)/(blueReflectMax-blueReflectMin)*255.0 );
 
 
                 // histogram stretch map to float-point THIS ONE WORKS!!
-                redPixel = (double)(redPixel - 0)/(255-0)*1;
-                bluePixel = (double)(bluePixel - 0)/(255-0)*1;
+                redPixel = (double)(redPixel - 0.0)/(255.0-0.0)*1.0;
+                bluePixel = (double)(bluePixel - 0.0)/(255.0-0.0)*1.0;
               }
 
               newRedImage.getProcessor().putPixelValue(x, y, redPixel);
@@ -562,6 +766,202 @@ public class Calibrator{
       }
 
       return nphoto;
+  }
+
+  public double[] calibrateQR(RGBPhoto photo, double[][] ref, double[] calibrationCeofs, Roi[] rois){
+      ImagePlus img = photo.getImage();
+      ImagePlus rimg = photo.getRedChannel();
+      ImagePlus gimg = photo.getGreenChannel();
+      ImagePlus bimg = photo.getBlueChannel();
+
+
+      double redPixel = 0.0;
+      double reflect = 0.0;
+      double bluePixel = 0.0;
+      double greenPixel = 0.0;
+
+      ImagePlus newRedImage = NewImage.createFloatImage((String)"redImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
+      ImagePlus newBlueImage = NewImage.createFloatImage((String)"blueImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
+      ImagePlus newGreenImage = NewImage.createFloatImage((String)"greenImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
+
+      int x = 0;
+      int y = 0;
+      while (y < img.getHeight()) {
+          x = 0;
+          while (x < img.getWidth()) {
+              // @TODO Survey 1 support (remember that the bands are switched)
+              redPixel = (double)rimg.getProcessor().getPixelValue(x, y);
+              bluePixel = (double)bimg.getProcessor().getPixelValue(x, y);
+
+              // NIR remove
+              if( photo.getCameraType().equals(CalibrationPrompt.SURVEY2_NDVI) ){
+                  redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 1.0 * bimg.getProcessor().getPixelValue(x, y);
+              }else if( photo.getCameraType().equals(CalibrationPrompt.DJIPHANTOM4_NDVI) ){
+                  redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 1.0 * bimg.getProcessor().getPixelValue(x, y);
+              }else if( photo.getCameraType().equals(CalibrationPrompt.DJIPHANTOM3_NDVI) ){
+                  redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 1.0 * bimg.getProcessor().getPixelValue(x, y);
+              }else if( photo.getCameraType().equals(CalibrationPrompt.SURVEY1_NDVI) ){
+                  bluePixel = bluePixel - redPixel;
+              }else if( photo.getCameraType().equals(CalibrationPrompt.DJIX3_NDVI) ){
+                 redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 1.0 * bimg.getProcessor().getPixelValue(x, y);
+              }
+
+              // Apply reflectance mapping
+              redPixel = (double)redPixel * calibrationCeofs[1] + calibrationCeofs[0];
+              bluePixel = (double)bluePixel * calibrationCeofs[3] + calibrationCeofs[2];
+
+              //IJ.log((String)"Red: " + redPixel);
+              //IJ.log((String)"Blue: " + bluePixel);
+
+
+              newRedImage.getProcessor().putPixelValue(x, y, redPixel);
+              newBlueImage.getProcessor().putPixelValue(x, y, bluePixel);
+              newGreenImage.getProcessor().putPixelValue(x, y, greenPixel);
+              x++;
+          }
+          y++;
+      }
+
+      IJ.save((ImagePlus)newRedImage, (String)(String.valueOf("C:\\Users\\Peau\\Desktop\\") + photo.getFileName() + "_index_Red_old" + "." + photo.getExtension()));
+      IJ.save((ImagePlus)newBlueImage, (String)(String.valueOf("C:\\Users\\Peau\\Desktop\\") + photo.getFileName() + "_index_Blue_old" + "." + photo.getExtension()));
+
+      // Check reflactance mapping
+      RoiManager manager = null;
+      List<HashMap<String, String>> bandSummary = null;
+      newRedImage.show();
+      newBlueImage.show();
+      manager = setupROIManager(newRedImage, rois);
+      bandSummary = processRois(newRedImage, manager);
+      manager.reset();
+      manager.close();
+
+      double[] redmeans = {Double.parseDouble(bandSummary.get(0).get(Calibrator.MAP_MEAN)),
+          Double.parseDouble(bandSummary.get(1).get(Calibrator.MAP_MEAN)),
+          Double.parseDouble(bandSummary.get(2).get(Calibrator.MAP_MEAN))};
+
+    for( int i=0; i<redmeans.length; i++ ){
+        IJ.log( (String)"Red mean: " + redmeans[i] );
+    }
+
+     manager = setupROIManager(newBlueImage, rois);
+     bandSummary = processRois(newBlueImage, manager);
+     manager.reset();
+     manager.close();
+
+     double[] bluemeans = {Double.parseDouble(bandSummary.get(0).get(Calibrator.MAP_MEAN)),
+         Double.parseDouble(bandSummary.get(1).get(Calibrator.MAP_MEAN)),
+         Double.parseDouble(bandSummary.get(2).get(Calibrator.MAP_MEAN))};
+
+         for( int i=0; i<bluemeans.length; i++ ){
+             IJ.log( (String)"Blue mean: " + bluemeans[i] );
+         }
+
+     // ref[0][0] = 87% target red
+     // ref[1][0] = 51% target green
+     // ref[2][0] = 23% target blue
+
+     // Get average Error
+     double redE1 = ref[0][0] - redmeans[0];
+     double redE2 = ref[1][0] - redmeans[1];
+     double redE3 = ref[2][0] - redmeans[2];
+
+     IJ.log( (String)"Red difference: " + redE1 );
+     IJ.log( (String)"Red difference: " + redE2 );
+     IJ.log( (String)"Red difference: " + redE3 );
+
+     double blueE1 = ref[0][2] - bluemeans[0];
+     double blueE2 = ref[1][2] - bluemeans[1];
+     double blueE3 = ref[2][2] - bluemeans[2];
+
+     IJ.log( (String)"Blue difference: " + blueE1 );
+     IJ.log( (String)"Blue difference: " + blueE2 );
+     IJ.log( (String)"Blue difference: " + blueE3 );
+
+     double redAvgError = (redE1 + redE2 + redE3)/3.0;
+     double blueAvgError = (blueE1 + blueE2 + blueE3)/3.0;
+
+
+     // coeffs[0] = intercept red
+     // coeffs[1] = slope red
+     double[] coeffs = {calibrationCeofs[0]+redAvgError, calibrationCeofs[1],
+                        calibrationCeofs[2]+blueAvgError, calibrationCeofs[3]};
+
+
+
+      x = 0;
+      y = 0;
+      while( y < img.getHeight() ){
+          x = 0;
+          while( x < img.getWidth() ){
+              redPixel = (double)newRedImage.getProcessor().getPixelValue(x, y);
+              bluePixel = (double)newBlueImage.getProcessor().getPixelValue(x, y);
+
+              // Apply adjusted reflectance mapping
+
+              redPixel = (double)redPixel * coeffs[1] + coeffs[0];
+              bluePixel = (double)bluePixel * coeffs[3] + coeffs[2];
+
+
+              newRedImage.getProcessor().putPixelValue(x, y, redPixel);
+              newBlueImage.getProcessor().putPixelValue(x, y, bluePixel);
+              newGreenImage.getProcessor().putPixelValue(x, y, greenPixel);
+              x++;
+          }
+          y++;
+      }
+
+      IJ.save((ImagePlus)newRedImage, (String)(String.valueOf("C:\\Users\\Peau\\Desktop\\") + photo.getFileName() + "_index_Red" + "." + photo.getExtension()));
+      IJ.save((ImagePlus)newBlueImage, (String)(String.valueOf("C:\\Users\\Peau\\Desktop\\") + photo.getFileName() + "_index_Blue" + "." + photo.getExtension()));
+
+      return coeffs;
+  }
+
+
+
+  public double getNIRSubtractPercent(ImagePlus image, Roi[] rois){
+      // The formula
+      RoiManager manager = setupROIManager(image, rois);
+
+      List<HashMap<String, String>> bandSummary = null;
+      double[] refmeans = new double[3];
+
+      if( image == null ){
+
+      }else{
+
+
+          /*
+        if( channel.equals("Red") ){
+          manager = calibrator.setupROIManager(qrphoto.getRedChannel(), rois);
+          bandSummary = calibrator.processRois(qrphoto.getRedChannel(), manager); // <--- This is the key
+
+          refmeans[0] = baseSummary[0][0];
+          refmeans[1] = baseSummary[1][0];
+          refmeans[2] = baseSummary[2][0];
+        }else if( channel.equals("Green") ){
+          manager = calibrator.setupROIManager(qrphoto.getGreenChannel(), rois);
+          bandSummary = calibrator.processRois(qrphoto.getGreenChannel(), manager); // <--- This is the key
+
+          refmeans[0] = baseSummary[0][1];
+          refmeans[1] = baseSummary[1][1];
+          refmeans[2] = baseSummary[2][1];
+        }else if( channel.equals("Blue") ){
+          //qrphoto.getBlueChannel().show();
+          manager = calibrator.setupROIManager(qrphoto.getBlueChannel(), rois);
+          bandSummary = calibrator.processRois(qrphoto.getBlueChannel(), manager); // <--- This is the key
+
+          refmeans[0] = baseSummary[0][2];
+          refmeans[1] = baseSummary[1][2];
+          refmeans[2] = baseSummary[2][2];
+      }*/
+      }
+
+
+
+
+      manager.reset();
+      manager.close();
+      return 0.0;
   }
 
 

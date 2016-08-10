@@ -18,7 +18,12 @@ import java.awt.TextField;
 import java.awt.image.IndexColorModel;
 
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 
 import java.util.List;
 import java.util.ArrayList;
@@ -31,8 +36,11 @@ public class IndexerMain implements PlugIn{
 
     public String NDVISINGLE = "NDVI (Single Camera)";
     public String NDVIDUAL = "NDVI (Dual Camera)";
+    public String NDVISurvey1 = "[Legacy] NDVI Survey1";
     public String SAVEFOLDER = "Index";
     public String PATHTOLUTS = IJ.getDirectory("luts");
+    public String WORKINGDIRECTORY = IJ.getDirectory("imagej");
+    public String LUTIMG = WORKINGDIRECTORY+"\\Survey2\\luts\\";
 
     public final int DEBUGHIGH = 2;
     public final int DEBUGLOW = 1;
@@ -40,7 +48,7 @@ public class IndexerMain implements PlugIn{
 
     public final int debugMode = 0;
 
-    public String indexes[] = {NDVISINGLE, NDVIDUAL};
+    public String indexes[] = {NDVISINGLE, NDVIDUAL, NDVISurvey1};
 
     private String indexOptionSelected = null;
     private Index index = null;
@@ -53,7 +61,11 @@ public class IndexerMain implements PlugIn{
     private String inputNirDir = null;
     private String[] luts = null;
 
-    private final String VERSION = "1.3.0";
+    private final String VERSION = "1.3.1";
+
+    // Tracked luts
+    private final String LUT_MAPIR_NDVI = "MAPIR_NDVI.lut";
+    private final String LUT_MAPIR_NDVI_CB = "MAPIR_NDVI_CB.lut";
 
     // @TODO maintain transparency layer (4th layer)
     public void run(String arg){
@@ -87,10 +99,12 @@ public class IndexerMain implements PlugIn{
                 index = new NDVIIndex();
             }else if( indexOptionSelected.equals(NDVIDUAL) ){
                 index = new NDVIIndex();
+            }else if( indexOptionSelected.equals(NDVISurvey1) ){
+                index = new NDVIIndexLegacy();
             }
 
             // Select strategy
-            if( indexOptionSelected.equals(NDVISINGLE) ){
+            if( indexOptionSelected.equals(NDVISINGLE) || indexOptionSelected.equals(NDVISurvey1) ){
                 inputDir = showInputDirectoryDialog("The First Image").getDirectory();
                 while( inputDir == null || inputDir == "" ){
                     if( showCantOpenDirectory(inputDir).wasCanceled() ){
@@ -147,7 +161,7 @@ public class IndexerMain implements PlugIn{
 
 
                 // Put images in map as needed for index selected
-                if( indexOptionSelected.equals(NDVISINGLE) ){
+                if( indexOptionSelected.equals(NDVISINGLE) || indexOptionSelected.equals(NDVISurvey1) ){
                     indexedImage = index.calculateIndex( imageToIndex );
                 }else if( indexOptionSelected.equals(NDVIDUAL) ){
                     imageMap = new HashMap<String, ImagePlus>();
@@ -170,10 +184,44 @@ public class IndexerMain implements PlugIn{
                     saveIndexImageToDir(inputDir, nextImage.getName(), index.getIndexType(), indexedImage);
                 }
 
+
                 // Apply lut
                 IJ.log("Path to lut: " + PATHTOLUTS+lutChoice);
                 lutImage = applyLut(indexedImage, PATHTOLUTS+lutChoice);
-                saveLutImageToDir(inputDir, nextImage.getName(), index.getIndexType(), lutImage);
+                File outDir = saveLutImageToDir(inputDir, nextImage.getName(), index.getIndexType(), lutImage);
+
+                // Save lut they used to directory (a png must be provided)
+                File lutRefImg = null;
+                File lutRefImgOut = null;
+                File lutRefPDF = null;
+                File lutRefPDFOut = null;
+                if( lutChoice.equals(LUT_MAPIR_NDVI) ){
+                    lutRefImgOut = new File(outDir + "\\MAPIR_NDVI_lut.png");
+                    lutRefImg = new File(LUTIMG+"MAPIR_NDVI_lut.png");
+                    lutRefPDF = new File(LUTIMG+"MAPIR_NDVI_lut.pdf");
+                    lutRefPDFOut = new File(outDir + "\\MAPIR_NDVI_lut.pdf");
+
+                }else if( lutChoice.equals(LUT_MAPIR_NDVI_CB) ){
+                    lutRefImgOut = new File(outDir + "\\MAPIR_NDVI_lut_CB.png");
+                    lutRefImg = new File(LUTIMG+"MAPIR_NDVI_lut_CB.png");
+                }
+
+                if( lutRefImg != null ){
+                    if( !lutRefImg.exists() ){
+                        IJ.log("Could not save lut reference image to directory.");
+                    }else{
+                        copy(lutRefImg, lutRefImgOut);
+                    }
+                }
+
+                if( lutRefPDF != null ){
+                    if( !lutRefPDF.exists() ){
+                        IJ.log("Could not save lut reference pdf to directory.");
+                    }else{
+                        copy(lutRefPDF, lutRefPDFOut);
+                    }
+                }
+
             }
 
             if( showFinishedDialog().wasCanceled() ){
@@ -185,6 +233,33 @@ public class IndexerMain implements PlugIn{
 
         // Clean up stuff if needed
         IJ.log("Goodbye!");
+    }
+
+    public void copy(File source, File dest){
+        FileInputStream in = null;
+        FileOutputStream out = null;
+
+        try{
+            in = new FileInputStream(source);
+            out = new FileOutputStream(dest);
+            byte[] buff = new byte[1024];
+            int length;
+            for( length = in.read(buff); length > 0; length = in.read(buff) ){
+                out.write(buff, 0, length);
+            }
+        }catch( FileNotFoundException fu ){
+
+        }catch( IOException ef){
+
+        }finally{
+            try{
+                in.close();
+                out.close();
+            }catch( IOException yo){
+                yo.printStackTrace();
+            }
+        }
+
     }
 
     public ImagePlus applyLut(ImagePlus indexImg, String pathToLut){
@@ -218,7 +293,7 @@ public class IndexerMain implements PlugIn{
 
         try {
             lutModel = LutLoader.open( pathToLut );
-        }catch (IOException e) {
+        }catch( IOException e) {
             //IJ.error((String)((Object)e));
             IJ.log("Could not open LUT file");
             e.printStackTrace();
@@ -235,7 +310,7 @@ public class IndexerMain implements PlugIn{
         return lutDir.list();
     }
 
-    public void saveLutImageToDir(String saveDir, String filename, String indexType, ImagePlus image){
+    public File saveLutImageToDir(String saveDir, String filename, String indexType, ImagePlus image){
         String folderName = "Index_Lut\\";
         // If output directory does not exist, create it
 
@@ -257,7 +332,7 @@ public class IndexerMain implements PlugIn{
         IJ.log("Saving to: " + outStr);
 
         IJ.save( (ImagePlus)image, outStr + filename );
-        return;
+        return outDir;
     }
 
     public void saveIndexImageToDir(String saveDir, String filename, String indexType, ImagePlus image){

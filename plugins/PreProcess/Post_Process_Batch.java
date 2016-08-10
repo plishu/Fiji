@@ -36,8 +36,9 @@ public class Post_Process_Batch implements PlugIn{
   private String FLAT_FIELD_DIRECTORY = null;
 
   private Boolean DeleteOriginals = true;
+  private boolean removeVignette = true;
 
-  private final String VERSION = "1.3.0";
+  private final String VERSION = "1.3.1";
 
 
   class FileComparator implements Comparator<File>{
@@ -54,7 +55,7 @@ public class Post_Process_Batch implements PlugIn{
     WorkingDirectory = IJ.getDirectory("imagej");
     OS = System.getProperty("os.name");
     // WINDOWS SUPPORT ONLY
-    PATH_TO_EXIFTOOL = WorkingDirectory+"Survey2\\EXIFTool\\exiftool.exe";
+    PATH_TO_EXIFTOOL = WorkingDirectory+"Survey2\\EXIFTool\\";
     //PATH_TO_EXIFTOOL = "/usr/bin/exiftool";
     FLAT_FIELD_DIRECTORY = WorkingDirectory+"Survey2\\Flat-Fields\\";
 
@@ -63,11 +64,13 @@ public class Post_Process_Batch implements PlugIn{
     if( removeVignetteDialog.yesPressed() ){
         filter_radius_raw = "1";
         filter_radius_jpg = "10";
+        removeVignette = true;
     }else if( removeVignetteDialog.cancelPressed() ){
         return;
     }else{
         filter_radius_raw = "0";
         filter_radius_jpg = "0";
+        removeVignette = false;
     }
 
     // @TODO: Camera settings changed detection
@@ -220,8 +223,15 @@ public class Post_Process_Batch implements PlugIn{
     String inImageExt = null;
     String inImageNoExt = null;
 
+    CameraEXIF imageEXIFData = null;
+    CameraEXIF defaultEXIFData = null;
+    String pathToCSV = null;
+
 
     int imgcounter = 1;
+    String tmp_f_r_raw = filter_radius_raw;
+    String tmp_f_r_jpg = filter_radius_jpg;
+
     if( !raw_jpgBatchToProcess.isEmpty() ){
       // Process RAW + JPG
 
@@ -229,7 +239,8 @@ public class Post_Process_Batch implements PlugIn{
       // Iterate through each RAW file only!
       // Index JPG by i+1 each time.
       for( int i=0; i<raw_jpgBatchToProcess.size(); i=i+2 ){
-
+        filter_radius_raw = tmp_f_r_raw;
+        filter_radius_jpg = tmp_f_r_jpg;
 
         inImageParts = (filesToProcess[i].getName()).split("\\.(?=[^\\.]+$)");
         if( inImageParts.length < 2 ){
@@ -241,6 +252,28 @@ public class Post_Process_Batch implements PlugIn{
         }
 
         NextModel = GetCameraModel(raw_jpgBatchToProcess.get(i+1).getAbsolutePath());
+        pathToCSV = GetEXIFCSV(NextModel);
+        imageEXIFData = new CameraEXIF( new EXIFToolsReader(PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath()) );
+        //IJ.log("Path To CSV: " + pathToCSV);
+        defaultEXIFData = new CameraEXIF( new EXIFCSVReader(pathToCSV) );
+
+
+        IJ.log("EXIF data match up? " + imageEXIFData.equals(defaultEXIFData) );
+        if( removeVignette && !imageEXIFData.equals(defaultEXIFData) ){
+            GenericDialog dialog = showCameraSettingsNotEqualDialog(defaultEXIFData.printEXIFData(), imageEXIFData.printEXIFData());
+            if( dialog.wasOKed() ){
+
+            }else if( dialog.wasCanceled() ){
+                return;
+            }else{
+                // Don't remove vignette
+                filter_radius_raw = "0";
+                filter_radius_jpg = "0";
+                //removeVignette = false;
+            }
+        }
+        //IJ.log(imageEXIFData.printEXIFData());
+        //IJ.log(defaultEXIFData.printEXIFData());
         //IJ.log("Camera Model for " + raw_jpgBatchToProcess.get(i+1).getAbsolutePath() + ": " + NextModel);
 
         if( NextModel.equals("CAMERA_NOT_SUPPORTED") ){
@@ -320,6 +353,8 @@ public class Post_Process_Batch implements PlugIn{
       // JPG only case
 
       for( int i=0; i<jpgBatchToProcess.size(); i++ ){
+          filter_radius_raw = tmp_f_r_raw;
+          filter_radius_jpg = tmp_f_r_jpg;
 
         inImageParts = (filesToProcess[i].getName()).split("\\.(?=[^\\.]+$)");
         if( inImageParts.length < 2 ){
@@ -333,6 +368,26 @@ public class Post_Process_Batch implements PlugIn{
 
         NextModel = GetCameraModel(jpgBatchToProcess.get(i).getAbsolutePath());
         //IJ.log("Camera Model for " + jpgBatchToProcess.get(i).getAbsolutePath() + ": " + NextModel);
+        pathToCSV = GetEXIFCSV(NextModel);
+        imageEXIFData = new CameraEXIF( new EXIFToolsReader(PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath()) );
+        //IJ.log("Path To CSV: " + pathToCSV);
+        defaultEXIFData = new CameraEXIF( new EXIFCSVReader(pathToCSV) );
+
+
+        IJ.log("EXIF data match up? " + imageEXIFData.equals(defaultEXIFData) );
+        if( removeVignette && !imageEXIFData.equals(defaultEXIFData) ){
+            GenericDialog dialog = showCameraSettingsNotEqualDialog(defaultEXIFData.printEXIFData(), imageEXIFData.printEXIFData());
+            if( dialog.wasOKed() ){
+
+            }else if( dialog.wasCanceled() ){
+                return;
+            }else{
+                // Don't remove vignette
+                filter_radius_raw = "0";
+                filter_radius_jpg = "0";
+                //removeVignette = false;
+            }
+        }
 
         if( NextModel.equals("CAMERA_NOT_SUPPORTED") ){
           IJ.log("The image you are trying to process was not taken with a compatable camera. I will skip this image");
@@ -384,6 +439,34 @@ public class Post_Process_Batch implements PlugIn{
 
   }
 
+  public String GetEXIFCSV(String model){
+      String workingDirectory = IJ.getDirectory("imagej");
+      String valuesDirectory = workingDirectory+"Survey2\\Values\\";
+      String csvpath = null;
+
+      if( model.equals("Survey2_RED") ){
+          csvpath = valuesDirectory+"red\\red.csv";
+      }else if( model.equals("Survey2_GREEN") ){
+          csvpath = valuesDirectory+"green\\green.csv";
+      }else if( model.equals("Survey2_BLUE") ){
+          csvpath = valuesDirectory+"blue\\blue.csv";
+      }else if( model.equals("Survey2_NDVI") ){
+          csvpath = valuesDirectory+"ndvi\\ndvi.csv";
+      }else if( model.equals("Survey2_IR") ){
+          csvpath = valuesDirectory+"ir\\ir.csv";
+      }else if( model.equals("FC350") ){
+          csvpath = valuesDirectory+"FC350_ndvi\\FC350_ndvi.csv";
+      }else if( model.equals("FC330") ){
+          csvpath = valuesDirectory+"FC330_ndvi\\FC330_ndvi.csv";
+      }else if( model.equals("FC300X") ){
+          csvpath = valuesDirectory+"FC300X_ndvi\\FC300X_ndvi.csv";
+      }else if( model.equals("FC300S") ){
+          csvpath = valuesDirectory+"FC300S_ndvi\\FC300S_ndvi.csv";
+      }
+
+      return csvpath;
+  }
+
   /*
    * Return the camera model that the img was taken with.
    * @param img - full path to image
@@ -397,11 +480,11 @@ public class Post_Process_Batch implements PlugIn{
     if( this.OS.contains("Windows") ){
       console = "cmd";
       c_arg = "/c";
-      command = PATH_TO_EXIFTOOL + " " + "\""+img+"\"";
+      command = PATH_TO_EXIFTOOL + "exiftool.exe" + " " + "\""+img+"\"";
     }else{
       console = "sh";
       c_arg = "-c";
-      command = PATH_TO_EXIFTOOL + " " + "\'"+img+"\'";
+      command = PATH_TO_EXIFTOOL + "exiftool" + " " + "\'"+img+"\'";
     }
 
 
@@ -780,7 +863,7 @@ public class Post_Process_Batch implements PlugIn{
       console = "cmd";
       c_arg = "/c";
       try{
-        command = exiftoolpath + " -overwrite_original -tagsfromfile " + "\""+refimg+"\"" + " " + "\""+targimg+"\"";
+        command = exiftoolpath + "exiftool.exe" + " -overwrite_original -tagsfromfile " + "\""+refimg+"\"" + " " + "\""+targimg+"\"";
         //IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(false);
@@ -799,7 +882,7 @@ public class Post_Process_Batch implements PlugIn{
 
       try{
         // directory spaces
-        command = exiftoolpath + " -overwrite_original -tagsfromfile " + "\'"+refimg+"\'" + " " + "\'"+targimg+"\'";
+        command = exiftoolpath + "exiftool" + " -overwrite_original -tagsfromfile " + "\'"+refimg+"\'" + " " + "\'"+targimg+"\'";
         //IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(true);
@@ -870,7 +953,7 @@ public class Post_Process_Batch implements PlugIn{
 
       for( int i=0; i<fileStr.length; i++ ){
           deleteFile = new File(fileStr[i]);
-          if( deleteFile.getName().contains("tmp") ){
+          if( deleteFile.getName().contains("tmp") || deleteFile.getName().contains("temp") ){
               deleteFile.delete();
           }
       }
@@ -936,6 +1019,23 @@ public class Post_Process_Batch implements PlugIn{
 
 
     IJ.log("Finished deleting backups");
+  }
+
+  public GenericDialog showCameraSettingsNotEqualDialog(String exifdata1, String exifdata2){
+      GenericDialog dialog = new GenericDialog("Attention!");
+
+      dialog.addMessage("The camera settings of the current image to process");
+      dialog.addMessage("does not match the camera settings the flat-field image was taken with.");
+      dialog.addMessage("Attempting vignette removal might cause undesired results.");
+      dialog.addMessage("Do you wish to continue?");
+      dialog.enableYesNoCancel("Continue anyway", "Don't remove vignette");
+
+      dialog.addTextAreas("Flat-Field EXIF Data:\n" + exifdata1, "Image EXIF Data:\n" + exifdata2, 5, 30);
+      dialog.setCancelLabel("Quit");
+
+      dialog.showDialog();
+
+      return dialog;
   }
 
 }
