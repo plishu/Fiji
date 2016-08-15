@@ -101,9 +101,9 @@ All notable changes to this project will be documented in this file.
 
 ## Older versions
 
-####[Fiji Windows 32-bit (1.3.1)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160726.zip)
+####[Fiji Windows 32-bit (1.3.0)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160726.zip)
 
-####[Fiji Windows 64-bit (1.3.1)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160726.zip)
+####[Fiji Windows 64-bit (1.3.0)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160726.zip)
 
 ####[Fiji Windows 32-bit (1.2.1)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160722.zip)
 
