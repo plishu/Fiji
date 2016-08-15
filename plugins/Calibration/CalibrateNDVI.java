@@ -200,7 +200,7 @@ public class CalibrateNDVI implements CalibrateIndex{
     }
 
     @Override
-    public double[] optimizeCoeffs(ImagePlus[] channels, Roi[] rois, double[][] baseValues){
+    public double[] optimizeCoeffs(ImagePlus[] channels, Roi[] rois, double[][] baseValues, double[] oldCoeff){
         RoiManager manager = null;
         double[] coeff = new double[4];
         List<HashMap<String, String>> bandSummary = null;
@@ -313,10 +313,14 @@ public class CalibrateNDVI implements CalibrateIndex{
         blueChannel.show();
         blueChannel.setTitle("Optimized blue");
 
-        coeff[0] = redCoeff[0];
-        coeff[1] = redCoeff[1];
-        coeff[2] = blueCoeff[0];
-        coeff[3] = blueCoeff[1];
+        //coeff[0] = redCoeff[0];
+        //coeff[1] = redCoeff[1];
+        //coeff[2] = blueCoeff[0];
+        //coeff[3] = blueCoeff[1];
+        coeff[0] = oldCoeff[0] + redCoeff[0];
+        coeff[1] = oldCoeff[1];
+        coeff[2] = oldCoeff[2] + blueCoeff[0];
+        coeff[3] = oldCoeff[3];
         return coeff;
     }
 

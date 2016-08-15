@@ -369,7 +369,7 @@ public class Post_Process_Batch implements PlugIn{
         NextModel = GetCameraModel(jpgBatchToProcess.get(i).getAbsolutePath());
         //IJ.log("Camera Model for " + jpgBatchToProcess.get(i).getAbsolutePath() + ": " + NextModel);
         pathToCSV = GetEXIFCSV(NextModel);
-        imageEXIFData = new CameraEXIF( new EXIFToolsReader(PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath()) );
+        imageEXIFData = new CameraEXIF( new EXIFToolsReader(PATH_TO_EXIFTOOL, jpgBatchToProcess.get(i).getAbsolutePath()) );
         //IJ.log("Path To CSV: " + pathToCSV);
         defaultEXIFData = new CameraEXIF( new EXIFCSVReader(pathToCSV) );
 

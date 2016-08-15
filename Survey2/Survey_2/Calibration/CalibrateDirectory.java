@@ -342,10 +342,10 @@ public class CalibrateDirectory implements PlugIn{
           //qrTIFScaled = calibrator.scaleChannels(qrTIFPhoto);
           qrTIFScaled = new RGBPhoto(qrTIFDir, qrTIFFilename, qrTIFPath, cameraType, true);
           if( qrTIFPhoto.getCameraType().equals(CalibrationPrompt.SURVEY2_NDVI) ){
-            calibrator.subtractNIR(qrTIFScaled.getBlueChannel(), qrTIFScaled.getRedChannel(), 0 );
+            calibrator.subtractNIR(qrTIFScaled.getBlueChannel(), qrTIFScaled.getRedChannel(), 80 );
           }
           if( qrTIFPhoto.getCameraType().equals(CalibrationPrompt.DJIPHANTOM4_NDVI) ){
-              calibrator.subtractNIR(qrTIFScaled.getBlueChannel(), qrTIFScaled.getRedChannel(), 0);
+              calibrator.subtractNIR(qrTIFScaled.getBlueChannel(), qrTIFScaled.getRedChannel(), 80);
           }
           // Enhance for better QR detection
           //(new ContrastEnhancer()).equalize(qrTIFPhoto.getImage());
@@ -549,12 +549,14 @@ public class CalibrateDirectory implements PlugIn{
               minusNIRImgs[1] = qrTIFScaled.getGreenChannel();
               minusNIRImgs[2] = qrTIFScaled.getBlueChannel();
               IJ.log("Optimizing calibration coefficients");
-              coeffs = index.optimizeCoeffs(minusNIRImgs, tifrois, baseSummary);
+              coeffs = index.optimizeCoeffs(minusNIRImgs, tifrois, baseSummary, coeffs);
 
 
               //coeffs = index.calculateCoeffs(qrTIFScaled, tifrois, baseSummary);
               // Subtract NIR
-              //minusNIRImgs = ((CalibrateNDVI)index).subtractNIR(photo, qrTIFScaled, tifrois, coeffs);
+              minusNIRImgs = ((CalibrateNDVI)index).subtractNIR(photo, qrTIFScaled, tifrois, coeffs);
+              //calibrator.subtractNIR(photo.getBlueChannel(), photo.getRedChannel(), 80 );
+
 
               minusNIRImgs[0] = photo.getRedChannel();
               minusNIRImgs[1] = photo.getGreenChannel();
@@ -609,10 +611,10 @@ public class CalibrateDirectory implements PlugIn{
               reflectanceImgs = index.createReflectanceMapping(photo, coeffs);
           }
 
-          reflectanceImgs[0].show();
-          reflectanceImgs[1].show();
-          reflectanceImgs[2].show();
-          //resultphoto = new RGBPhoto(reflectanceImgs, CalibrationPrompt.SURVEY2_NDVI, photo);
+          //reflectanceImgs[0].show();
+          //reflectanceImgs[1].show();
+          //reflectanceImgs[2].show();
+          resultphoto = new RGBPhoto(reflectanceImgs, CalibrationPrompt.SURVEY2_NDVI, photo);
         }else if( cameraType.equals(CalibrationPrompt.SURVEY2_NIR) ){
           baseSummary = calibrator.getRefValues(bfs, "850");
 
