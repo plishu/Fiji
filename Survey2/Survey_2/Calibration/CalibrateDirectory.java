@@ -86,7 +86,6 @@ public class CalibrateDirectory implements PlugIn{
   private boolean keepPluginAlive = true;
 
   private Debugger debugger = Debugger.getInstance();
-  public  boolean savePlot = false;
 
   // {Intercept, Slope}
   // @TODO Update this
@@ -131,19 +130,17 @@ public class CalibrateDirectory implements PlugIn{
   private final String VERSION = "1.3.1";
   private final boolean DEBUG = false;
 
-  private Calibrator calibrator = null;
+
 
   public void run(String arg){
       IJ.log("Build: " + VERSION);
-      Log.setLogger(new Log.IJLogger());
-      Log.DEBUG();
       debugger.DEBUGMODE = false;
 
       jpegQuality = FileSaver.getJpegQuality();
       FileSaver.setJpegQuality(100);
 
     while( keepPluginAlive ){
-      calibrator = new Calibrator();
+      Calibrator calibrator = new Calibrator();
       Roi[] jpgrois = null;
       Roi[] tifrois = null;
       CalibrationPrompt prompts = new CalibrationPrompt();
@@ -166,7 +163,6 @@ public class CalibrateDirectory implements PlugIn{
       //IJ.log( String.valueOf(useQR) );
       cameraType = fullDialogValues.get(CalibrationPrompt.MAP_CAMERA);
       tifsToJpgs = Boolean.parseBoolean( fullDialogValues.get(CalibrationPrompt.MAP_TIFFTOJPG) );
-      savePlot = Boolean.parseBoolean( fullDialogValues.get(CalibrationPrompt.MAP_SAVECALIBINFO) );
 
       String qrCameraModel = null;
 
@@ -279,7 +275,7 @@ public class CalibrateDirectory implements PlugIn{
 
             qrJPGScaled = calibrator.scaleChannels(qrJPGPhoto);
             if( qrJPGPhoto.getCameraType().equals(CalibrationPrompt.SURVEY2_NDVI) ){
-              calibrator.subtractNIR(qrJPGScaled.getBlueChannel(), qrJPGScaled.getRedChannel(), 0 );
+              calibrator.subtractNIR(qrJPGScaled.getBlueChannel(), qrJPGScaled.getRedChannel(), 80 );
             }
 
             //qrJPGScaled = new RGBPhoto(qrJPGPhoto);
@@ -351,8 +347,6 @@ public class CalibrateDirectory implements PlugIn{
           //(new ContrastEnhancer()).equalize(qrTIFPhoto.getImage());
           tifrois = calibrator.getRois(qrTIFPhoto.getImage());
 
-
-
           if( tifrois == null ){
             //IJ.log("ATTN: QR calibration targets could not be found. I will use default coefficient values.");
             try{
@@ -362,6 +356,9 @@ public class CalibrateDirectory implements PlugIn{
                 continue;
               }else{
                 if (cameraType.equals(CalibrationPrompt.DJIX3_NDVI)){
+                    IJ.log("ATTENTION: We currently do not have base calibration values for the DJI X3. You must supply a calibation target to proceed.");
+                    IJ.log("The plugin will now terminate. Goodbye!");
+                    return;
                 }
                 useQR = false;
               }
@@ -438,11 +435,6 @@ public class CalibrateDirectory implements PlugIn{
         tifout.mkdir();
       }
 
-      if( savePlot ){
-          saveToDir( jpgOutputDir, "jpg_calibration_target_used", "jpg", qrJPGPhoto.getImage() );
-          saveToDir( tifOutputDir, "tif_calibration_target_used", "tif", qrTIFPhoto.getImage() );
-      }
-
       double[][] baseSummary = null;
       double[] coeffs = new double[4];
       double[] tmpcoeff = null;
@@ -478,7 +470,7 @@ public class CalibrateDirectory implements PlugIn{
         //IJ.log(qrTIFEXIFData.printEXIFData());
         //IJ.log(qrJPGEXIFData.printEXIFData());
 
-        if( useQR && !imageEXIFData.equals(qrTIFEXIFData)  ){
+        if( useQR && thereAreTIFs && !imageEXIFData.equals(qrTIFEXIFData)  ){
             GenericDialog dialog = showCameraSettingsNotEqualDialog(qrTIFEXIFData.printEXIFData(),imageEXIFData.printEXIFData());
             if( dialog.wasOKed() ){
                 // Continue
@@ -525,22 +517,14 @@ public class CalibrateDirectory implements PlugIn{
 
         }*/
 
-        CalibrateIndex index = null;
         IJ.log("Calibrating image: " + tmpfile.getName());
-        boolean ndvi_condition = cameraType.equals(CalibrationPrompt.SURVEY2_NDVI) ||
-            cameraType.equals(CalibrationPrompt.DJIX3_NDVI) ||
-            cameraType.equals(CalibrationPrompt.DJIPHANTOM4_NDVI) ||
-            cameraType.equals(CalibrationPrompt.DJIPHANTOM3_NDVI);
-
-
-        if( ndvi_condition ){
+        if( cameraType.equals(CalibrationPrompt.SURVEY2_NDVI) ){
           // Use red channel and blue channel
           baseSummary = calibrator.getRefValues(bfs, "660/850");
-          index = new CalibrateNDVI();
-          ImagePlus[] minusNIRImgs = new ImagePlus[3];
-          ImagePlus[] qrMinusNIR = null;
+
           if( photo.getExtension().toUpperCase().equals("TIF") ){
             if( useQR == true && tifrois != null ){
+
               // Optimize coefficients from QR
               coeffs = index.calculateCoeffs(qrTIFScaled, tifrois, baseSummary);
               //minusNIRImgs = ((CalibrateNDVI)index).subtractNIR(qrTIFScaled, qrTIFScaled, tifrois, coeffs);
@@ -579,18 +563,17 @@ public class CalibrateDirectory implements PlugIn{
               coeffs[3] = BASE_COEFF_SURVEY2_NDVI_TIF[3];
             }
 
+            //photo = calibrator.subtractNIR(photo, 0.8);
+            resultphoto = calibrator.makeNDVI(photo, qrTIFPhoto, coeffs, tifrois );
+
           }else if( photo.getExtension().toUpperCase().equals("JPG") ){
             if( useQR == true && jpgrois != null ){
-              coeffs = index.calculateCoeffs(qrJPGScaled, jpgrois, baseSummary);
-              // Subtract NIR
-              minusNIRImgs = ((CalibrateNDVI)index).subtractNIR(photo, qrJPGScaled, jpgrois, coeffs);
-
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Red"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(jpgOutputDir, photo.getFileName()+"_Red_Plot", "png", plotimg);
-                  plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Blue"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(jpgOutputDir, photo.getFileName()+"_Blue_Plot", "png", plotimg);
-              }
+              tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Red");
+              coeffs[0] = tmpcoeff[0];
+              coeffs[1] = tmpcoeff[1];
+              tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Blue");
+              coeffs[2] = tmpcoeff[0];
+              coeffs[3] = tmpcoeff[1];
             }else{
               coeffs[0] = BASE_COEFF_SURVEY2_NDVI_JPG[0];
               coeffs[1] = BASE_COEFF_SURVEY2_NDVI_JPG[1];
@@ -598,18 +581,11 @@ public class CalibrateDirectory implements PlugIn{
               coeffs[3] = BASE_COEFF_SURVEY2_NDVI_JPG[3];
             }
 
+            resultphoto = calibrator.makeNDVI(photo, coeffs);
           }
 
-          ImagePlus[] reflectanceImgs = null;
-          if( minusNIRImgs != null ){
-              RGBPhoto nphoto = new RGBPhoto(minusNIRImgs, CalibrationPrompt.SURVEY2_NDVI, photo);
-              IJ.log("Createing reflectance mapping");
-              reflectanceImgs = index.createReflectanceMapping(nphoto, coeffs);
-              //index.optimizeCoeffs(reflectanceImgs, tifrois, baseSummary);
-              IJ.log("Done.");
-          }else{
-              reflectanceImgs = index.createReflectanceMapping(photo, coeffs);
-          }
+          //resultphoto = calibrator.makeNDVI(photo, coeffs);
+          //resultphoto = calibrator.makeNDVI(photo, qrTIFPhoto, coeffs, tifrois );
 
           //reflectanceImgs[0].show();
           //reflectanceImgs[1].show();
@@ -623,18 +599,9 @@ public class CalibrateDirectory implements PlugIn{
               tmpcoeff = calculateCoefficients(qrTIFScaled, tifrois, calibrator, baseSummary, "Red");
               coeffs[0] = tmpcoeff[0];
               coeffs[1] = tmpcoeff[1];
-
-              resultphoto = calibrator.makeNDVI(photo, qrTIFPhoto, coeffs, tifrois );
-
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Red"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(tifOutputDir, photo.getFileName()+"_Red_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_SURVEY2_NIR_TIF[0];
               coeffs[1] = BASE_COEFF_SURVEY2_NIR_TIF[1];
-
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
 
           }else if( photo.getExtension().toUpperCase().equals("JPG") ){
@@ -642,19 +609,14 @@ public class CalibrateDirectory implements PlugIn{
               tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Red");
               coeffs[0] = tmpcoeff[0];
               coeffs[1] = tmpcoeff[1];
-
-              resultphoto = calibrator.makeSingle(photo, coeffs);
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Red"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(jpgOutputDir, photo.getFileName()+"_Red_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_SURVEY2_NIR_JPG[0];
               coeffs[1] = BASE_COEFF_SURVEY2_NIR_JPG[1];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
           }
 
+
+          resultphoto = calibrator.makeSingle(photo, coeffs);
 
         }else if( cameraType.equals(CalibrationPrompt.SURVEY2_RED) ){
           baseSummary = calibrator.getRefValues(bfs, "650");
@@ -664,16 +626,9 @@ public class CalibrateDirectory implements PlugIn{
               tmpcoeff = calculateCoefficients(qrTIFScaled, tifrois, calibrator, baseSummary, "Red");
               coeffs[0] = tmpcoeff[0];
               coeffs[1] = tmpcoeff[1];
-
-              resultphoto = calibrator.makeNDVI(photo, qrTIFPhoto, coeffs, tifrois );
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Red"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(tifOutputDir, photo.getFileName()+"_Red_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_SURVEY2_RED_TIF[0];
               coeffs[1] = BASE_COEFF_SURVEY2_RED_TIF[1];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
 
           }else if( photo.getExtension().toUpperCase().equals("JPG") ){
@@ -681,18 +636,15 @@ public class CalibrateDirectory implements PlugIn{
               tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Red");
               coeffs[0] = tmpcoeff[0];
               coeffs[1] = tmpcoeff[1];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Red"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(jpgOutputDir, photo.getFileName()+"_Red_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_SURVEY2_RED_JPG[0];
               coeffs[1] = BASE_COEFF_SURVEY2_RED_JPG[1];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
           }
 
+
+
+          resultphoto = calibrator.makeSingle(photo, coeffs);
 
         }else if( cameraType.equals(CalibrationPrompt.SURVEY2_GREEN) ){
           baseSummary = calibrator.getRefValues(bfs, "548");
@@ -702,36 +654,23 @@ public class CalibrateDirectory implements PlugIn{
               tmpcoeff = calculateCoefficients(qrTIFScaled, tifrois, calibrator, baseSummary, "Green");
               coeffs[0] = tmpcoeff[0];
               coeffs[1] = tmpcoeff[1];
-
-              resultphoto = calibrator.makeNDVI(photo, qrTIFPhoto, coeffs, tifrois );
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Green"), makeRefMeans(baseSummary, "Green"));
-                  saveToDir(tifOutputDir, photo.getFileName()+"_Green_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_SURVEY2_GREEN_TIF[0];
               coeffs[1] = BASE_COEFF_SURVEY2_GREEN_TIF[1];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
           }else if( photo.getExtension().toUpperCase().equals("JPG") ){
             if( useQR == true && jpgrois != null ){
               tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Green");
               coeffs[0] = tmpcoeff[0];
               coeffs[1] = tmpcoeff[1];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
-
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Green"), makeRefMeans(baseSummary, "Green"));
-                  saveToDir(jpgOutputDir, photo.getFileName()+"_Green_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_SURVEY2_GREEN_JPG[0];
               coeffs[1] = BASE_COEFF_SURVEY2_GREEN_JPG[1];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
 
           }
 
+          resultphoto = calibrator.makeSingle(photo, coeffs);
 
         }else if( cameraType.equals(CalibrationPrompt.SURVEY2_BLUE) ){
           baseSummary = calibrator.getRefValues(bfs, "450");
@@ -741,35 +680,23 @@ public class CalibrateDirectory implements PlugIn{
               tmpcoeff = calculateCoefficients(qrTIFScaled, tifrois, calibrator, baseSummary, "Blue");
               coeffs[0] = tmpcoeff[0];
               coeffs[1] = tmpcoeff[1];
-
-              resultphoto = calibrator.makeNDVI(photo, qrTIFPhoto, coeffs, tifrois );
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Blue"), makeRefMeans(baseSummary, "Blue"));
-                  saveToDir(tifOutputDir, photo.getFileName()+"_Blue_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_SURVEY2_BLUE_TIF[0];
               coeffs[1] = BASE_COEFF_SURVEY2_BLUE_TIF[1];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
           }else if( photo.getExtension().toUpperCase().equals("JPG") ){
             if( useQR == true && jpgrois != null ){
               tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Blue");
               coeffs[0] = tmpcoeff[0];
               coeffs[1] = tmpcoeff[1];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
-
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Blue"), makeRefMeans(baseSummary, "Blue"));
-                  saveToDir(jpgOutputDir, photo.getFileName()+"_Blue_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_SURVEY2_BLUE_JPG[0];
               coeffs[1] = BASE_COEFF_SURVEY2_BLUE_JPG[1];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
           }
 
+
+          resultphoto = calibrator.makeSingle(photo, coeffs);
 
         }else if( cameraType.equals(CalibrationPrompt.DJIX3_NDVI) ){
           baseSummary = calibrator.getRefValues(bfs, "660/850");
@@ -782,20 +709,11 @@ public class CalibrateDirectory implements PlugIn{
               tmpcoeff = calculateCoefficients(qrTIFScaled, tifrois, calibrator, baseSummary, "Blue");
               coeffs[2] = tmpcoeff[0];
               coeffs[3] = tmpcoeff[1];
-
-              resultphoto = calibrator.makeNDVI(photo, qrTIFPhoto, coeffs, tifrois );
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Red"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(tifOutputDir, photo.getFileName()+"_Red_Plot", "png", plotimg);
-                  plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Blue"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(tifOutputDir, photo.getFileName()+"_Blue_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_DJIX3_NDVI_TIF[0];
               coeffs[1] = BASE_COEFF_DJIX3_NDVI_TIF[1];
               coeffs[2] = BASE_COEFF_DJIX3_NDVI_TIF[2];
               coeffs[3] = BASE_COEFF_DJIX3_NDVI_TIF[3];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
           }else if( photo.getExtension().toUpperCase().equals("JPG") ){
             if( useQR == true && jpgrois != null ){
@@ -805,24 +723,34 @@ public class CalibrateDirectory implements PlugIn{
               tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Blue");
               coeffs[2] = tmpcoeff[0];
               coeffs[3] = tmpcoeff[1];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
-
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Red"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(jpgOutputDir, photo.getFileName()+"_Red_Plot", "png", plotimg);
-                  plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Blue"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(jpgOutputDir, photo.getFileName()+"_Blue_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_DJIX3_NDVI_JPG[0];
               coeffs[1] = BASE_COEFF_DJIX3_NDVI_JPG[1];
               coeffs[2] = BASE_COEFF_DJIX3_NDVI_JPG[2];
               coeffs[3] = BASE_COEFF_DJIX3_NDVI_JPG[3];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
           }
-
+          resultphoto = calibrator.makeNDVI(photo, coeffs);
         }else if( cameraType.equals(CalibrationPrompt.GOPRO_HERO4_NDVI) ){
+          /*
+          baseSummary = calibrator.getRefValues(bfs, "660/850");
+
+          if( useQR == true && rois != null ){
+            tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Red");
+            coeffs[0] = tmpcoeff[0];
+            coeffs[1] = tmpcoeff[1];
+            tmpcoeff = calculateCoefficients(qrScaled, rois, calibrator, baseSummary, "Blue");
+            coeffs[2] = tmpcoeff[0];
+            coeffs[3] = tmpcoeff[1];
+          }else{
+            coeffs[0] = BASE_COEFF_DJIX3_NDVI[0];
+            coeffs[1] = BASE_COEFF_DJIX3_NDVI[1];
+            coeffs[2] = BASE_COEFF_DJIX3_NDVI[2];
+            coeffs[3] = BASE_COEFF_DJIX3_NDVI[3];
+          }
+
+
+          resultphoto = calibrator.makeNDVI(photo, coeffs);*/
 
           IJ.log("GoPro Hero 4 support coming soon!");
         }else if( cameraType.equals(CalibrationPrompt.DJIPHANTOM4_NDVI) ){
@@ -836,20 +764,11 @@ public class CalibrateDirectory implements PlugIn{
               tmpcoeff = calculateCoefficients(qrTIFScaled, tifrois, calibrator, baseSummary, "Blue");
               coeffs[2] = tmpcoeff[0];
               coeffs[3] = tmpcoeff[1];
-
-              resultphoto = calibrator.makeNDVI(photo, qrTIFPhoto, coeffs, tifrois );
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Red"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(tifOutputDir, photo.getFileName()+"_Red_Plot", "png", plotimg);
-                  plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Blue"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(tifOutputDir, photo.getFileName()+"_Blue_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_DJIPHANTOM4_NDVI_TIF[0];
               coeffs[1] = BASE_COEFF_DJIPHANTOM4_NDVI_TIF[1];
               coeffs[2] = BASE_COEFF_DJIPHANTOM4_NDVI_TIF[2];
               coeffs[3] = BASE_COEFF_DJIPHANTOM4_NDVI_TIF[3];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
 
 
@@ -863,23 +782,14 @@ public class CalibrateDirectory implements PlugIn{
               tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Blue");
               coeffs[2] = tmpcoeff[0];
               coeffs[3] = tmpcoeff[1];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
-
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Red"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(jpgOutputDir, photo.getFileName()+"_Red_Plot", "png", plotimg);
-                  plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Blue"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(jpgOutputDir, photo.getFileName()+"_Blue_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_DJIPHANTOM4_NDVI_JPG[0];
               coeffs[1] = BASE_COEFF_DJIPHANTOM4_NDVI_JPG[1];
               coeffs[2] = BASE_COEFF_DJIPHANTOM4_NDVI_JPG[2];
               coeffs[3] = BASE_COEFF_DJIPHANTOM4_NDVI_JPG[3];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
           }
-
+          resultphoto = calibrator.makeNDVI(photo, coeffs);
       }else if( cameraType.equals(CalibrationPrompt.DJIPHANTOM3_NDVI) ){
           baseSummary = calibrator.getRefValues(bfs, "660/850");
 
@@ -891,20 +801,11 @@ public class CalibrateDirectory implements PlugIn{
               tmpcoeff = calculateCoefficients(qrTIFScaled, tifrois, calibrator, baseSummary, "Blue");
               coeffs[2] = tmpcoeff[0];
               coeffs[3] = tmpcoeff[1];
-
-              resultphoto = calibrator.makeNDVI(photo, qrTIFPhoto, coeffs, tifrois );
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Red"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(tifOutputDir, photo.getFileName()+"_Red_Plot", "png", plotimg);
-                  plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Blue"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(tifOutputDir, photo.getFileName()+"_Blue_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_DJIPHANTOM3_NDVI_TIF[0];
               coeffs[1] = BASE_COEFF_DJIPHANTOM3_NDVI_TIF[1];
               coeffs[2] = BASE_COEFF_DJIPHANTOM3_NDVI_TIF[2];
               coeffs[3] = BASE_COEFF_DJIPHANTOM3_NDVI_TIF[3];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
 
 
@@ -918,23 +819,14 @@ public class CalibrateDirectory implements PlugIn{
               tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Blue");
               coeffs[2] = tmpcoeff[0];
               coeffs[3] = tmpcoeff[1];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
-
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Red"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(jpgOutputDir, photo.getFileName()+"_Red_Plot", "png", plotimg);
-                  plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Blue"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(jpgOutputDir, photo.getFileName()+"_Blue_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_DJIPHANTOM3_NDVI_JPG[0];
               coeffs[1] = BASE_COEFF_DJIPHANTOM3_NDVI_JPG[1];
               coeffs[2] = BASE_COEFF_DJIPHANTOM3_NDVI_JPG[2];
               coeffs[3] = BASE_COEFF_DJIPHANTOM3_NDVI_JPG[3];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
           }
-
+          resultphoto = calibrator.makeNDVI(photo, coeffs);
       }else if( cameraType.equals(CalibrationPrompt.SURVEY1_NDVI) ){
           // VIS and NIR channels are switched!!
           // VIS = blue
@@ -949,20 +841,11 @@ public class CalibrateDirectory implements PlugIn{
               tmpcoeff = calculateCoefficients(qrTIFScaled, tifrois, calibrator, baseSummary, "Blue");
               coeffs[2] = tmpcoeff[0];
               coeffs[3] = tmpcoeff[1];
-
-              resultphoto = calibrator.makeNDVI(photo, qrTIFPhoto, coeffs, tifrois );
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Red"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(tifOutputDir, photo.getFileName()+"_Red_Plot", "png", plotimg);
-                  plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Blue"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(tifOutputDir, photo.getFileName()+"_Blue_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_SURVEY1_NDVI_TIF[0];
               coeffs[1] = BASE_COEFF_SURVEY1_NDVI_TIF[1];
               coeffs[2] = BASE_COEFF_SURVEY1_NDVI_TIF[2];
               coeffs[3] = BASE_COEFF_SURVEY1_NDVI_TIF[3];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
 
 
@@ -976,23 +859,14 @@ public class CalibrateDirectory implements PlugIn{
               tmpcoeff = calculateCoefficients(qrJPGScaled, jpgrois, calibrator, baseSummary, "Blue");
               coeffs[2] = tmpcoeff[0];
               coeffs[3] = tmpcoeff[1];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
-
-              if( savePlot ){
-                  ImagePlus plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Red"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(jpgOutputDir, photo.getFileName()+"_Red_Plot", "png", plotimg);
-                  plotimg = calibrator.makePlot(makeMeans(qrTIFScaled, tifrois, "Blue"), makeRefMeans(baseSummary, "Red"));
-                  saveToDir(jpgOutputDir, photo.getFileName()+"_Blue_Plot", "png", plotimg);
-              }
             }else{
               coeffs[0] = BASE_COEFF_SURVEY1_NDVI_JPG[0];
               coeffs[1] = BASE_COEFF_SURVEY1_NDVI_JPG[1];
               coeffs[2] = BASE_COEFF_SURVEY1_NDVI_JPG[2];
               coeffs[3] = BASE_COEFF_SURVEY1_NDVI_JPG[3];
-              resultphoto = calibrator.makeSingle(photo, coeffs);
             }
           }
-
+          resultphoto = calibrator.makeNDVI(photo, coeffs);
       }
 
         resultphoto.copyFileData(photo);
@@ -1106,56 +980,6 @@ public class CalibrateDirectory implements PlugIn{
     return coeff;
   }
 
-  public double[] makeMeans(RGBPhoto qrphoto, Roi[] rois, String channel){
-      RoiManager manager = null;
-      double[] coeff = null;
-      List<HashMap<String, String>> bandSummary = null;
-
-      if( qrphoto == null ){
-
-      }else{
-
-        if( channel.equals("Red") ){
-          manager = calibrator.setupROIManager(qrphoto.getRedChannel(), rois);
-          bandSummary = calibrator.processRois(qrphoto.getRedChannel(), manager);
-        }else if( channel.equals("Green") ){
-          manager = calibrator.setupROIManager(qrphoto.getGreenChannel(), rois);
-          bandSummary = calibrator.processRois(qrphoto.getGreenChannel(), manager);
-        }else if( channel.equals("Blue") ){
-          manager = calibrator.setupROIManager(qrphoto.getBlueChannel(), rois);
-          bandSummary = calibrator.processRois(qrphoto.getBlueChannel(), manager);
-        }
-      }
-
-
-      double[] means = {Double.parseDouble(bandSummary.get(0).get(Calibrator.MAP_MEAN)),
-          Double.parseDouble(bandSummary.get(1).get(Calibrator.MAP_MEAN)),
-          Double.parseDouble(bandSummary.get(2).get(Calibrator.MAP_MEAN))};
-
-      manager.reset();
-      manager.close();
-
-      return means;
-  }
-
-  public double[] makeRefMeans(double[][] baseSummary, String channel){
-      double[] refmeans = new double[3];
-      if( channel.equals("Red") ){
-        refmeans[0] = baseSummary[0][0];
-        refmeans[1] = baseSummary[1][0];
-        refmeans[2] = baseSummary[2][0];
-      }else if( channel.equals("Green") ){
-        refmeans[0] = baseSummary[0][1];
-        refmeans[1] = baseSummary[1][1];
-        refmeans[2] = baseSummary[2][1];
-      }else if( channel.equals("Blue") ){
-        refmeans[0] = baseSummary[0][2];
-        refmeans[1] = baseSummary[1][2];
-        refmeans[2] = baseSummary[2][2];
-    }
-    return refmeans;
-  }
-
 
   public void saveToDir(String outdir, String filename, String ext, ImagePlus image){
     String NDVIAppend = "_Calibrated";
@@ -1184,11 +1008,11 @@ public class CalibrateDirectory implements PlugIn{
       if( this.OS.contains("Windows") ){
         console = "cmd";
         c_arg = "/c";
-        command = exiftoolpath + "exiftool.exe" + " -model -S " + "\""+refimg+"\"";
+        command = exiftoolpath + "exiftool.exe -model -S " + "\""+refimg+"\"";
       }else{
         console = "sh";
         c_arg = "-c";
-        command = exiftoolpath + "exiftool" + " -model -S " + "\'"+refimg+"\'";
+        command = exiftoolpath + "exiftool -model -S " + "\'"+refimg+"\'";
       }
 
 
@@ -1250,7 +1074,7 @@ public class CalibrateDirectory implements PlugIn{
       console = "cmd";
       c_arg = "/c";
       try{
-        command = exiftoolpath + "exiftool.exe" + " -overwrite_original -tagsfromfile " + "\""+refimg+"\"" + " " + "\""+targimg+"\"";
+        command = exiftoolpath + "exiftool.exe -overwrite_original -tagsfromfile " + "\""+refimg+"\"" + " " + "\""+targimg+"\"";
         //IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(false);
@@ -1269,7 +1093,7 @@ public class CalibrateDirectory implements PlugIn{
 
       try{
         // directory spaces
-        command = exiftoolpath + "exiftool" + " -overwrite_original -tagsfromfile " + "\'"+refimg+"\'" + " " + "\'"+targimg+"\'";
+        command = exiftoolpath + "exiftool -overwrite_original -tagsfromfile " + "\'"+refimg+"\'" + " " + "\'"+targimg+"\'";
         //IJ.log("Executing command: " + command);
         bob = new ProcessBuilder(console, c_arg, command);
         bob.redirectErrorStream(true);

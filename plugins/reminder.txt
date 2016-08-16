@@ -1,0 +1,5 @@
+Delete EXIFCSVReader.class
+Delete EXIFReader.class
+Delete EXIFTool.class
+Delete ECIFToolsReader.class
+From Calibration folder

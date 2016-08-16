@@ -45,7 +45,7 @@ public class EXIFToolsReader implements EXIFReader{
 
           while( (line = output.readLine()) != null ){
 
-            //IJ.log("EXIFTool says: " + line);
+            IJ.log("EXIFTool says: " + line);
             //errstr = err.readLine();
             //IJ.log("Error: " + errstr);
             if( match(line, EXIF_EXPOSURE_TIME_STR) ){

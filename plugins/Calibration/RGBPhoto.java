@@ -377,7 +377,6 @@ public class RGBPhoto{
       RGBStackConverter.convertToRGB(image);
     }*/
     //image.show();
-
   }
 
   public boolean checkChannels(){

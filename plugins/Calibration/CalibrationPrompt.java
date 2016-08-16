@@ -33,8 +33,6 @@ public class CalibrationPrompt{
   public static final String MAP_CAMERA = "CAMERA";
   public static final String MAP_FILTER = "FILTER";
   public static final String MAP_USEQR = "USEQR";
-  //public static final String MAP_USEANYQR = "USEANYQR";
-  public static final String MAP_SAVECALIBINFO = "SAVECALIBINFO";
   public static final String MAP_REMOVEGAMMA = "REMOVEGAMMA";
   public static final String MAP_GAMMA = "GAMMA";
   public static final String MAP_REMOVENIR = "REMOVENIR";
@@ -79,7 +77,6 @@ public class CalibrationPrompt{
   private boolean removeGamma = true;
   private boolean removeNIR = true;
   private boolean tifsToJpgs = false;
-  private boolean saveCalibInfo = false;
 
   public CalibrationPrompt(){
     mainDialog = new GenericDialog("Calibrate Image");
@@ -108,7 +105,6 @@ public class CalibrationPrompt{
     fullDialog.addMessage("If a QR target image is not supplied, or the supplied");
     fullDialog.addMessage("image fails to be detected, base calibration values taken");
     fullDialog.addMessage("during a clear sunny day will be used.");
-    fullDialog.addCheckbox("Save extra calibration information", saveCalibInfo);
 
     fullDialog.centerDialog(true);
     fullDialog.setOKLabel("Begin");
@@ -236,7 +232,6 @@ public class CalibrationPrompt{
     values.put( MAP_CAMERA, theCamera );
     values.put( MAP_TIFFTOJPG, String.valueOf(fullDialog.getNextBoolean()) );
     values.put( MAP_USEQR, String.valueOf(fullDialog.getNextBoolean()) );
-    values.put( MAP_SAVECALIBINFO, String.valueOf(fullDialog.getNextBoolean()) );
     //values.put( MAP_REMOVEGAMMA, String.valueOf(fullDialog.getNextBoolean()) );
     //values.put( MAP_GAMMA, String.valueOf(fullDialog.getNextNumber()) );
     //values.put( MAP_REMOVENIR, String.valueOf(fullDialog.getNextBoolean()) );

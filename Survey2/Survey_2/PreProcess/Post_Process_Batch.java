@@ -257,10 +257,9 @@ public class Post_Process_Batch implements PlugIn{
         //IJ.log("Path To CSV: " + pathToCSV);
         defaultEXIFData = new CameraEXIF( new EXIFCSVReader(pathToCSV) );
 
-
         IJ.log("EXIF data match up? " + imageEXIFData.equals(defaultEXIFData) );
         if( removeVignette && !imageEXIFData.equals(defaultEXIFData) ){
-            GenericDialog dialog = showCameraSettingsNotEqualDialog(defaultEXIFData.printEXIFData(), imageEXIFData.printEXIFData());
+            GenericDialog dialog = showCameraSettingsNotEqualDialog(defaultEXIFData.printEXIFData(), imageEXIFData.printEXIFData(), raw_jpgBatchToProcess.get(i+1).getName());
             if( dialog.wasOKed() ){
 
             }else if( dialog.wasCanceled() ){
@@ -349,7 +348,7 @@ public class Post_Process_Batch implements PlugIn{
 
     }
 
-    if( !jpgBatchToProcess.isEmpty() ){
+    else if( !jpgBatchToProcess.isEmpty() ){
       // JPG only case
 
       for( int i=0; i<jpgBatchToProcess.size(); i++ ){
@@ -376,7 +375,7 @@ public class Post_Process_Batch implements PlugIn{
 
         IJ.log("EXIF data match up? " + imageEXIFData.equals(defaultEXIFData) );
         if( removeVignette && !imageEXIFData.equals(defaultEXIFData) ){
-            GenericDialog dialog = showCameraSettingsNotEqualDialog(defaultEXIFData.printEXIFData(), imageEXIFData.printEXIFData());
+            GenericDialog dialog = showCameraSettingsNotEqualDialog(defaultEXIFData.printEXIFData(), imageEXIFData.printEXIFData(), jpgBatchToProcess.get(i).getName() );
             if( dialog.wasOKed() ){
 
             }else if( dialog.wasCanceled() ){
@@ -1021,7 +1020,7 @@ public class Post_Process_Batch implements PlugIn{
     IJ.log("Finished deleting backups");
   }
 
-  public GenericDialog showCameraSettingsNotEqualDialog(String exifdata1, String exifdata2){
+  public GenericDialog showCameraSettingsNotEqualDialog(String exifdata1, String exifdata2, String image){
       GenericDialog dialog = new GenericDialog("Attention!");
 
       dialog.addMessage("The camera settings of the current image to process");
@@ -1030,7 +1029,7 @@ public class Post_Process_Batch implements PlugIn{
       dialog.addMessage("Do you wish to continue?");
       dialog.enableYesNoCancel("Continue anyway", "Don't remove vignette");
 
-      dialog.addTextAreas("Flat-Field EXIF Data:\n" + exifdata1, "Image EXIF Data:\n" + exifdata2, 5, 30);
+      dialog.addTextAreas("Flat-Field EXIF Data:\n" + exifdata1, "Image EXIF Data: " + image + "\n" + exifdata2, 5, 30);
       dialog.setCancelLabel("Quit");
 
       dialog.showDialog();
