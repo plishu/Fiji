@@ -199,6 +199,7 @@ public class CalibrateNDVI implements CalibrateIndex{
         return coeff;
     }
 
+    /*
     @Override
     public double[] optimizeCoeffs(ImagePlus[] channels, Roi[] rois, double[][] baseValues){
         RoiManager manager = null;
@@ -308,6 +309,70 @@ public class CalibrateNDVI implements CalibrateIndex{
 
         }while( avgBlueError >= tolerance+0.002 && attempt < maxAttempts );
 
+        redChannel.show();
+        redChannel.setTitle("Optimized red");
+        blueChannel.show();
+        blueChannel.setTitle("Optimized blue");
+
+        coeff[0] = redCoeff[0];
+        coeff[1] = redCoeff[1];
+        coeff[2] = blueCoeff[0];
+        coeff[3] = blueCoeff[1];
+        return coeff;
+    }*/
+
+    @Override
+    public double[] optimizeCoeffs(ImagePlus[] channels, Roi[] rois, double[][] baseValues){
+        RoiManager manager = null;
+        double[] coeff = new double[4];
+        List<HashMap<String, String>> bandSummary = null;
+        double[] redBaseValues = new double[3];
+        double[] blueBaseValues = new double[3];
+        Calibrator calibrator = new Calibrator();
+
+        // START HERE
+        double redError87;
+        double redError51;
+        double redError23;
+        double avgRedError;
+        ImagePlus redChannel = channels[0];
+        double[] redCoeff = null;
+
+        // Calibrate red channel
+        manager = calibrator.setupROIManager(redChannel, rois);
+        bandSummary = calibrator.processRois(redChannel, manager);
+        manager.reset();
+        manager.close();
+        double[] redMeans = {Double.parseDouble(bandSummary.get(0).get(Calibrator.MAP_MEAN)),
+            Double.parseDouble(bandSummary.get(1).get(Calibrator.MAP_MEAN)),
+            Double.parseDouble(bandSummary.get(2).get(Calibrator.MAP_MEAN))};
+        Log.debug("Red Mean 87: " + redMeans[0]);
+        Log.debug("Red Mean 52: " + redMeans[1]);
+        Log.debug("Red Mean 23: " + redMeans[2]);
+
+        // Get base values
+        redBaseValues[0] = baseValues[0][0];
+        redBaseValues[1] = baseValues[1][0];
+        redBaseValues[2] = baseValues[2][0];
+
+        // Calculate average error
+        redError87 = Math.abs(redBaseValues[0] - redMeans[0]);
+        redError51 = Math.abs(redBaseValues[1] - redMeans[1]);
+        redError23 = Math.abs(redBaseValues[2] - redMeans[2]);
+        avgRedError = (redError87+redError51+redError23)/3.0;
+
+        Log.debug("Red Average Error: " + avgRedError);
+
+
+        double blueError87;
+        double blueError51;
+        double blueError23;
+        double avgBlueError;
+        ImagePlus blueChannel = channels[2];
+        double[] blueCoeff = null;
+
+
+        // Calibrate blue channel
         redChannel.show();
         redChannel.setTitle("Optimized red");
         blueChannel.show();
