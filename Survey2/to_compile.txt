@@ -1,0 +1,12 @@
+For preprocess:
+C:\Windows\system32>javac -source 1.6 -target 1.6 -classpath C:\Users\Peau\Docum
+ents\GitHub\Fiji\Fiji.app\jars\*; C:\Users\Peau\Documents\GitHub\Fiji\Survey2\Su
+rvey_2\PreProcess\*.java
+
+For Indexing:
+C:\Windows\system32>javac -source 1.6 -target 1.6 -classpath C:\Users\Peau\Docum
+ents\GitHub\Fiji\Fiji.app\jars\*; C:\Users\Peau\Documents\GitHub\Fiji\Survey2\Su
+rvey_2\Indexing\*.java
+
+For Calibration
+See build.gradle

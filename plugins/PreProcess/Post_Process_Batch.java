@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Collections;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Formatter;
+import java.util.Iterator;
 import java.lang.Runtime;
 import java.lang.ProcessBuilder;
 import java.lang.Process;
@@ -167,15 +169,18 @@ public class Post_Process_Batch implements PlugIn{
             raw_jpgBatchToProcess.add(filesToProcess[i+1]);
         }else{
             // Does not comply to directory file structure
-            if( showNotCorrectFileStructure().wasOKed() ){
+            if( containsDNGOnly( raw_jpgBatchToProcess.iterator()) ){
+
+            }
+            else if( showNotCorrectFileStructure().wasOKed() ){
                 IJ.log("Current File: " + filesToProcess[i].getName());
                 IJ.log("Error --> " + filesToProcess[i+1].getName());
                 IJ.log("File structure detected: ");
                 for( int j=0; j<filesToProcess.length; j++ ){
                     IJ.log(filesToProcess[j].getName());
                 }
+                return;
             }
-            return;
         }
 
         i++; // Skip following JPG in the search
@@ -235,6 +240,8 @@ public class Post_Process_Batch implements PlugIn{
     if( !raw_jpgBatchToProcess.isEmpty() ){
       // Process RAW + JPG
 
+      // I think you will need to create new loop for DNG only
+
 
       // Iterate through each RAW file only!
       // Index JPG by i+1 each time.
@@ -242,7 +249,8 @@ public class Post_Process_Batch implements PlugIn{
         filter_radius_raw = tmp_f_r_raw;
         filter_radius_jpg = tmp_f_r_jpg;
 
-        inImageParts = (filesToProcess[i].getName()).split("\\.(?=[^\\.]+$)");
+        //inImageParts = (filesToProcess[i].getName()).split("\\.(?=[^\\.]+$)");
+        inImageParts = (raw_jpgBatchToProcess.get(i).getName()).split("\\.(?=[^\\.]+$)");
         if( inImageParts.length < 2 ){
           IJ.log("Could not find extension of " + filesToProcess[i].getName());
           continue;
@@ -251,24 +259,49 @@ public class Post_Process_Batch implements PlugIn{
           inImageExt = inImageParts[1];
         }
 
-        NextModel = GetCameraModel(raw_jpgBatchToProcess.get(i+1).getAbsolutePath());
+        // Support for DNG only (DNG has metadata embedded within image)
+        if( containsDNGOnly(raw_jpgBatchToProcess.iterator()) ){
+            if( i != 0 ){
+                i = i-1;
+            }
+            String margs = "";
+            margs += "path_ff="+FLAT_FIELD_DIRECTORY+FlatField+"\\"+FlatField+".RAW";
+            margs += "|";
+            margs += "path_raw="+raw_jpgBatchToProcess.get(i).getAbsolutePath();
+            margs += "|";
+            margs += "path_out="+outDirStr;
+            margs += "|";
+            margs += "filter_radius="+filter_radius_raw;
+            //IJ.log(margs);
+            // Clear log for exif data
+            IJ.deleteRows(0, IJ.getLog().length()-1);
+            //IJ.selectWindow("Log");
+            IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\GetDNGEXIF.ijm", margs);
+            // Get camera model (dng version)
+            imageEXIFData = new CameraEXIF( new EXIFDNGReader(outDirStr+"MetaData.txt") );
+            NextModel = getDNGCameraModel( imageEXIFData );
+        }else{
+            NextModel = GetCameraModel(raw_jpgBatchToProcess.get(i+1).getAbsolutePath());
+            imageEXIFData = new CameraEXIF( new EXIFToolsReader(PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath()) );
+        }
         pathToCSV = GetEXIFCSV(NextModel);
-        imageEXIFData = new CameraEXIF( new EXIFToolsReader(PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath()) );
         //IJ.log("Path To CSV: " + pathToCSV);
         defaultEXIFData = new CameraEXIF( new EXIFCSVReader(pathToCSV) );
 
         IJ.log("EXIF data match up? " + imageEXIFData.equals(defaultEXIFData) );
         if( removeVignette && !imageEXIFData.equals(defaultEXIFData) ){
-            GenericDialog dialog = showCameraSettingsNotEqualDialog(defaultEXIFData.printEXIFData(), imageEXIFData.printEXIFData(), raw_jpgBatchToProcess.get(i+1).getName());
-            if( dialog.wasOKed() ){
+            if( !containsDNGOnly(raw_jpgBatchToProcess.iterator()) ){
+                GenericDialog dialog = showCameraSettingsNotEqualDialog(defaultEXIFData.printEXIFData(), imageEXIFData.printEXIFData(), raw_jpgBatchToProcess.get(i+1).getName());
+                if( dialog.wasOKed() ){
 
-            }else if( dialog.wasCanceled() ){
-                return;
-            }else{
-                // Don't remove vignette
-                filter_radius_raw = "0";
-                filter_radius_jpg = "0";
-                //removeVignette = false;
+                }else if( dialog.wasCanceled() ){
+                    return;
+                }else{
+                    // Don't remove vignette
+                    filter_radius_raw = "0";
+                    filter_radius_jpg = "0";
+                    //removeVignette = false;
+                }
             }
         }
         //IJ.log(imageEXIFData.printEXIFData());
@@ -313,8 +346,17 @@ public class Post_Process_Batch implements PlugIn{
           IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessDNG.ijm", margs);
         }
 
+        if( containsDNGOnly(raw_jpgBatchToProcess.iterator()) ){
+            // Get camera model (dng version)
+            CopyEXIFDNGData(imageEXIFData, PATH_TO_EXIFTOOL, outDirStr+inImageNoExt+".tif");
+            IJ.log("Done copying EXIF data");
+        }else{
+            CopyEXIFData(OS, PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath(), outDirStr+inImageNoExt+".tif");
+        }
 
-        CopyEXIFData(OS, PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath(), outDirStr+inImageNoExt+".tif");
+        if( containsDNGOnly(raw_jpgBatchToProcess.iterator()) ){
+            continue;
+        }
 
 
         // Process JPG
@@ -539,6 +581,35 @@ public class Post_Process_Batch implements PlugIn{
     }else{
       return "CAMERA_NOT_SUPPORTED";
     }
+  }
+
+  public String getDNGCameraModel(CameraEXIF exifdata){
+      // Open logfile
+      String line = exifdata.getCameraModel();
+
+      if( line.matches(".*Survey2_BLUE") ){
+        return "Survey2_BLUE";
+      }else if( line.matches(".*Survey2_RED") ){
+        return "Survey2_RED";
+      }else if( line.matches(".*Survey2_GREEN") ){
+        return "Survey2_GREEN";
+      }else if( line.matches(".*Survey2_RGB") ){
+        return "Survey2_RGB";
+      }else if( line.matches(".*Survey2_IR") ){
+        return "Survey2_IR";
+      }else if( line.matches(".*Survey2_NDVI") ){
+        return "Survey2_NDVI";
+      }else if( line.matches(".*FC350") ){
+        return "FC350";
+      }else if( line.matches(".*FC330") ){
+        return "FC330";
+      }else if( line.matches(".*FC300X") ){
+        return "FC300X";
+      }else if( line.matches(".*FC300S") ){
+        return "FC300S";
+      }else{
+        return "CAMERA_NOT_SUPPORTED";
+      }
   }
 
   public GenericDialog showNotCorrectFileStructure(){
@@ -851,6 +922,137 @@ public class Post_Process_Batch implements PlugIn{
     return composite;
   }
 
+  public void CopyEXIFDNGData(CameraEXIF mdata, String exiftoolpath, String imgpath){
+      // Tags
+      final String TAG_EXPOSURE_TIME = "ExposureTime";
+      final String TAG_ISO = "ISO";
+      final String TAG_CMODEL = "Model";
+      final String TAG_CMAKE = "Make";
+      final String TAG_FSTOP = "FNumber";
+      final String TAG_EXPOSURE_BIAS = "ExposureCompensation";
+      final String TAG_FOCAL_LENGTH = "FocalLength";
+      final String TAG_WHITE_BALANCE = "WhiteBalance";
+      final String TAG_TIME_STAMP = "CreateDate";
+      final String TAG_APERTURE = "ApertureValue";
+      final String TAG_THUMB_SIZE = "";
+      final String TAG_FULL_SIZE = "";
+      final String TAG_IMAGE_SIZE = "ImageSize";
+      final String TAG_OUTPUT_SIZE = "";
+      final String TAG_FILTER_PATTERN = "";
+      final String TAG_DAYLIGHT_MULTIPLYER = "";
+      final String TAG_CAMERA_MULTIPLYER = "";
+
+      Formatter formatter = new Formatter();
+
+      // Start running exiftool
+      String command = null;
+
+      formatter = formatter.format(exiftoolpath + "exiftool.exe -%1$s=%2$s \"%3$s\"", TAG_EXPOSURE_TIME, mdata.getExposureTime(), imgpath);
+      command = formatter.toString();
+      runCommand(command);
+      IJ.log("Writting EXIF to " + imgpath);
+      IJ.log(command);
+
+      formatter = new Formatter();
+      formatter = formatter.format(exiftoolpath + "exiftool.exe -%1$s=%2$s \"%3$s\"", TAG_ISO, mdata.getISOSpeed(), imgpath);
+      command = formatter.toString();
+      runCommand(command);
+      IJ.log("Writting EXIF to " + imgpath);
+      IJ.log(command);
+
+      formatter = new Formatter();
+      formatter = formatter.format(exiftoolpath + "exiftool.exe -%1$s=%2$s \"%3$s\"", TAG_CMAKE, mdata.getCameraMaker(), imgpath);
+      command = formatter.toString();
+      runCommand(command);
+      IJ.log("Writting EXIF to " + imgpath);
+      IJ.log(command);
+
+      formatter = new Formatter();
+      formatter = formatter.format(exiftoolpath + "exiftool.exe -%1$s=%2$s \"%3$s\"", TAG_CMODEL, mdata.getCameraModel(), imgpath);
+      command = formatter.toString();
+      runCommand(command);
+      IJ.log("Writting EXIF to " + imgpath);
+      IJ.log(command);
+
+      formatter = new Formatter();
+      formatter = formatter.format(exiftoolpath + "exiftool.exe -%1$s=%2$s \"%3$s\"", TAG_FSTOP, mdata.getFStop(), imgpath);
+      command = formatter.toString();
+      runCommand(command);
+      IJ.log("Writting EXIF to " + imgpath);
+      IJ.log(command);
+
+      formatter = new Formatter();
+      formatter = formatter.format(exiftoolpath + "exiftool.exe -%1$s=%2$s \"%3$s\"", TAG_EXPOSURE_BIAS, mdata.getExposureBias(), imgpath);
+      command = formatter.toString();
+      runCommand(command);
+      IJ.log("Writting EXIF to " + imgpath);
+      IJ.log(command);
+
+      formatter = new Formatter();
+      formatter = formatter.format(exiftoolpath + "exiftool.exe -%1$s=%2$s \"%3$s\"", TAG_FOCAL_LENGTH, mdata.getFocalLength(), imgpath);
+      command = formatter.toString();
+      runCommand(command);
+      IJ.log("Writting EXIF to " + imgpath);
+      IJ.log(command);
+
+      formatter = new Formatter();
+      formatter = formatter.format(exiftoolpath + "exiftool.exe -%1$s=%2$s \"%3$s\"", TAG_WHITE_BALANCE, mdata.getWhiteBalance(), imgpath);
+      command = formatter.toString();
+      runCommand(command);
+      IJ.log("Writting EXIF to " + imgpath);
+      IJ.log(command);
+
+      formatter = new Formatter();
+      formatter = formatter.format(exiftoolpath + "exiftool.exe -%1$s=%2$s \"%3$s\"", TAG_TIME_STAMP, mdata.getTimeStamp(), imgpath);
+      command = formatter.toString();
+      runCommand(command);
+      IJ.log("Writting EXIF to " + imgpath);
+      IJ.log(command);
+
+      formatter = new Formatter();
+      formatter = formatter.format(exiftoolpath + "exiftool.exe -%1$s=%2$s \"%3$s\"", TAG_APERTURE, mdata.getApeture(), imgpath);
+      command = formatter.toString();
+      runCommand(command);
+      IJ.log("Writting EXIF to " + imgpath);
+      IJ.log(command);
+
+      formatter = new Formatter();
+      formatter = formatter.format(exiftoolpath + "exiftool.exe -%1$s=%2$s \"%3$s\"", TAG_IMAGE_SIZE, mdata.getImageSize(), imgpath);
+      command = formatter.toString();
+      runCommand(command);
+      IJ.log("Writting EXIF to " + imgpath);
+      IJ.log(command);
+
+      // Repeat this for all tags
+  }
+
+  public void runCommand(String command){
+      String console = null;
+      String c_arg = null;
+      ProcessBuilder bob = null;
+      Process proc = null;
+
+      if( System.getProperty("os.name").contains("Windows") ){
+          console = "cmd";
+          c_arg = "/c";
+      }else{
+          console = "sh";
+          c_arg = "-c";
+      }
+
+      try{
+        bob = new ProcessBuilder(console, c_arg, command);
+        bob.redirectErrorStream(false);
+        proc = bob.start();
+        proc.waitFor();
+
+      }catch( IOException e){
+        e.printStackTrace();
+      }catch( InterruptedException i ){
+        i.printStackTrace();
+      }
+  }
+
 
   public void CopyEXIFData(String osType, String exiftoolpath, String refimg, String targimg ){
     String console = null;
@@ -952,7 +1154,7 @@ public class Post_Process_Batch implements PlugIn{
 
       for( int i=0; i<fileStr.length; i++ ){
           deleteFile = new File(fileStr[i]);
-          if( deleteFile.getName().contains("tmp") || deleteFile.getName().contains("temp") ){
+          if( deleteFile.getName().contains("tmp") || deleteFile.getName().contains("temp") || deleteFile.getName().contains("_original") ){
               deleteFile.delete();
           }
       }
@@ -1035,6 +1237,36 @@ public class Post_Process_Batch implements PlugIn{
       dialog.showDialog();
 
       return dialog;
+  }
+
+  public boolean containsDNGOnly(Iterator<File> it){
+      boolean hasDNGOnly = false;
+      File nextFile = null;
+      String ext = null;
+      while (it.hasNext()){
+          nextFile = it.next();
+          // Get extension
+          ext = getFileExtension(nextFile);
+          // Only check for extension if the file not a folder
+          if( ext != null ){
+              hasDNGOnly = true;// Assume true if there are files with extension
+              if( !ext.toUpperCase().equals("DNG") ){
+                  hasDNGOnly = false;
+                  break;
+              }
+          }
+      }
+      return hasDNGOnly;
+  }
+
+  public String getFileExtension(File file){
+      String filename = file.getName();
+      String[] parts = filename.split("\\.(?=[^\\.]+$)");
+
+      if( parts.length != 2 ){
+        return null;
+      }
+      return parts[1];
   }
 
 }

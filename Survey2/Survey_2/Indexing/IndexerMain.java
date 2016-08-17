@@ -34,9 +34,9 @@ import java.util.HashMap;
 
 public class IndexerMain implements PlugIn{
 
-    public String NDVISINGLE = "NDVI (Single Camera)";
-    public String NDVIDUAL = "NDVI (Dual Camera)";
-    public String NDVISurvey1 = "[Legacy] NDVI Survey1";
+    public String NDVISINGLE = "NDVI Red + NIR (Single Camera)";
+    public String NDVIDUAL = "NDVI Red + NIR (Dual Camera)";
+    public String NDVISurvey1 = "NDVI Blue + NIR (Single Camera)";
     public String SAVEFOLDER = "Index";
     public String PATHTOLUTS = IJ.getDirectory("luts");
     public String WORKINGDIRECTORY = IJ.getDirectory("imagej");

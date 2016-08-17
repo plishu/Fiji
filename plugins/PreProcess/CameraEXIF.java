@@ -13,9 +13,46 @@ public class CameraEXIF{
     private String exposureBias;
     private String focalLength;
 
+
     public CameraEXIF(EXIFReader nreader){
         reader = nreader;
         exifcontainer = reader.readExif();
+    }
+
+    public String getTimeStamp(){
+        return exifcontainer.getTimeStamp();
+    }
+
+    public String getApeture(){
+        return exifcontainer.getApeture();
+    }
+
+    public String getThumbSize(){
+        return exifcontainer.getThumbSize();
+    }
+
+    public String getFullSize(){
+        return exifcontainer.getFullSize();
+    }
+
+    public String getImageSize(){
+        return exifcontainer.getImageSize();
+    }
+
+    public String getOutputSize(){
+        return exifcontainer.getOutputSize();
+    }
+
+    public String getFilterPattern(){
+        return exifcontainer.getFilterPattern();
+    }
+
+    public String getDaylightMultiplyer(){
+        return exifcontainer.getDaylightMultiplyer();
+    }
+
+    public String getCameraMultiplyer(){
+        return exifcontainer.getCameraMultiplyer();
     }
 
     public String getExposureTime(){

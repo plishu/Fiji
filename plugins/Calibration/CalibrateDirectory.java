@@ -406,9 +406,12 @@ public class CalibrateDirectory implements PlugIn{
 
       IJ.log("I will begin processing the " + jpgToCalibrate.size() + " images that were found.");
 
-      IJ.showMessage("Attention! During the calibration process, windows will popup.\n" +
-      "This is part of the calibration process.\n" +
-      "Please do not disturb these windows as it might disrupt the calibration process.");
+      // @TODO Only show this for tifs (not for jpgs bc its fine for jpgs only)
+      if( thereAreTIFs ){
+          IJ.showMessage("Attention! During the calibration process, windows will popup.\n" +
+          "This is part of the calibration process.\n" +
+          "Please do not disturb these windows as it might disrupt the calibration process.");
+      }
 
       // Load in photo (only after calibration coefficients have been prepared)
       RGBPhoto photo = null;
