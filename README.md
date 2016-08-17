@@ -40,7 +40,11 @@ Within Fiji's Plugin submenu, you will see a MAPIR option. The MAPIR plugin cont
 ## Change Log
 All notable changes to this project will be documented in this file.
 
-## [1.3.1] - 2016-08-05
+## [1.3.2] - 2016-08-17
+### Added
+- pre-pocess: Added support for DNG only pre-processing (JPG counterparts are not required)
+
+## [1.3.1] - 2016-08-08
 ### Added
 - In pre-process: Added warning to user if camera settings are different than those in Flat-Fields
 - In calibration: Added warning to user if calibration target image camera settings are different than those of the image to be calibrated
