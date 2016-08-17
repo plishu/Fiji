@@ -1,15 +1,19 @@
 This directory contains the download links to the various pre-packaged Fiji distribution with the MAPIR plugin pre-installed
 
-## Latest Version (1.3.1)
+## Latest Version (1.3.2)
 
-####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160808.zip)
+####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160817.zip)
 
-####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160808.zip)
+####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160817.zip)
 
 ## Change Log
 All notable changes to this project will be documented in this file.
 
-## [1.3.1] - 2016-08-05
+## [1.3.2] - 2016-08-17
+### Added
+- pre-pocess: Added support for DNG only pre-processing (JPG counterparts are not required)
+
+## [1.3.1] - 2016-08-08
 ### Added
 - In pre-process: Added warning to user if camera settings are different than those in Flat-Fields
 - In calibration: Added warning to user if calibration target image camera settings are different than those of the image to be calibrated
@@ -100,6 +104,10 @@ All notable changes to this project will be documented in this file.
 
 
 ## Older versions
+
+####[Fiji Windows 32-bit (1.3.1)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160808.zip)
+
+####[Fiji Windows 64-bit (1.3.1)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160808.zip)
 
 ####[Fiji Windows 32-bit (1.3.0)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160726.zip)
 
