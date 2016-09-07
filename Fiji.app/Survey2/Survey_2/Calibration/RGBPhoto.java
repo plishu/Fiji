@@ -154,13 +154,14 @@ public class RGBPhoto{
     greenChannel = channels[1];
     blueChannel = channels[2];
 
+
     RGBStackMerge merger = new RGBStackMerge();
     image = merger.mergeChannels(channels, false);
     //image.flattenStack();
     //image.show();
-    //here!!
     RGBStackConverter.convertToRGB(image);
     //(new StackConverter(image)).convertToRGB();
+
 
     camera = cam;
     imageDir = ref.getDir();
@@ -271,9 +272,15 @@ public class RGBPhoto{
         this.filter = "660/850";
       }else if( camera.equals(CalibrationPrompt.SURVEY2_NIR) ){
         this.filter = "850";
+      }else if( camera.equals(CalibrationPrompt.DJIPHANTOM4_NDVI) ){
+        this.filter = "660/850";
+      }else if( camera.equals(CalibrationPrompt.DJIX3_NDVI) ){
+        this.filter = "660/850";
+      }else if( camera.equals(CalibrationPrompt.DJIPHANTOM3_NDVI) ){
+        this.filter = "660/850";
       }else if( camera.equals(CalibrationPrompt.OTHER_CAMERA) ){
         //this.filter = valueMap.get(CalibrationPrompt.MAP_FILTER);
-        filter = null;
+        filter = null; // User will input filter
       }else{
         IJ.log("Camera not supported");
       }

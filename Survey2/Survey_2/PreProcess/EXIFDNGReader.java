@@ -21,33 +21,41 @@ public class EXIFDNGReader implements EXIFReader{
 
             while( (line=buffreader.readLine()) != null ){
                 try{
-                    if( line.contains("Timestamp") ){
+                    if( line.contains("File Creation Date/Time") ){
                         container.setTimeStamp(getAfterColon(line));
                     }else if( line.contains("Camera") ){
                         container.setCameraModel(getAfterColon(line));
-                    }else if( line.contains("ISO speed") ){
+                    }else if( line.contains("ISO") ){
                         container.setIsoSpeed(getAfterColon(line));
-                    }else if( line.contains("Shutter") ){
+                    }else if( line.contains("Shutter Speed Value") ){
                         container.setExposureTime(getAfterColon(line));
                     }else if( line.contains("Aperture") ){
                         container.setAperture(getAfterColon(line));
-                    }else if( line.contains("Focal length") ){
+                    }else if( line.contains("Focal Length") ){
                         container.setFocalLength(getAfterColon(line));
-                    }else if( line.contains("Thumb size") ){
-                        container.setThumbSize(getAfterColon(line));
-                    }else if( line.contains("Full size") ){
-                        container.setFullSize(getAfterColon(line));
-                    }else if( line.contains("Image size") ){
-                        container.setImageSize(getAfterColon(line));
-                    }else if( line.contains("Output size") ){
-                        container.setOutputSize(getAfterColon(line));
-                    }else if( line.contains("Filter pattern") ){
-                        container.setFilterPattern(getAfterColon(line));
-                    }else if( line.contains("Daylight multipliers") ){
-                        container.setDaylightMultiplyer(getAfterColon(line));
-                    }else if( line.contains("Camera multipliers") ){
-                        container.setCameraMultiplyer(getAfterColon(line));
                     }
+                    //else if( line.contains("Thumb size") ){
+                    //    container.setThumbSize(getAfterColon(line));
+                    //}
+                    //else if( line.contains("Full size") ){
+                    //    container.setFullSize(getAfterColon(line));
+                    //}
+                    else if( line.contains("Image Size") ){
+                        container.setImageSize(getAfterColon(line));
+                    }
+                    //else if( line.contains("Output size") ){
+                    //    container.setOutputSize(getAfterColon(line));
+                    //}
+                    else if( line.contains("Filter pattern") ){
+                        container.setFilterPattern(getAfterColon(line));
+                    }
+                    //else if( line.contains("Daylight multipliers") ){
+                    //    container.setDaylightMultiplyer(getAfterColon(line));
+                    //}
+                    //else if( line.contains("Camera multipliers") ){
+                    //    container.setCameraMultiplyer(getAfterColon(line));
+                    //}
+                    else{}
                 }catch(Exception e){
                     IJ.log(e.getMessage());
                 }

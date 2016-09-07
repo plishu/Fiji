@@ -3,7 +3,7 @@ C:\Program Files\Java\jdk1.8.0_91\bin>jar cvfM C:\Users\Edgar\Desktop\fiji-win32
 C:\Program Files (x86)\Java\jdk1.8.0_73\bin>jar cvfM C:\Users\PP3\Documents\GitHub\Fiji\Survey2\PP_MAPIR.jar C:\Users\PP3\Documents\GitHub\Fiji\Survey2\Survey_2\plugins.config
 
 
-Complile plugin first!!
+Compile plugin first!!
 C:\Program Files\Java\jdk1.8.0_91\bin>jar cvfM C:\Users\Nolan\Documents\GitHub\Fiji\Survey2\PP_MAPIR.jar C:\Users\Nolan\Documents\GitHub\Fiji\Survey2\Survey_2\plugins.config
 
 Move Post_Process* files into plugin. (don't include .java)

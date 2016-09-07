@@ -1,6 +1,5 @@
-setBatchMode(false);
+setBatchMode(true);
 
-/*
 args = getArgument();
 
 // Parse argument
@@ -27,17 +26,18 @@ for( i=0; i<tmpstr1.length; i++ ){
   }
 }
 
-print("path_ff: " + path_ff);
-print("path_raw: " + path_raw);
-print("path_out: " + path_out);
-print("filter_radius: " + filter_radius);
-*/
+//print("path_ff: " + path_ff);
+//print("path_raw: " + path_raw);
+//print("path_out: " + path_out);
+//print("filter_radius: " + filter_radius);
 
-/* Dev mode remove this */
+/* Dev mode: comment out */
+/*
 path_ff = File.openDialog("Select Flat-Field");
 path_raw = File.openDialog("Select DNG File");
 path_out = File.directory;
 filter_radius = 0;
+*/
 
 fileName_ff = "";
 fileNameNoExt_ff = "";
@@ -46,32 +46,32 @@ fileNameNoExt_raw = "";
 
 // Open flat-field image
 if( filter_radius != 0 ){
-  print("Opening Flat-Field: " + path_ff);
+  //print("Opening Flat-Field: " + path_ff);
   run("DCRaw Reader...", "open=["+path_ff+"] white_balance=None output_colorspace=raw read_as=8-bit interpolation=[High-speed, low-quality bilinear]");
   fileName_ff = getTitle();
   tmp = split(fileName_ff, ".");
   fileNameNoExt_ff = tmp[0];
 
-  print("Splitting channels " + getTitle());
+  //print("Splitting channels " + getTitle());
   run("Split Channels");
   wait(1000);
 
   selectWindow(fileName_ff + " (red)");
-  print("Applying mean on " + getTitle());
+  //print("Applying mean on " + getTitle());
   run("Mean...", "radius="+filter_radius);
   run("32-bit");
   getRawStatistics(nPixels, mean, min, max, std, histogram);
   run("Macro...", "code=v=" + max + "/v");
 
   selectWindow(fileName_ff + " (green)");
-  print("Applying mean on " + getTitle());
+  //print("Applying mean on " + getTitle());
   run("Mean...", "radius="+filter_radius);
   run("32-bit");
   getRawStatistics(nPixels, mean, min, max, std, histogram);
   run("Macro...", "code=v=" + max + "/v");
 
   selectWindow(fileName_ff + " (blue)");
-  print("Applying mean on " + getTitle());
+  //print("Applying mean on " + getTitle());
   run("Mean...", "radius="+filter_radius);
   run("32-bit");
   getRawStatistics(nPixels, mean, min, max, std, histogram);
@@ -80,7 +80,7 @@ if( filter_radius != 0 ){
 }
 
 // Process RAW image
-print("Opening " + path_raw);
+//print("Opening " + path_raw);
 run("DCRaw Reader...", "open=["+path_raw+"] white_balance=None output_colorspace=raw read_as=8-bit interpolation=[High-speed, low-quality bilinear]");
 fileName_raw = getTitle();
 tmp = split(fileName_raw, ".");
@@ -89,13 +89,13 @@ fileNameNoExt_raw = tmp[0];
 // Don't correct for vignette, just save
 if (filter_radius == 0) {
   //run("RGB Color");
-  print("Saving " + getTitle());
+  //print("Saving " + getTitle());
   saveAs("Tiff", path_out + fileNameNoExt_raw + ".tif");
   close();
 } else {
   // Correct for vignette
   selectWindow(fileName_raw);
-  print("Splitting channels " + getTitle());
+  //print("Splitting channels " + getTitle());
   run("Split Channels");
 
   run("Calculator Plus", "i1="+"[" + fileName_ff + " (red)" + "]"+" i2="+"[" + fileName_raw + " (red)" + "]"+" operation=[Multiply: i2 = (i1*i2) x k1 + k2] k1=1 k2=0 create");
@@ -122,15 +122,18 @@ if (filter_radius == 0) {
   selectWindow("Result");
   rename("ResultB");
 
-  print("Merging channels");
+  //print("Merging channels");
+
   run("Merge Channels...", "c1=ResultR c2=ResultG c3=ResultB");
-  print("Finished merging " + getTitle());
+  //run("Merge Channels...", "c1=ResultR c2=ResultG c3=ResultB create"); // @TODO <--Remove create to fix tif!!
+  //print("Finished merging " + getTitle());
 
-  selectWindow("RGB");
+  selectWindow("RGB"); // @TODO If you removed create, then use this one
+  //selectWindow("Composite");
 
-  print("Saving " + getTitle());
+  //print("Saving " + getTitle());
   saveAs("Tiff", path_out + fileNameNoExt_raw + ".tif");
-  print("Closing " + getTitle());
+  //print("Closing " + getTitle());
   close();
 
 }

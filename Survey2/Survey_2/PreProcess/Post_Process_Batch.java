@@ -131,7 +131,7 @@ public class Post_Process_Batch implements PlugIn{
     // 1) RAW always comes before JPG
     // 2) All files sorted in chronological order first
     // 3) RAW always followed by JPG, and are the same image
-
+    if( filesToProcess.length > 0){
     for( int i=0; i<filesToProcess.length; i++ ){
       String[] inImageParts = (filesToProcess[i].getName()).split("\\.(?=[^\\.]+$)");
       String inImageExt = null;
@@ -165,30 +165,34 @@ public class Post_Process_Batch implements PlugIn{
       }else if( inImageExt.toUpperCase().equals("DNG") ){
         raw_jpgBatchToProcess.add(filesToProcess[i]);
 
-        if( filesToProcess[i+1].getName().contains("jpg") || filesToProcess[i+1].getName().contains("JPG") ){
-            raw_jpgBatchToProcess.add(filesToProcess[i+1]);
-        }else{
-            // Does not comply to directory file structure
-            if( containsDNGOnly( raw_jpgBatchToProcess.iterator()) ){
+        //IJ.log(filesToProcess[i].getName());
+        if( containsDNGOnly( raw_jpgBatchToProcess.iterator()) ){
 
-            }
-            else if( showNotCorrectFileStructure().wasOKed() ){
-                IJ.log("Current File: " + filesToProcess[i].getName());
-                IJ.log("Error --> " + filesToProcess[i+1].getName());
-                IJ.log("File structure detected: ");
-                for( int j=0; j<filesToProcess.length; j++ ){
-                    IJ.log(filesToProcess[j].getName());
-                }
-                return;
-            }
         }
+        else
+        {
+            if( filesToProcess[i+1].getName().contains("jpg") || filesToProcess[i+1].getName().contains("JPG") ){
+                raw_jpgBatchToProcess.add(filesToProcess[i+1]);
+            }else{
+                // Does not comply to directory file structure
 
-        i++; // Skip following JPG in the search
+                if( showNotCorrectFileStructure().wasOKed() ){
+                    IJ.log("Current File: " + filesToProcess[i].getName());
+                    IJ.log("Error --> " + filesToProcess[i+1].getName());
+                    IJ.log("File structure detected: ");
+                    for( int j=0; j<filesToProcess.length; j++ ){
+                        IJ.log(filesToProcess[j].getName());
+                    }
+                    return;
+                }
+            }
+            i++;
+      }
       }else if( inImageExt.toUpperCase().equals("JPG") ){
         jpgBatchToProcess.add(filesToProcess[i]);
       }
     }
-
+}
     Collections.sort(jpgBatchToProcess);
     Collections.sort(raw_jpgBatchToProcess);
 
@@ -586,6 +590,7 @@ public class Post_Process_Batch implements PlugIn{
   public String getDNGCameraModel(CameraEXIF exifdata){
       // Open logfile
       String line = exifdata.getCameraModel();
+      //String line = "Survey2_RED";
 
       if( line.matches(".*Survey2_BLUE") ){
         return "Survey2_BLUE";
