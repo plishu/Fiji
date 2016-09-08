@@ -32,13 +32,26 @@ Within Fiji's Plugin submenu, you will see a MAPIR option. The MAPIR plugin cont
 - [Packages](/Packages): Contains easy installation deployment for various systems. Downloading a zip packages for your system and extracting is sufficient to start using Fiji.
 - [Survey2](/Survey2): Contains plugin dependencies such as flat-fields, exiftools, and macros.
 - [luts](/luts): Look up tables
-- [plugins](/plugins): Plugins for Fiji. 
+- [plugins](/plugins): Plugins for Fiji.
 
 ### Credits
  - [Photomonitoring Plugin](https://github.com/nedhorning/PhotoMonitoringPlugin) by Ned Horning - American Museum of Natural History, Center for Biodiversity and Conservation
 
 ## Change Log
 All notable changes to this project will be documented in this file.
+
+## [1.3.2] - 2016-09-08
+### Added
+- In pre-process: Added functionality to allow for processing folders containing only DNG images.
+
+
+### Changed
+- Updated text to "Create Index and Apply LUT to Images" from "Apply LUT to Images" to better reflect functionality at that step.
+
+
+### Fixed
+- DNG EXIF data extraction
+
 
 ## [1.3.1] - 2016-08-05
 ### Added

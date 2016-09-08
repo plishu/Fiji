@@ -2,12 +2,23 @@ This directory contains the download links to the various pre-packaged Fiji dist
 
 ## Latest Version (1.3.1)
 
-####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160808.zip)
+####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160908.zip)
 
-####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160808.zip)
+####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160908.zip)
 
 ## Change Log
 All notable changes to this project will be documented in this file.
+
+## [1.3.2] - 2016-09-08
+### Added
+- In pre-process: Added functionality to allow for processing folders containing only DNG images.
+
+
+### Changed
+- Updated text to "Create Index and Apply LUT to Images" from "Apply LUT to Images" to better reflect functionality at that step.
+
+### Fixed
+- DNG EXIF data extraction
 
 ## [1.3.1] - 2016-08-05
 ### Added
