@@ -40,21 +40,21 @@ Within Fiji's Plugin submenu, you will see a MAPIR option. The MAPIR plugin cont
 ## Change Log
 All notable changes to this project will be documented in this file.
 
-
-## [1.3.2] - 2016-09-08
-### Added
-- In pre-process: Added functionality to allow for processing folders containing only DNG images.
-
-
+## [1.3.3] - 2016-09-08
 ### Changed
 - Updated text to "Create Index and Apply LUT to Images" from "Apply LUT to Images" to better reflect functionality at that step.
 
 
 ### Fixed
 - DNG EXIF data extraction
+- pre-pocess: Support for DNG only pre-processing out of bounds exception.
 
 
-## [1.3.1] - 2016-08-05
+## [1.3.2] - 2016-08-17
+### Added
+- pre-pocess: Added support for DNG only pre-processing (JPG counterparts are not required)
+
+## [1.3.1] - 2016-08-08
 ### Added
 - In pre-process: Added warning to user if camera settings are different than those in Flat-Fields
 - In calibration: Added warning to user if calibration target image camera settings are different than those of the image to be calibrated
