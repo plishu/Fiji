@@ -1,6 +1,6 @@
 This directory contains the download links to the various pre-packaged Fiji distribution with the MAPIR plugin pre-installed
 
-## Latest Version (1.3.2)
+## Latest Version (1.3.3)
 
 
 ####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160908.zip)
@@ -116,6 +116,10 @@ All notable changes to this project will be documented in this file.
 
 
 ## Older versions
+
+####[Fiji Windows 32-bit (1.3.2)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160817.zip)
+
+####[Fiji Windows 64-bit (1.3.2)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160817.zip)
 
 ####[Fiji Windows 32-bit (1.3.1)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160808.zip)
 
