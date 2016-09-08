@@ -40,6 +40,7 @@ Within Fiji's Plugin submenu, you will see a MAPIR option. The MAPIR plugin cont
 ## Change Log
 All notable changes to this project will be documented in this file.
 
+
 ## [1.3.2] - 2016-09-08
 ### Added
 - In pre-process: Added functionality to allow for processing folders containing only DNG images.

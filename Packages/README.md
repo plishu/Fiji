@@ -17,8 +17,10 @@ All notable changes to this project will be documented in this file.
 ### Changed
 - Updated text to "Create Index and Apply LUT to Images" from "Apply LUT to Images" to better reflect functionality at that step.
 
+
 ### Fixed
 - DNG EXIF data extraction
+
 
 ## [1.3.1] - 2016-08-05
 ### Added
