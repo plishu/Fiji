@@ -1,1 +1,0 @@
-javac -source 1.6 -target 1.6 -classpath C:\Users\Peau\Documents\GitHub\Fiji\Fiji.app\jars\*; C:\Users\Peau\Documents\GitHub\Fiji\Survey2\Survey_2\PreProcess\*.java
