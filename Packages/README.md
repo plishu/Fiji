@@ -18,7 +18,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - DNG EXIF data extraction
-- pre-pocess: Support for DNG only pre-processing out of bounds exception.
+- pre-process: Support for DNG only pre-processing out of bounds exception.
 
 
 ## [1.3.2] - 2016-08-17
