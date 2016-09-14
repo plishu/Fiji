@@ -26,10 +26,9 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - DNG EXIF data extraction
-- In pre-process: Support for DNG only pre-processing out of bounds exception.
-- In calibration: Fixed null pointer exception when processing an image with no EXIF data.
-- In calibration: Fixed skew in MakeNDVI function where both blue min and red min were
-    being treated as the minimum value on a 0 to 255 scale
+- pre-process: Support for DNG only pre-processing out of bounds exception.
+
+>>>>>>> origin/master
 
 ## [1.3.2] - 2016-08-17
 ### Added
