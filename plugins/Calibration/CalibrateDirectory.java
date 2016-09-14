@@ -248,7 +248,7 @@ public class CalibrateDirectory implements PlugIn{
       while( useQR == true ){
 
         if( !tifsToJpgs ){
-          // User want to calibate JPGs present in directory
+          // User want to calibrate JPGs present in directory
           if( thereAreJPGs ){
 
             prompts.showQRJPGFileDialog();
@@ -275,6 +275,7 @@ public class CalibrateDirectory implements PlugIn{
 
             qrJPGScaled = calibrator.scaleChannels(qrJPGPhoto);
             if( qrJPGPhoto.getCameraType().equals(CalibrationPrompt.SURVEY2_NDVI) ){
+            //TODO If a packet hits a pocket
               calibrator.subtractNIR(qrJPGScaled.getBlueChannel(), qrJPGScaled.getRedChannel(), 80 );
             }
 
@@ -338,9 +339,11 @@ public class CalibrateDirectory implements PlugIn{
           //qrTIFScaled = calibrator.scaleChannels(qrTIFPhoto);
           qrTIFScaled = new RGBPhoto(qrTIFDir, qrTIFFilename, qrTIFPath, cameraType, true);
           if( qrTIFPhoto.getCameraType().equals(CalibrationPrompt.SURVEY2_NDVI) ){
+            //TODO If a packet hits a pocket
             calibrator.subtractNIR(qrTIFScaled.getBlueChannel(), qrTIFScaled.getRedChannel(), 80 );
           }
           if( qrTIFPhoto.getCameraType().equals(CalibrationPrompt.DJIPHANTOM4_NDVI) ){
+            //TODO If a packet hits a pocket
               calibrator.subtractNIR(qrTIFScaled.getBlueChannel(), qrTIFScaled.getRedChannel(), 80);
           }
           // Enhance for better QR detection
@@ -416,8 +419,14 @@ public class CalibrateDirectory implements PlugIn{
       // Load in photo (only after calibration coefficients have been prepared)
       RGBPhoto photo = null;
       RGBPhoto resultphoto = null;
-      Iterator<File> jpgIterator = jpgToCalibrate.iterator();
-      Iterator<File> tifIterator = tifToCalibrate.iterator();
+
+      Iterator<File> jpgPixelIterator = jpgToCalibrate.iterator();
+      Iterator<File> tifPixelIterator = tifToCalibrate.iterator();
+      double dirRedReflectMax = 0.0;
+      double dirRedReflectMin = 0.0;
+      double dirBlueReflectMax = 0.0;
+      double dirBlueReflectMin = 0.0;
+      double[] dirMinMaxes = new double[4];
       File tmpfile = null;
 
       //OpenDialog baseFileDialog = new OpenDialog("Select Base File");
@@ -449,8 +458,31 @@ public class CalibrateDirectory implements PlugIn{
       CameraEXIF imageEXIFData = null;
       CameraEXIF qrTIFEXIFData = null;
       CameraEXIF qrJPGEXIFData = null;
-      String pathToCSV = null;
+      //String pathToCSV = null;
+      while( jpgPixelIterator.hasNext() ){
+        tmpfile = jpgPixelIterator.next();
+        photo = new RGBPhoto(inputDir, tmpfile.getName(), tmpfile.getPath(), cameraType, false);
 
+        ImagePlus imgRed = photo.getRedChannel();
+        ImagePlus imgBlue = photo.getBlueChannel();
+
+        double redReflectMax = (double)imgRed.getDisplayRangeMax();
+        double redReflectMin = (double)imgRed.getDisplayRangeMin();
+        double blueReflectMax = (double)imgBlue.getDisplayRangeMax();
+        double blueReflectMin = (double)imgBlue.getDisplayRangeMin();
+
+        dirRedReflectMax = (dirRedReflectMax > redReflectMax) ? dirRedReflectMax : redReflectMax;
+        dirRedReflectMin = (dirRedReflectMin < redReflectMin) ? dirRedReflectMin : redReflectMin;
+        dirBlueReflectMax = (dirBlueReflectMax > blueReflectMax) ? dirBlueReflectMax : blueReflectMax;
+        dirBlueReflectMin = (dirBlueReflectMin > blueReflectMin) ? dirBlueReflectMin : blueReflectMin;
+      }
+      dirMinMaxes[0] = (double)dirRedReflectMax;
+      dirMinMaxes[1] = (double)dirRedReflectMin;
+      dirMinMaxes[2] = (double)dirBlueReflectMax;
+      dirMinMaxes[3] = (double)dirBlueReflectMin;
+      IJ.log( (String)"Red Max: " + dirMinMaxes[0] + " Red Min: " + dirMinMaxes[1] + " Blue Max: " + dirMinMaxes[2] + "Blue Min: " + dirMinMaxes[3]);
+      Iterator<File> jpgIterator = jpgToCalibrate.iterator();
+      Iterator<File> tifIterator = tifToCalibrate.iterator();
       while( jpgIterator.hasNext() ){
         imgcounter++;
         tmpfile = jpgIterator.next();
@@ -464,7 +496,8 @@ public class CalibrateDirectory implements PlugIn{
             IJ.log("Could not find EXIF information on this image. Please make sure it contains EXIF information. I will skip this image.");
             continue;
         }
-        pathToCSV = GetEXIFCSV(imageEXIFData.getCameraModel());
+        //    pathToCSV = GetEXIFCSV(imageEXIFData.getCameraModel());
+
         //IJ.log("Path To CSV: " + pathToCSV);
         qrTIFEXIFData = new CameraEXIF( new EXIFToolsReader(PATH_TO_EXIFTOOL, qrTIFPath) );
         qrJPGEXIFData = new CameraEXIF( new EXIFToolsReader(PATH_TO_EXIFTOOL, qrJPGPath) );
@@ -473,31 +506,33 @@ public class CalibrateDirectory implements PlugIn{
         //IJ.log(qrTIFEXIFData.printEXIFData());
         //IJ.log(qrJPGEXIFData.printEXIFData());
 
-        if( useQR && thereAreTIFs && !imageEXIFData.equals(qrTIFEXIFData)  ){
-            GenericDialog dialog = showCameraSettingsNotEqualDialog(qrTIFEXIFData.printEXIFData(),imageEXIFData.printEXIFData());
-            if( dialog.wasOKed() ){
-                // Continue
-            }else if( dialog.wasCanceled() ){
-                // Quit
-                IJ.log("Goodbye!");
-                return;
+        if( imageEXIFData != null)
+        {
+            if( useQR && thereAreTIFs && !imageEXIFData.equals(qrTIFEXIFData)  ){
+                GenericDialog dialog = showCameraSettingsNotEqualDialog(qrTIFEXIFData.printEXIFData(),imageEXIFData.printEXIFData());
+                if( dialog.wasOKed() ){
+                    // Continue
+                }else if( dialog.wasCanceled() ){
+                    // Quit
+                    IJ.log("Goodbye!");
+                    return;
+                }
+            }
+
+
+            if( useQR && thereAreJPGs && !imageEXIFData.equals(qrJPGEXIFData) ){
+                IJ.log(qrJPGEXIFData.printEXIFData());
+                IJ.log(imageEXIFData.printEXIFData());
+                GenericDialog dialog = showCameraSettingsNotEqualDialog(qrJPGEXIFData.printEXIFData(),imageEXIFData.printEXIFData());
+                if( dialog.wasOKed() ){
+                    // Continue
+                }else if( dialog.wasCanceled() ){
+                    // Quit
+                    IJ.log("Goodbye!");
+                    return;
+                }
             }
         }
-
-
-        if( useQR && thereAreJPGs && !imageEXIFData.equals(qrJPGEXIFData) ){
-            IJ.log(qrJPGEXIFData.printEXIFData());
-            IJ.log(imageEXIFData.printEXIFData());
-            GenericDialog dialog = showCameraSettingsNotEqualDialog(qrJPGEXIFData.printEXIFData(),imageEXIFData.printEXIFData());
-            if( dialog.wasOKed() ){
-                // Continue
-            }else if( dialog.wasCanceled() ){
-                // Quit
-                IJ.log("Goodbye!");
-                return;
-            }
-        }
-
 
 
         IJ.log("Opening image: " + tmpfile.getName());
@@ -541,7 +576,10 @@ public class CalibrateDirectory implements PlugIn{
             }
 
             //photo = calibrator.subtractNIR(photo, 0.8);
-            resultphoto = calibrator.makeNDVI(photo, qrTIFPhoto, coeffs, tifrois );
+            //TODO add calibrated max/min pixel values
+            //IJ.log( (String)"Red Max: " + dirMinMaxes[0] + " Red Min: " + dirMinMaxes[1] + " Blue Max: " + dirMinMaxes[2] + "Blue Min: " + dirMinMaxes[3]);
+            resultphoto = calibrator.makeNDVI(photo, coeffs, dirMinMaxes);
+            //IJ.log( (String)"Red Max: " + dirMinMaxes[0] + " Red Min: " + dirMinMaxes[1] + " Blue Max: " + dirMinMaxes[2] + "Blue Min: " + dirMinMaxes[3]);
 
           }else if( photo.getExtension().toUpperCase().equals("JPG") ){
             if( useQR == true && jpgrois != null ){
@@ -557,8 +595,9 @@ public class CalibrateDirectory implements PlugIn{
               coeffs[2] = BASE_COEFF_SURVEY2_NDVI_JPG[2];
               coeffs[3] = BASE_COEFF_SURVEY2_NDVI_JPG[3];
             }
-
-            resultphoto = calibrator.makeNDVI(photo, coeffs);
+            //IJ.log( (String)"Red Max: " + dirMinMaxes[0] + " Red Min: " + dirMinMaxes[1] + " Blue Max: " + dirMinMaxes[2] + "Blue Min: " + dirMinMaxes[3]);
+            resultphoto = calibrator.makeNDVI(photo, coeffs, dirMinMaxes);
+            //IJ.log( (String)"Red Max: " + dirMinMaxes[0] + " Red Min: " + dirMinMaxes[1] + " Blue Max: " + dirMinMaxes[2] + "Blue Min: " + dirMinMaxes[3]);
           }
 
           //resultphoto = calibrator.makeNDVI(photo, coeffs);
@@ -703,7 +742,7 @@ public class CalibrateDirectory implements PlugIn{
               coeffs[3] = BASE_COEFF_DJIX3_NDVI_JPG[3];
             }
           }
-          resultphoto = calibrator.makeNDVI(photo, coeffs);
+          resultphoto = calibrator.makeNDVI(photo, coeffs, dirMinMaxes);
         }else if( cameraType.equals(CalibrationPrompt.GOPRO_HERO4_NDVI) ){
           /*
           baseSummary = calibrator.getRefValues(bfs, "660/850");
@@ -762,7 +801,7 @@ public class CalibrateDirectory implements PlugIn{
               coeffs[3] = BASE_COEFF_DJIPHANTOM4_NDVI_JPG[3];
             }
           }
-          resultphoto = calibrator.makeNDVI(photo, coeffs);
+          resultphoto = calibrator.makeNDVI(photo, coeffs, dirMinMaxes);
       }else if( cameraType.equals(CalibrationPrompt.DJIPHANTOM3_NDVI) ){
           baseSummary = calibrator.getRefValues(bfs, "660/850");
 
@@ -799,7 +838,7 @@ public class CalibrateDirectory implements PlugIn{
               coeffs[3] = BASE_COEFF_DJIPHANTOM3_NDVI_JPG[3];
             }
           }
-          resultphoto = calibrator.makeNDVI(photo, coeffs);
+          resultphoto = calibrator.makeNDVI(photo, coeffs, dirMinMaxes);
       }else if( cameraType.equals(CalibrationPrompt.SURVEY1_NDVI) ){
           // VIS and NIR channels are switched!!
           // VIS = blue
@@ -839,7 +878,7 @@ public class CalibrateDirectory implements PlugIn{
               coeffs[3] = BASE_COEFF_SURVEY1_NDVI_JPG[3];
             }
           }
-          resultphoto = calibrator.makeNDVI(photo, coeffs);
+          resultphoto = calibrator.makeNDVI(photo, coeffs, dirMinMaxes);
       }
 
         resultphoto.copyFileData(photo);
@@ -1131,25 +1170,30 @@ public class CalibrateDirectory implements PlugIn{
       String workingDirectory = IJ.getDirectory("imagej");
       String valuesDirectory = workingDirectory+"Survey2\\Values\\";
       String csvpath = null;
-
-      if( model.equals("Survey2_RED") ){
-          csvpath = valuesDirectory+"red\\red.csv";
-      }else if( model.equals("Survey2_GREEN") ){
-          csvpath = valuesDirectory+"green\\green.csv";
-      }else if( model.equals("Survey2_BLUE") ){
-          csvpath = valuesDirectory+"blue\\blue.csv";
-      }else if( model.equals("Survey2_NDVI") ){
-          csvpath = valuesDirectory+"ndvi\\ndvi.csv";
-      }else if( model.equals("Survey2_IR") ){
-          csvpath = valuesDirectory+"ir\\ir.csv";
-      }else if( model.equals("FC350") ){
-          csvpath = valuesDirectory+"FC350_ndvi\\FC350_ndvi.csv";
-      }else if( model.equals("FC330") ){
-          csvpath = valuesDirectory+"FC330_ndvi\\FC300_ndvi.csv";
-      }else if( model.equals("FC300X") ){
-          csvpath = valuesDirectory+"FC300X_ndvi\\FC300X_ndvi.csv";
-      }else if( model.equals("FC300S") ){
-          csvpath = valuesDirectory+"FC300S_ndvi\\FC300S_ndvi.csv";
+      if(model != null)
+      {
+          if( model.equals("Survey2_RED") ){
+              csvpath = valuesDirectory+"red\\red.csv";
+          }else if( model.equals("Survey2_GREEN") ){
+              csvpath = valuesDirectory+"green\\green.csv";
+          }else if( model.equals("Survey2_BLUE") ){
+              csvpath = valuesDirectory+"blue\\blue.csv";
+          }else if( model.equals("Survey2_NDVI") ){
+              csvpath = valuesDirectory+"ndvi\\ndvi.csv";
+          }else if( model.equals("Survey2_IR") ){
+              csvpath = valuesDirectory+"ir\\ir.csv";
+          }else if( model.equals("FC350") ){
+              csvpath = valuesDirectory+"FC350_ndvi\\FC350_ndvi.csv";
+          }else if( model.equals("FC330") ){
+              csvpath = valuesDirectory+"FC330_ndvi\\FC300_ndvi.csv";
+          }else if( model.equals("FC300X") ){
+              csvpath = valuesDirectory+"FC300X_ndvi\\FC300X_ndvi.csv";
+          }else if( model.equals("FC300S") ){
+              csvpath = valuesDirectory+"FC300S_ndvi\\FC300S_ndvi.csv";
+          }
+      }
+      else{
+          csvpath = "Camera not supported";
       }
 
       return csvpath;

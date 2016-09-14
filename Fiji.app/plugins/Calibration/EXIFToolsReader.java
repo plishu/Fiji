@@ -100,13 +100,14 @@ public class EXIFToolsReader implements EXIFReader{
         if( System.getProperty("os.name").contains("Windows") ){
           console = "cmd";
           c_arg = "/c";
-          command = path_to_exiftool + " " + "\""+path_to_img+"\"";
+          IJ.log("USING WINDOWS EXIFTOOLS");
+          command = path_to_exiftool + "exiftool.exe" + " " + "\""+path_to_img+"\"";
         }else{
           console = "sh";
           c_arg = "-c";
-          command = path_to_exiftool + " " + "\'"+path_to_img+"\'";
+          command = path_to_exiftool + "exiftool" + " " + "\'"+path_to_img+"\'";
         }
-        //IJ.log("Executing command: " + command);
+        IJ.log("Executing command: " + command);
 
 
         try{

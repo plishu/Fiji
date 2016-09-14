@@ -151,64 +151,182 @@ public class EXIFContainer{
     }
 
     public String getTimeStamp(){
-        return timeStamp;
+        if(timeStamp != null)
+        {
+            return timeStamp;
+        }
+        else
+        {
+            return "UNKOWN Time Stamp";
+        }
     }
 
     public String getApeture(){
-        return aperture;
+        if(aperture != null)
+        {
+            return aperture;
+        }
+        else
+        {
+            return "UNKOWN Aperture";
+        }
     }
 
     public String getThumbSize(){
-        return thumbSize;
+        if(thumbSize != null)
+        {
+            return thumbSize;
+        }
+        else
+        {
+            return "UNKOWN Thumb Size";
+        }
     }
-
     public String getFullSize(){
-        return fullSize;
+        if(fullSize != null)
+        {
+            return fullSize;
+        }
+        else
+        {
+            return "UNKOWN Full Size";
+        }
     }
 
     public String getImageSize(){
-        return imageSize;
+        if(imageSize != null)
+        {
+            return imageSize;
+        }
+        else
+        {
+            return "UNKOWN Image Size";
+        }
     }
 
     public String getOutputSize(){
-        return outputSize;
+        if(outputSize != null)
+        {
+            return outputSize;
+        }
+        else
+        {
+            return "UNKOWN Output Size";
+        }
     }
 
     public String getFilterPattern(){
-        return filterPattern;
+        if(filterPattern != null)
+        {
+            return filterPattern;
+        }
+        else
+        {
+            return "UNKOWN Filter Pattern";
+        }
     }
 
     public String getDaylightMultiplyer(){
-        return dayLightMultiplyer;
+        if(dayLightMultiplyer != null)
+        {
+            return dayLightMultiplyer;
+        }
+        else
+        {
+            return "UNKOWN Daylight Multiplier";
+        }
     }
 
     public String getCameraMultiplyer(){
-        return cameraMultiplyer;
+        if(cameraMultiplyer != null)
+        {
+            return cameraMultiplyer;
+        }
+        else
+        {
+            return "UNKOWN Camera Multiplier";
+        }
     }
 
     public String getExposureTime(){
-        return exposureTime;
+        if(exposureTime != null)
+        {
+            return exposureTime;
+        }
+        else
+        {
+            return "UNKOWN Exposure Time";
+        }
     }
     public String getIsoSpeed(){
-        return isoSpeed;
+        if(isoSpeed != null)
+        {
+            return isoSpeed;
+        }
+        else
+        {
+            return "UNKOWN ISO Speed";
+        }
     }
     public String getCameraModel(){
-        return cameraModel;
+        if(cameraModel != null)
+        {
+            return cameraModel;
+        }
+        else
+        {
+            return "UNKOWN Camera Model";
+        }
     }
     public String getCameraMaker(){
-        return cameraMaker;
+        if(cameraMaker != null)
+        {
+            return cameraMaker;
+        }
+        else
+        {
+            return "UNKOWN Camera Maker";
+        }
     }
     public String getFStop(){
-        return fStop;
+        if(fStop != null)
+        {
+            return fStop;
+        }
+        else
+        {
+            return "UNKOWN F Stop";
+        }
     }
     public String getExposureBias(){
-        return exposureBias;
+        if(exposureBias != null)
+        {
+            return exposureBias;
+        }
+        else
+        {
+            return "UNKOWN Exposure Bias";
+        }
     }
     public String getFocalLength(){
-        return focalLength;
+        if(focalLength != null)
+        {
+            return focalLength;
+        }
+        else
+        {
+            return "UNKOWN Focal Length";
+        }
     }
     public String getWhiteBalance(){
-        return whiteBalance;
+        if(whiteBalance != null)
+        {
+            return whiteBalance;
+        }
+        else
+        {
+            return "UNKOWN White Balance";
+        }
     }
 
 }

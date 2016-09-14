@@ -3,27 +3,37 @@ This directory contains the download links to the various pre-packaged Fiji dist
 ## Latest Version (1.3.3)
 
 
-####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160908.zip)
+####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160914.zip)
 
-####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160908.zip)
+####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160914.zip)
 
 
 ## Change Log
 All notable changes to this project will be documented in this file.
 
+## [1.3.4] - 2016-09-14
+### Added
+- Code to collect highes/lowest pixel values across an entire directory.
+### Fixed
+- MakeNDVI now correctly calibrates using the min and max pixel values for an entire survey, instead of on a per picture basis.
+- Null pointer exceptions created when calling CameraEXIF.equals().
+
 ## [1.3.3] - 2016-09-08
 ### Changed
 - Updated text to "Create Index and Apply LUT to Images" from "Apply LUT to Images" to better reflect functionality at that step.
+- Added default return values to EXIFContainer.get* mutater functions.
 
 
 ### Fixed
 - DNG EXIF data extraction
-- pre-pocess: Support for DNG only pre-processing out of bounds exception.
-
+- In pre-process: Support for DNG only pre-processing out of bounds exception.
+- In calibration: Fixed null pointer exception when processing an image with no EXIF data.
+- In calibration: Fixed skew in MakeNDVI function where both blue min and red min were
+    being treated as the minimum value on a 0 to 255 scale
 
 ## [1.3.2] - 2016-08-17
 ### Added
-- pre-pocess: Added support for DNG only pre-processing (JPG counterparts are not required)
+- pre-process: Added support for DNG only pre-processing (JPG counterparts are not required)
 
 ## [1.3.1] - 2016-08-08
 ### Added
@@ -116,6 +126,10 @@ All notable changes to this project will be documented in this file.
 
 
 ## Older versions
+
+####[Fiji Windows 32-bit (1.3.2)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160908.zip)
+
+####[Fiji Windows 64-bit (1.3.2)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160908.zip)
 
 ####[Fiji Windows 32-bit (1.3.2)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160817.zip)
 

@@ -20,70 +20,172 @@ public class CameraEXIF{
     }
 
     public String getTimeStamp(){
-        return exifcontainer.getTimeStamp();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getTimeStamp();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getApeture(){
-        return exifcontainer.getApeture();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getApeture();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getThumbSize(){
-        return exifcontainer.getThumbSize();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getThumbSize();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getFullSize(){
-        return exifcontainer.getFullSize();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getFullSize();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getImageSize(){
-        return exifcontainer.getImageSize();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getImageSize();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getOutputSize(){
-        return exifcontainer.getOutputSize();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getOutputSize();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getFilterPattern(){
-        return exifcontainer.getFilterPattern();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getFilterPattern();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getDaylightMultiplyer(){
-        return exifcontainer.getDaylightMultiplyer();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getDaylightMultiplyer();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getCameraMultiplyer(){
-        return exifcontainer.getCameraMultiplyer();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getCameraMultiplyer();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getExposureTime(){
-        return exifcontainer.getExposureTime();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getExposureTime();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getISOSpeed(){
-        return exifcontainer.getIsoSpeed();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getIsoSpeed();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
     public String getCameraModel(){
-        return exifcontainer.getCameraModel();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getCameraModel();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getCameraMaker(){
-        return exifcontainer.getCameraMaker();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getCameraMaker();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getFStop(){
-        return exifcontainer.getFStop();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getFStop();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getExposureBias(){
-        return exifcontainer.getExposureBias();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getExposureBias();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getFocalLength(){
-        return exifcontainer.getFocalLength();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getFocalLength();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
     public String getWhiteBalance(){
-        return exifcontainer.getWhiteBalance();
+        if( exifcontainer != null)
+        {
+            return exifcontainer.getWhiteBalance();
+        }
+        else{
+            return "No Exif Data";
+        }
     }
 
 
@@ -91,9 +193,13 @@ public class CameraEXIF{
         if( !(obj instanceof CameraEXIF) ){
             return false;
         }
+        else if (obj == null)
+        {
+            return false;
+        }
 
         CameraEXIF objCast = (CameraEXIF)obj;
-
+        boolean camerasMatch = false;
         /*
         boolean condition = objCast.getExposureTime().equals(exifcontainer.getExposureTime())
             && objCast.getISOSpeed().equals(exifcontainer.getIsoSpeed())
@@ -105,16 +211,22 @@ public class CameraEXIF{
             && objCast.getWhiteBalance().equals(exifcontainer.getFocalLength());
             */
 
+        if( (exifcontainer == null) || (objCast == null))
+        {
+            return camerasMatch;
+        }
+        else
+        {
+            // return true;
+            camerasMatch = objCast.getExposureTime().equals(exifcontainer.getExposureTime())
+                && objCast.getISOSpeed().equals(exifcontainer.getIsoSpeed())
+                && objCast.getCameraModel().equals(exifcontainer.getCameraModel())
+                && objCast.getExposureBias().equals(exifcontainer.getExposureBias());
+                //&& objCast.getWhiteBalance().equals(exifcontainer.getWhiteBalance());
+        }
 
-        boolean whatNolanWants = objCast.getExposureTime().equals(exifcontainer.getExposureTime())
-            && objCast.getISOSpeed().equals(exifcontainer.getIsoSpeed())
-            && objCast.getCameraModel().equals(exifcontainer.getCameraModel())
-            && objCast.getExposureBias().equals(exifcontainer.getExposureBias());
-            //&& objCast.getWhiteBalance().equals(exifcontainer.getWhiteBalance());
 
-
-
-        return whatNolanWants;
+        return camerasMatch;
     }
 
     // Return all differences in both containers

@@ -141,7 +141,21 @@ public class Calibrate implements PlugIn{
       coeffs[2] = tmpcoeff[0];
       coeffs[3] = tmpcoeff[1];
 
-      resultphoto = calibrator.makeNDVI(photo, coeffs);
+      ImagePlus imgRed = photo.getRedChannel();
+      ImagePlus imgBlue = photo.getBlueChannel();
+
+      double redReflectMax = (double)imgRed.getDisplayRangeMax();
+      double redReflectMin = (double)imgRed.getDisplayRangeMin();
+      double blueReflectMax = (double)imgBlue.getDisplayRangeMax();
+      double blueReflectMin = (double)imgBlue.getDisplayRangeMin();
+      double[] dirMinMaxes = new double[4];
+
+      dirMinMaxes[0] = redReflectMax;
+      dirMinMaxes[1] = redReflectMin;
+      dirMinMaxes[2] = blueReflectMax;
+      dirMinMaxes[3] = blueReflectMin;
+
+      resultphoto = calibrator.makeNDVI(photo, coeffs, dirMinMaxes);
 
     }else if( camera.equals(CalibrationPrompt.SURVEY2_NIR) ){
       baseSummary = calibrator.getRefValues(bfs, "850");
