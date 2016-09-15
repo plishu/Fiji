@@ -12,17 +12,14 @@ This directory contains the download links to the various pre-packaged Fiji dist
 All notable changes to this project will be documented in this file.
 
 ## [1.3.4] - 2016-09-14
-### Added
-- Code to collect highes/lowest pixel values across an entire directory.
 ### Fixed
-- MakeNDVI now correctly calibrates using the min and max pixel values for an entire survey, instead of on a per picture basis.
+- Code to collect highest/lowest pixel values across entire input directory not on a per picture basis
 - Null pointer exceptions created when calling CameraEXIF.equals().
 
 ## [1.3.3] - 2016-09-08
 ### Changed
 - Updated text to "Create Index and Apply LUT to Images" from "Apply LUT to Images" to better reflect functionality at that step.
 - Added default return values to EXIFContainer.get* mutater functions.
-
 
 ### Fixed
 - DNG EXIF data extraction
@@ -45,7 +42,6 @@ All notable changes to this project will be documented in this file.
 - In apply LUT: If lut reference image exists, then it will be copied to the output folder.
 - Auto-Adjust NIR subtraction percent for more accurate calibration
 - User can now save the plots and calibration target image used in calibration (for debugging purposes)
-
 
 ### Changed
 - Histogram equalization to histogram stretch for qr detection. Histogram stretch seems to produce better qr detection
