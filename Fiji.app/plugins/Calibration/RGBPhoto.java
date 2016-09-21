@@ -127,11 +127,13 @@ public class RGBPhoto{
     greenChannel = imageBands[1];
     blueChannel = imageBands[2];
     */
-
-    if( imageExt.toUpperCase().equals("TIF") ){
-      //RGBStackConverter.convertToRGB(image);
-      //(new StackConverter(image)).convertToRGB();
-      fixTif(false);
+    if(imageExt != null)
+    {
+        if( imageExt.toUpperCase().equals("TIF") ){
+            //RGBStackConverter.convertToRGB(image);
+            //(new StackConverter(image)).convertToRGB();
+            fixTif(false);
+        }
     }
 
     splitStack(image);

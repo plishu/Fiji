@@ -6,10 +6,11 @@ path_ff = "";
 path_raw = "";
 path_out = "";
 filter_radius = "";
+normalize_photos = "";
 
 tmpstr1 = split(args, "|");
 
-// format: arg1=v1 | arg2=v2 | arg3=v3
+// format: arg1=v1 | arg2=v2 | arg3=v3 | arg4=v4
 for( i=0; i<tmpstr1.length; i++ ){
   tmpstr2 = split(tmpstr1[i], "=");
 
@@ -22,6 +23,9 @@ for( i=0; i<tmpstr1.length; i++ ){
     path_raw = tmpstr2[1];
   }else if( tmpstr2[0] == "path_out"){
     path_out = tmpstr2[1];
+  }else if( tmpstr2[0] == "normalize_photos"){
+    normalize_photos = tmpstr2[1];
+    normalize_photos = parseInt(normalize_photos);
   }
 }
 
@@ -29,7 +33,7 @@ for( i=0; i<tmpstr1.length; i++ ){
 //print("path_raw: " + path_raw);
 //print("path_out: " + path_out);
 //print("filter_radius: " + filter_radius);
-
+//print("normalize_photos: " + normalize_photos);
 
 
 // Open flat-field image
@@ -40,7 +44,14 @@ if( filter_radius != 0 ){
 
   rawImage = getTitle();
   //print("Debayering " + rawImage);
-  run("Debayer Image", "order=R-G-R-G demosaicing=Replication radius=2 radius=2");
+  if(normalize_photos != 0)
+  {
+	run("Debayer Image", "order=R-G-R-G demosaicing=Replication radius=2 radius=2 normalize");
+  }
+  else
+  {
+  	run("Debayer Image", "order=R-G-R-G demosaicing=Replication radius=2 radius=2");
+  }
   //print("Done Debayering " + rawImage);
 
   selectWindow(rawImage);
@@ -97,7 +108,14 @@ rawimgfname = getInfo("image.filename");
 //print("Done Opening" + getTitle());
 
 //print("Debayering " + getTitle());
-run("Debayer Image", "order=R-G-R-G demosaicing=Replication radius=2 radius=2");
+  if(normalize_photos != 0)
+  {
+	run("Debayer Image", "order=R-G-R-G demosaicing=Replication radius=2 radius=2 normalize");
+  }
+  else
+  {
+  	run("Debayer Image", "order=R-G-R-G demosaicing=Replication radius=2 radius=2");
+  }
 //print("Finished Debayering " + getTitle());
 selectWindow(rawimgfname);
 //print("Closed " + getTitle());

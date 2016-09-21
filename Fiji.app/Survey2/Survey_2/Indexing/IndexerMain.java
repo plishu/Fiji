@@ -61,7 +61,7 @@ public class IndexerMain implements PlugIn{
     private String inputNirDir = null;
     private String[] luts = null;
 
-    private final String VERSION = "1.3.1";
+    private final String VERSION = "1.3.4";
 
     // Tracked luts
     private final String LUT_MAPIR_NDVI = "MAPIR_NDVI.lut";

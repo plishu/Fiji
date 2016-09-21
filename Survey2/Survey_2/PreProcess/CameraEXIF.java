@@ -213,7 +213,7 @@ public class CameraEXIF{
 
         if( (exifcontainer == null) || (objCast == null))
         {
-            return camerasMatch;
+            return false;
         }
         else
         {

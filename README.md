@@ -40,6 +40,11 @@ Within Fiji's Plugin submenu, you will see a MAPIR option. The MAPIR plugin cont
 ## Change Log
 All notable changes to this project will be documented in this file.
 
+## [1.3.4] - 2016-09-14
+### Fixed
+- Code to collect highest/lowest pixel values across entire input directory not on a per picture basis
+- Null pointer exceptions created when calling CameraEXIF.equals().
+
 ## [1.3.3] - 2016-09-08
 ### Changed
 - Updated text to "Create Index and Apply LUT to Images" from "Apply LUT to Images" to better reflect functionality at that step.

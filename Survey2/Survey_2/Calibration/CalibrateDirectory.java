@@ -51,6 +51,7 @@ public class CalibrateDirectory implements PlugIn{
 
   private boolean useQR = false;
   private boolean tifsToJpgs = false;
+  private boolean continueAnyway = false;
 
   private String qrJPGDir = "";
   private String qrJPGFilename = "";
@@ -127,10 +128,17 @@ public class CalibrateDirectory implements PlugIn{
   private boolean thereAreJPGs = false;
   private boolean thereAreTIFs = false;
 
-  private final String VERSION = "1.3.1";
+  private final String VERSION = "1.3.4";
   private final boolean DEBUG = false;
 
-
+  public enum channelNumbers {
+      REDMAX,
+      REDMIN,
+      GREENMAX,
+      GREENMIN,
+      BLUEMAX,
+      BLUEMIN
+  }
 
   public void run(String arg){
       IJ.log("Build: " + VERSION);
@@ -420,13 +428,12 @@ public class CalibrateDirectory implements PlugIn{
       RGBPhoto photo = null;
       RGBPhoto resultphoto = null;
 
-      Iterator<File> jpgPixelIterator = jpgToCalibrate.iterator();
-      Iterator<File> tifPixelIterator = tifToCalibrate.iterator();
-      double dirRedReflectMax = 0.0;
-      double dirRedReflectMin = 0.0;
-      double dirBlueReflectMax = 0.0;
-      double dirBlueReflectMin = 0.0;
-      double[] dirMinMaxes = new double[4];
+      Iterator<File> pixelIterator = jpgToCalibrate.iterator();
+
+      double[] dirMinMaxes = new double[18];
+      //dirMinMaxes[0-5]: Tiff minimum and maximum channel values
+      //dirMinMaxes[6-11]: JPG minimum and maximum channel values
+      //dirMinMaxes[12-17]: DNG minimum and maximum channel values
       File tmpfile = null;
 
       //OpenDialog baseFileDialog = new OpenDialog("Select Base File");
@@ -458,31 +465,57 @@ public class CalibrateDirectory implements PlugIn{
       CameraEXIF imageEXIFData = null;
       CameraEXIF qrTIFEXIFData = null;
       CameraEXIF qrJPGEXIFData = null;
-      //String pathToCSV = null;
-      while( jpgPixelIterator.hasNext() ){
-        tmpfile = jpgPixelIterator.next();
+      String pathToCSV = null;
+      while( pixelIterator.hasNext() ){
+        imgcounter++;
+        tmpfile = pixelIterator.next();
+        IJ.log( (String)"Gathering pixel information for " + tmpfile.getName() + " (" + imgcounter + " of " + jpgToCalibrate.size() + " - " + (int)((double)imgcounter/((double)jpgToCalibrate.size())*100) + "% complete" + ")" );
         photo = new RGBPhoto(inputDir, tmpfile.getName(), tmpfile.getPath(), cameraType, false);
 
         ImagePlus imgRed = photo.getRedChannel();
+        ImagePlus imgGreen = photo.getGreenChannel();
         ImagePlus imgBlue = photo.getBlueChannel();
+
 
         double redReflectMax = (double)imgRed.getDisplayRangeMax();
         double redReflectMin = (double)imgRed.getDisplayRangeMin();
+        double greenReflectMax = (double)imgGreen.getDisplayRangeMax();
+        double greenReflectMin = (double)imgGreen.getDisplayRangeMin();
         double blueReflectMax = (double)imgBlue.getDisplayRangeMax();
         double blueReflectMin = (double)imgBlue.getDisplayRangeMin();
+        if(photo.getExtension().toUpperCase().equals("TIF"))
+        {
+            dirMinMaxes[0] = (dirMinMaxes[0] > redReflectMax) ? dirMinMaxes[0] : redReflectMax;
+            dirMinMaxes[1] = (dirMinMaxes[1] < redReflectMin) ? dirMinMaxes[1] : redReflectMin;
+            dirMinMaxes[2] = (dirMinMaxes[2] > greenReflectMax) ? dirMinMaxes[2] : greenReflectMax;
+            dirMinMaxes[3] = (dirMinMaxes[3] < greenReflectMin) ? dirMinMaxes[3] : greenReflectMin;
+            dirMinMaxes[4] = (dirMinMaxes[4] > blueReflectMax) ? dirMinMaxes[4] : blueReflectMax;
+            dirMinMaxes[5] = (dirMinMaxes[5] < blueReflectMin) ? dirMinMaxes[5] : blueReflectMin;
+        }
+        else if(photo.getExtension().toUpperCase().equals("JPG"))
+        {
+            dirMinMaxes[6] = (dirMinMaxes[6] > redReflectMax) ? dirMinMaxes[6] : redReflectMax;
+            dirMinMaxes[7] = (dirMinMaxes[7] < redReflectMin) ? dirMinMaxes[7] : redReflectMin;
+            dirMinMaxes[8] = (dirMinMaxes[8] > greenReflectMax) ? dirMinMaxes[8] : greenReflectMax;
+            dirMinMaxes[9] = (dirMinMaxes[9] < greenReflectMin) ? dirMinMaxes[9] : greenReflectMin;
+            dirMinMaxes[10] = (dirMinMaxes[10] > blueReflectMax) ? dirMinMaxes[10] : blueReflectMax;
+            dirMinMaxes[11] = (dirMinMaxes[11] < blueReflectMin) ? dirMinMaxes[11] : blueReflectMin;
+        }
+        else if(photo.getExtension().toUpperCase().equals("DNG"))
+        {
+            dirMinMaxes[12] = (dirMinMaxes[12] > redReflectMax) ? dirMinMaxes[12] : redReflectMax;
+            dirMinMaxes[13] = (dirMinMaxes[13] < redReflectMin) ? dirMinMaxes[13] : redReflectMin;
+            dirMinMaxes[14] = (dirMinMaxes[14] > greenReflectMax) ? dirMinMaxes[14] : greenReflectMax;
+            dirMinMaxes[15] = (dirMinMaxes[15] < greenReflectMin) ? dirMinMaxes[15] : greenReflectMin;
+            dirMinMaxes[16] = (dirMinMaxes[16] > blueReflectMax) ? dirMinMaxes[16] : blueReflectMax;
+            dirMinMaxes[17] = (dirMinMaxes[17] < blueReflectMin) ? dirMinMaxes[17] : blueReflectMin;
+        }
+     }
 
-        dirRedReflectMax = (dirRedReflectMax > redReflectMax) ? dirRedReflectMax : redReflectMax;
-        dirRedReflectMin = (dirRedReflectMin < redReflectMin) ? dirRedReflectMin : redReflectMin;
-        dirBlueReflectMax = (dirBlueReflectMax > blueReflectMax) ? dirBlueReflectMax : blueReflectMax;
-        dirBlueReflectMin = (dirBlueReflectMin > blueReflectMin) ? dirBlueReflectMin : blueReflectMin;
-      }
-      dirMinMaxes[0] = (double)dirRedReflectMax;
-      dirMinMaxes[1] = (double)dirRedReflectMin;
-      dirMinMaxes[2] = (double)dirBlueReflectMax;
-      dirMinMaxes[3] = (double)dirBlueReflectMin;
-      IJ.log( (String)"Red Max: " + dirMinMaxes[0] + " Red Min: " + dirMinMaxes[1] + " Blue Max: " + dirMinMaxes[2] + "Blue Min: " + dirMinMaxes[3]);
+      //IJ.log( (String)"Red Max: " + dirMinMaxes[0] + " Red Min: " + dirMinMaxes[1] + " Blue Max: " + dirMinMaxes[2] + "Blue Min: " + dirMinMaxes[3]);
       Iterator<File> jpgIterator = jpgToCalibrate.iterator();
       Iterator<File> tifIterator = tifToCalibrate.iterator();
+      imgcounter = 0;
       while( jpgIterator.hasNext() ){
         imgcounter++;
         tmpfile = jpgIterator.next();
@@ -496,42 +529,81 @@ public class CalibrateDirectory implements PlugIn{
             IJ.log("Could not find EXIF information on this image. Please make sure it contains EXIF information. I will skip this image.");
             continue;
         }
-        //    pathToCSV = GetEXIFCSV(imageEXIFData.getCameraModel());
+
 
         //IJ.log("Path To CSV: " + pathToCSV);
         qrTIFEXIFData = new CameraEXIF( new EXIFToolsReader(PATH_TO_EXIFTOOL, qrTIFPath) );
         qrJPGEXIFData = new CameraEXIF( new EXIFToolsReader(PATH_TO_EXIFTOOL, qrJPGPath) );
 
-        //IJ.log(imageEXIFData.printEXIFData());
+        //IJ.log("image Exif Data: " + imageEXIFData.printEXIFData());
         //IJ.log(qrTIFEXIFData.printEXIFData());
-        //IJ.log(qrJPGEXIFData.printEXIFData());
+        //IJ.log("QR Exif Data" + qrJPGEXIFData.printEXIFData());
 
         if( imageEXIFData != null)
         {
-            if( useQR && thereAreTIFs && !imageEXIFData.equals(qrTIFEXIFData)  ){
-                GenericDialog dialog = showCameraSettingsNotEqualDialog(qrTIFEXIFData.printEXIFData(),imageEXIFData.printEXIFData());
-                if( dialog.wasOKed() ){
-                    // Continue
-                }else if( dialog.wasCanceled() ){
-                    // Quit
-                    IJ.log("Goodbye!");
-                    return;
+            pathToCSV = GetEXIFCSV(imageEXIFData.getCameraModel());
+            CameraEXIF defaultEXIFData = new CameraEXIF( new EXIFCSVReader(pathToCSV));
+
+            if (useQR)
+            {
+                if( thereAreTIFs && !continueAnyway){
+                    if( !imageEXIFData.equals(qrTIFEXIFData) )
+                    {
+                        GenericDialog dialog = showCameraSettingsNotEqualDialog(qrTIFEXIFData.printEXIFData(),imageEXIFData.printEXIFData());
+                        continueAnyway = dialog.getNextBoolean();
+                        if( dialog.wasOKed() ){
+                            // Continue
+                        }else if( dialog.wasCanceled() ){
+                            // Quit
+                            IJ.log("Goodbye!");
+                            return;
+                        }
+                    }
+                }
+                if( thereAreJPGs && !continueAnyway){
+                    if( !imageEXIFData.equals(qrTIFEXIFData) )
+                    {
+                        GenericDialog dialog = showCameraSettingsNotEqualDialog(qrTIFEXIFData.printEXIFData(),imageEXIFData.printEXIFData());
+                        continueAnyway = dialog.getNextBoolean();
+                        if( dialog.wasOKed() ){
+                            // Continue
+                        }else if( dialog.wasCanceled() ){
+                            // Quit
+                            IJ.log("Goodbye!");
+                            return;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if( thereAreTIFs && !imageEXIFData.equals(defaultEXIFData) && !continueAnyway){
+                    GenericDialog dialog = showCameraSettingsNotEqualDialog(defaultEXIFData.printEXIFData(),imageEXIFData.printEXIFData());
+                    continueAnyway = dialog.getNextBoolean();
+                    if( dialog.wasOKed() ){
+                        // Continue
+                    }else if( dialog.wasCanceled() ){
+                        // Quit
+                        IJ.log("Goodbye!");
+                        return;
+                    }
+                }
+                if( thereAreJPGs && !imageEXIFData.equals(defaultEXIFData) && !continueAnyway){
+                    //IJ.log(qrJPGEXIFData.printEXIFData());
+                    //IJ.log(imageEXIFData.printEXIFData());
+                    GenericDialog dialog = showCameraSettingsNotEqualDialog(defaultEXIFData.printEXIFData(),imageEXIFData.printEXIFData());
+                    continueAnyway = dialog.getNextBoolean();
+                    if( dialog.wasOKed() ){
+                        // Continue
+                    }else if( dialog.wasCanceled() ){
+                        // Quit
+                        IJ.log("Goodbye!");
+                        return;
+                    }
                 }
             }
 
 
-            if( useQR && thereAreJPGs && !imageEXIFData.equals(qrJPGEXIFData) ){
-                IJ.log(qrJPGEXIFData.printEXIFData());
-                IJ.log(imageEXIFData.printEXIFData());
-                GenericDialog dialog = showCameraSettingsNotEqualDialog(qrJPGEXIFData.printEXIFData(),imageEXIFData.printEXIFData());
-                if( dialog.wasOKed() ){
-                    // Continue
-                }else if( dialog.wasCanceled() ){
-                    // Quit
-                    IJ.log("Goodbye!");
-                    return;
-                }
-            }
         }
 
 
@@ -628,7 +700,7 @@ public class CalibrateDirectory implements PlugIn{
           }
 
 
-          resultphoto = calibrator.makeSingle(photo, coeffs);
+          resultphoto = calibrator.makeSingle(photo, coeffs, dirMinMaxes);
 
         }else if( cameraType.equals(CalibrationPrompt.SURVEY2_RED) ){
           baseSummary = calibrator.getRefValues(bfs, "650");
@@ -656,7 +728,7 @@ public class CalibrateDirectory implements PlugIn{
 
 
 
-          resultphoto = calibrator.makeSingle(photo, coeffs);
+          resultphoto = calibrator.makeSingle(photo, coeffs, dirMinMaxes);
 
         }else if( cameraType.equals(CalibrationPrompt.SURVEY2_GREEN) ){
           baseSummary = calibrator.getRefValues(bfs, "548");
@@ -682,7 +754,7 @@ public class CalibrateDirectory implements PlugIn{
 
           }
 
-          resultphoto = calibrator.makeSingle(photo, coeffs);
+          resultphoto = calibrator.makeSingle(photo, coeffs, dirMinMaxes);
 
         }else if( cameraType.equals(CalibrationPrompt.SURVEY2_BLUE) ){
           baseSummary = calibrator.getRefValues(bfs, "450");
@@ -708,7 +780,7 @@ public class CalibrateDirectory implements PlugIn{
           }
 
 
-          resultphoto = calibrator.makeSingle(photo, coeffs);
+          resultphoto = calibrator.makeSingle(photo, coeffs, dirMinMaxes);
 
         }else if( cameraType.equals(CalibrationPrompt.DJIX3_NDVI) ){
           baseSummary = calibrator.getRefValues(bfs, "660/850");
@@ -886,8 +958,8 @@ public class CalibrateDirectory implements PlugIn{
 
 
         // Calibrated output folder override prevention
-        IJ.log("Saving Image");
-
+        //IJ.log("Saving Image");
+        IJ.log( "Saving image to " + outputDir);
         if( resultphoto.getExtension().toUpperCase().equals("TIF") ){
           saveToDir(tifOutputDir, resultphoto.getFileName(), resultphoto.getExtension(), resultphoto.getImage());
           CopyEXIFData(OS, PATH_TO_EXIFTOOL, tmpfile.getAbsolutePath(), tifOutputDir+resultphoto.getFileName()+"_Calibrated"+"."+resultphoto.getExtension());
@@ -901,7 +973,7 @@ public class CalibrateDirectory implements PlugIn{
           saveToDir( jpgOutputDir, resultphoto.getFileName(), "jpg", resultphoto.getImage() );
           CopyEXIFData(OS, PATH_TO_EXIFTOOL, tmpfile.getAbsolutePath(), jpgOutputDir+resultphoto.getFileName()+"_Calibrated"+"."+"jpg");
         }
-        IJ.log( "Saved image to " + outputDir);
+
 
 
 
@@ -1190,6 +1262,8 @@ public class CalibrateDirectory implements PlugIn{
               csvpath = valuesDirectory+"FC300X_ndvi\\FC300X_ndvi.csv";
           }else if( model.equals("FC300S") ){
               csvpath = valuesDirectory+"FC300S_ndvi\\FC300S_ndvi.csv";
+          }else if( model.equals("MAPIR")){
+              csvpath = valuesDirectory+"survey1\\survey1.csv";
           }
       }
       else{
@@ -1203,11 +1277,12 @@ public class CalibrateDirectory implements PlugIn{
       GenericDialog dialog = new GenericDialog("Attention!");
 
       dialog.addMessage("The camera settings of the current image to process");
-      dialog.addMessage("does not match the camera settings of the calibration targets image.");
+      dialog.addMessage("does not match the camera default settings or the setings of the calibration target's image.");
       dialog.addMessage("Proceeding will produce undesired results.");
       dialog.addMessage("Do you wish to continue?");
       dialog.addTextAreas("Calibration Target EXIF Data:\n" + exifdata1, "Image EXIF Data:\n" + exifdata2, 5, 30);
       //dialog.enableYesNoCancel("Continue anyway", "Choose another Calibration Target");
+      dialog.addCheckbox("Keep this decision for all remaining files.", false);
       dialog.setOKLabel("Continue anyway");
       dialog.setCancelLabel("Quit");
 

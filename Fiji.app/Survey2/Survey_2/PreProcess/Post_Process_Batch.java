@@ -29,6 +29,7 @@ public class Post_Process_Batch implements PlugIn{
   private final int FILTER_RADIUS_JPG = 10;
   private String filter_radius_raw = "1";
   private String filter_radius_jpg = "10";
+  private String normalize = "0";
 
   private String OS = null;
 
@@ -40,7 +41,7 @@ public class Post_Process_Batch implements PlugIn{
   private Boolean DeleteOriginals = true;
   private boolean removeVignette = true;
 
-  private final String VERSION = "1.3.1";
+  private final String VERSION = "1.3.4";
 
 
   class FileComparator implements Comparator<File>{
@@ -195,7 +196,26 @@ public class Post_Process_Batch implements PlugIn{
 }
     Collections.sort(jpgBatchToProcess);
     Collections.sort(raw_jpgBatchToProcess);
+    if( !raw_jpgBatchToProcess.isEmpty())
+    {
+    if( GetCameraModel(raw_jpgBatchToProcess.get(1).getAbsolutePath()) == "Survey2_RGB")
+    {
+        YesNoCancelDialog normal = new YesNoCancelDialog(null, "Attention", "Do you want to normalize the RGB color photos? This will make the colors more even (less green).");
+        if(normal.yesPressed())
+        {
+            normalize = "1";
+        }
+        else if(normal.cancelPressed())
+        {
+            return;
+        }
+        else
+        {
+            normalize = "0";
+        }
 
+    }
+}
     /*
     IJ.log("jpg:" + jpgBatchToProcess.size());
     IJ.log("raw:" + raw_jpgBatchToProcess.size());
@@ -292,7 +312,7 @@ public class Post_Process_Batch implements PlugIn{
         //IJ.log("Path To CSV: " + pathToCSV);
         defaultEXIFData = new CameraEXIF( new EXIFCSVReader(pathToCSV) );
 
-        IJ.log("EXIF data match up? " + imageEXIFData.equals(defaultEXIFData) );
+        //IJ.log("EXIF data match up? " + imageEXIFData.equals(defaultEXIFData) );
         if( removeVignette && !imageEXIFData.equals(defaultEXIFData) ){
             if( !containsDNGOnly(raw_jpgBatchToProcess.iterator()) ){
                 GenericDialog dialog = showCameraSettingsNotEqualDialog(defaultEXIFData.printEXIFData(), imageEXIFData.printEXIFData(), raw_jpgBatchToProcess.get(i+1).getName());
@@ -332,6 +352,8 @@ public class Post_Process_Batch implements PlugIn{
           margs += "path_out="+outDirStr;
           margs += "|";
           margs += "filter_radius="+filter_radius_raw;
+          margs += "|";
+          margs += "normalize_photos="+normalize;
           //IJ.log(margs);
           IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessRAW.ijm", margs);
         }
@@ -353,7 +375,7 @@ public class Post_Process_Batch implements PlugIn{
         if( containsDNGOnly(raw_jpgBatchToProcess.iterator()) ){
             // Get camera model (dng version)
             CopyEXIFDNGData(imageEXIFData, PATH_TO_EXIFTOOL, outDirStr+inImageNoExt+".tif");
-            IJ.log("Done copying EXIF data");
+            //IJ.log("Done copying EXIF data");
         }else{
             CopyEXIFData(OS, PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath(), outDirStr+inImageNoExt+".tif");
         }
@@ -377,7 +399,10 @@ public class Post_Process_Batch implements PlugIn{
         margs += "|";
         margs += "filter_radius="+filter_radius_jpg;
         //IJ.log(margs);
-        IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessJPG.ijm", margs);
+        if ( filter_radius_jpg != "0" )
+        {
+            IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessJPG.ijm", margs);
+        }
 
         inImageParts = (raw_jpgBatchToProcess.get(i+1).getName()).split("\\.(?=[^\\.]+$)");
         inImageNoExt = inImageParts[0];
@@ -419,7 +444,7 @@ public class Post_Process_Batch implements PlugIn{
         defaultEXIFData = new CameraEXIF( new EXIFCSVReader(pathToCSV) );
 
 
-        IJ.log("EXIF data match up? " + imageEXIFData.equals(defaultEXIFData) );
+        //IJ.log("EXIF data match up? " + imageEXIFData.equals(defaultEXIFData) );
         if( removeVignette && !imageEXIFData.equals(defaultEXIFData) ){
             GenericDialog dialog = showCameraSettingsNotEqualDialog(defaultEXIFData.printEXIFData(), imageEXIFData.printEXIFData(), jpgBatchToProcess.get(i).getName() );
             if( dialog.wasOKed() ){
@@ -452,7 +477,7 @@ public class Post_Process_Batch implements PlugIn{
         margs += "|";
         margs += "path_out="+outDirStr;
         margs += "|";
-        margs += "filter_radius="+"10";
+        margs += "filter_radius="+filter_radius_jpg;
         //IJ.log(margs);
         IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\ProcessJPG.ijm", margs);
 
@@ -507,6 +532,8 @@ public class Post_Process_Batch implements PlugIn{
           csvpath = valuesDirectory+"FC300X_ndvi\\FC300X_ndvi.csv";
       }else if( model.equals("FC300S") ){
           csvpath = valuesDirectory+"FC300S_ndvi\\FC300S_ndvi.csv";
+      }else if( model.equals("Survey2_RGB") ){
+          csvpath = valuesDirectory+"rgb\\rgb.csv";
       }
 
       return csvpath;
@@ -564,6 +591,8 @@ public class Post_Process_Batch implements PlugIn{
 
     if( line.matches(".*Survey2_BLUE") ){
       return "Survey2_BLUE";
+    }else if( line.matches(".*Survey2_RGB") ){
+      return "Survey2_RGB";
     }else if( line.matches(".*Survey2_RED") ){
       return "Survey2_RED";
     }else if( line.matches(".*Survey2_GREEN") ){
@@ -596,6 +625,8 @@ public class Post_Process_Batch implements PlugIn{
         return "Survey2_BLUE";
       }else if( line.matches(".*Survey2_RED") ){
         return "Survey2_RED";
+      }else if( line.matches(".*Survey2_RGB") ){
+        return "Survey2_RGB";
       }else if( line.matches(".*Survey2_GREEN") ){
         return "Survey2_GREEN";
       }else if( line.matches(".*Survey2_RGB") ){
@@ -691,7 +722,7 @@ public class Post_Process_Batch implements PlugIn{
       ImagePlus raw = IJ.getImage();
 
 
-      IJ.run(raw, "Debayer Image", "order=R-G-R-G demosaicing=Replication radius=2 radius=2");
+      IJ.run(raw, "Debayer Image", "order=G-B-G-B demosaicing=Replication radius=2 radius=2");
       ImagePlus debayed = IJ.getImage();
       raw.changes = false;
       raw.close();
@@ -796,7 +827,7 @@ public class Post_Process_Batch implements PlugIn{
     IJ.run("Raw...", "open="+ "[" + path + "]" + "image=[16-bit Unsigned] width=4608 height=3456 offset=0 number=1 gap=0 little-endian");
     ImagePlus raw = IJ.getImage();
 
-    IJ.run(raw, "Debayer Image", "order=R-G-R-G demosaicing=Replication radius=2 radius=2");
+    IJ.run(raw, "Debayer Image", "order=G-B-G-B demosaicing=Replication radius=2 radius=2");
     IJ.wait(1000);
     raw.changes = false;
     raw.close();
@@ -900,7 +931,7 @@ public class Post_Process_Batch implements PlugIn{
     // Get Green channel
     IJ.selectWindow(jpg.getTitle() + " (green)");
     ImagePlus green = IJ.getImage();
-    IJ.run(red, "Calculator Plus", "i1="+"["+flatField[1].getTitle()+"]"+" i2="+"["+green.getTitle()+"]"+" operation=[Multiply: i2 = (i1*i2) x k1 + k2] k1=1 k2=0 create");
+    IJ.run(green, "Calculator Plus", "i1="+"["+flatField[1].getTitle()+"]"+" i2="+"["+green.getTitle()+"]"+" operation=[Multiply: i2 = (i1*i2) x k1 + k2] k1=1 k2=0 create");
     IJ.wait(1000);
     IJ.selectWindow("Result");
     ImagePlus result2 = IJ.getImage();
@@ -1103,7 +1134,7 @@ public class Post_Process_Batch implements PlugIn{
 
     }
 
-    IJ.log("Finished writing EXIF data");
+    //IJ.log("Finished writing EXIF data");
 
   }
 

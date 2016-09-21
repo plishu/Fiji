@@ -47,6 +47,8 @@ public class Calibrator{
   public static String MAP_TARG2 = "TARGET2";
   public static String MAP_TARG3 = "TARGET3";
 
+
+
   private Debugger debugger = Debugger.getInstance(false);
   private boolean ReflectanceImageOnly = false;
 
@@ -347,7 +349,7 @@ public class Calibrator{
     return values;
   }
 
-  public RGBPhoto makeSingle(RGBPhoto photo, double[] calibrationCeofs){
+  public RGBPhoto makeSingle(RGBPhoto photo, double[] calibrationCeofs, double[] pixelMinMaxes){
     ImagePlus img = photo.getImage();
     ImagePlus rimg = photo.getRedChannel();
     ImagePlus gimg = photo.getGreenChannel();
@@ -360,13 +362,46 @@ public class Calibrator{
     ImagePlus newRedImage = NewImage.createFloatImage((String)"redImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
     ImagePlus newBlueImage = NewImage.createFloatImage((String)"blueImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
     ImagePlus newGreenImage = NewImage.createFloatImage((String)"greenImage", (int)img.getWidth(), (int)img.getHeight(), (int)1, (int)1);
+    double redReflectMax = 255.0;
+    double redReflectMin = 0.0;
+    double greenReflectMax = 255.0;
+    double greenReflectMin = 0.0;
+    double blueReflectMax = 255.0;
+    double blueReflectMin = 0.0;
+    if(photo.getExtension().toUpperCase().equals("TIF"))
+    {
+        redReflectMax = (pixelMinMaxes[0] * calibrationCeofs[1]) + calibrationCeofs[0];
+        redReflectMin = (pixelMinMaxes[1] * calibrationCeofs[1]) + calibrationCeofs[0];
+        greenReflectMax = (pixelMinMaxes[2] * calibrationCeofs[1]) + calibrationCeofs[0];
+        greenReflectMin = (pixelMinMaxes[3] * calibrationCeofs[1]) + calibrationCeofs[0];
+        blueReflectMax = (pixelMinMaxes[4] * calibrationCeofs[1]) + calibrationCeofs[0];
+        blueReflectMin = (pixelMinMaxes[5] * calibrationCeofs[1]) + calibrationCeofs[0];
+    }
+    else if(photo.getExtension().toUpperCase().equals("JPG"))
+    {
+        redReflectMax = (pixelMinMaxes[6] * calibrationCeofs[1]) + calibrationCeofs[0];
+        redReflectMin = (pixelMinMaxes[7] * calibrationCeofs[1]) + calibrationCeofs[0];
+        greenReflectMax = (pixelMinMaxes[8] * calibrationCeofs[1]) + calibrationCeofs[0];
+        greenReflectMin = (pixelMinMaxes[9] * calibrationCeofs[1]) + calibrationCeofs[0];
+        blueReflectMax = (pixelMinMaxes[10] * calibrationCeofs[1]) + calibrationCeofs[0];
+        blueReflectMin = (pixelMinMaxes[11] * calibrationCeofs[1]) + calibrationCeofs[0];
+    }
+    else if(photo.getExtension().toUpperCase().equals("DNG"))
+    {
+        redReflectMax = (pixelMinMaxes[12] * calibrationCeofs[1]) + calibrationCeofs[0];
+        redReflectMin = (pixelMinMaxes[13] * calibrationCeofs[1]) + calibrationCeofs[0];
+        greenReflectMax = (pixelMinMaxes[14] * calibrationCeofs[1]) + calibrationCeofs[0];
+        greenReflectMin = (pixelMinMaxes[15] * calibrationCeofs[1]) + calibrationCeofs[0];
+        blueReflectMax = (pixelMinMaxes[16] * calibrationCeofs[1]) + calibrationCeofs[0];
+        blueReflectMin = (pixelMinMaxes[17] * calibrationCeofs[1]) + calibrationCeofs[0];
+    }
 
-    double redReflectMax = (double)rimg.getDisplayRangeMax() * calibrationCeofs[1] + calibrationCeofs[0];
-    double redReflectMin = (double)rimg.getDisplayRangeMin() * calibrationCeofs[1] + calibrationCeofs[0];
-    double greenReflectMax = (double)gimg.getDisplayRangeMax() * calibrationCeofs[1] + calibrationCeofs[0];
-    double greenReflectMin = (double)gimg.getDisplayRangeMin() * calibrationCeofs[1] + calibrationCeofs[0];
-    double blueReflectMax = (double)bimg.getDisplayRangeMax() * calibrationCeofs[1] + calibrationCeofs[0];
-    double blueReflectMin = (double)bimg.getDisplayRangeMin() * calibrationCeofs[1] + calibrationCeofs[0];
+    // double redReflectMax = (double)rimg.getDisplayRangeMax() * calibrationCeofs[1] + calibrationCeofs[0];
+    // double redReflectMin = (double)rimg.getDisplayRangeMin() * calibrationCeofs[1] + calibrationCeofs[0];
+    // double greenReflectMax = (double)gimg.getDisplayRangeMax() * calibrationCeofs[1] + calibrationCeofs[0];
+    // double greenReflectMin = (double)gimg.getDisplayRangeMin() * calibrationCeofs[1] + calibrationCeofs[0];
+    // double blueReflectMax = (double)bimg.getDisplayRangeMax() * calibrationCeofs[1] + calibrationCeofs[0];
+    // double blueReflectMin = (double)bimg.getDisplayRangeMin() * calibrationCeofs[1] + calibrationCeofs[0];
 
     double pixel = 0.0;
     double reflect = 0.0;
@@ -401,7 +436,6 @@ public class Calibrator{
               if( !ReflectanceImageOnly ){
 
                 pixel = (int)( (pixel - greenReflectMin)/(greenReflectMax-greenReflectMin)*255 );
-                // histogram stretch map to float-point THIS ONE WORKS!!
                 pixel = (double)(pixel - 0)/(255-0)*1;
 
               }
@@ -415,7 +449,6 @@ public class Calibrator{
               if( !ReflectanceImageOnly ){
 
                 pixel = (int)( (pixel - blueReflectMin)/(blueReflectMax-blueReflectMin)*255 );
-                // histogram stretch map to float-point THIS ONE WORKS!!
                 pixel = (double)(pixel - 0)/(255-0)*1;
 
               }
@@ -429,7 +462,6 @@ public class Calibrator{
               if( !ReflectanceImageOnly ){
 
                 pixel = (int)( (pixel - redReflectMin)/(redReflectMax-redReflectMin)*255 );
-                // histogram stretch map to float-point THIS ONE WORKS!!
                 pixel = (double)(pixel - 0)/(255-0)*1;
 
               }
@@ -481,11 +513,37 @@ public class Calibrator{
       //int imgMax = (int)(Math.pow(2,8)-1);
       //int imgMin = 0;
       //double range[] = {(double)imgMin, (double)imgMax};
-      double redReflectMax = (pixelMinMaxes[0] * calibrationCeofs[1]) + calibrationCeofs[0];
-      double redReflectMin = (pixelMinMaxes[1] * calibrationCeofs[1]) + calibrationCeofs[0];
-      double blueReflectMax = (pixelMinMaxes[2] * calibrationCeofs[3]) + calibrationCeofs[2];
-      double blueReflectMin = (pixelMinMaxes[3] * calibrationCeofs[3]) + calibrationCeofs[2];
+      double redReflectMax = 0.0;
+      double redReflectMin = 255.0;
+      double blueReflectMax = 0.0;
+      double blueReflectMin = 255.0;
+      if(photo.getExtension().toUpperCase().equals("TIF"))
+      {
+          redReflectMax = (pixelMinMaxes[0] * calibrationCeofs[1]) + calibrationCeofs[0];
+          redReflectMin = (pixelMinMaxes[1] * calibrationCeofs[1]) + calibrationCeofs[0];
 
+          blueReflectMax = (pixelMinMaxes[4] * calibrationCeofs[1]) + calibrationCeofs[0];
+          blueReflectMin = (pixelMinMaxes[5] * calibrationCeofs[1]) + calibrationCeofs[0];
+      }
+      else if(photo.getExtension().toUpperCase().equals("JPG"))
+      {
+          redReflectMax = (pixelMinMaxes[6] * calibrationCeofs[1]) + calibrationCeofs[0];
+          redReflectMin = (pixelMinMaxes[7] * calibrationCeofs[1]) + calibrationCeofs[0];
+
+          blueReflectMax = (pixelMinMaxes[10] * calibrationCeofs[1]) + calibrationCeofs[0];
+          blueReflectMin = (pixelMinMaxes[11] * calibrationCeofs[1]) + calibrationCeofs[0];
+      }
+      else if(photo.getExtension().toUpperCase().equals("DNG"))
+      {
+          redReflectMax = (pixelMinMaxes[12] * calibrationCeofs[1]) + calibrationCeofs[0];
+          redReflectMin = (pixelMinMaxes[13] * calibrationCeofs[1]) + calibrationCeofs[0];
+
+          blueReflectMax = (pixelMinMaxes[16] * calibrationCeofs[1]) + calibrationCeofs[0];
+          blueReflectMin = (pixelMinMaxes[17] * calibrationCeofs[1]) + calibrationCeofs[0];
+      }
+
+      double leastReflect = (redReflectMin < blueReflectMin) ? redReflectMin : blueReflectMin;
+      double greatestReflect = (redReflectMax > blueReflectMax) ? redReflectMax : blueReflectMax;
 
       //double redRange[] = {0.0,redReflectMax};
       //double blueRange[] = {0.0,blueReflectMax};
@@ -531,8 +589,8 @@ public class Calibrator{
               // THIS ONE WORKS!!
 
               if( !ReflectanceImageOnly ){
-                redPixel = (int)( (redPixel - redReflectMin)/(redReflectMax-redReflectMin)*255 );
-                bluePixel = (int)( (bluePixel - blueReflectMin)/(blueReflectMax-blueReflectMin)*255 );
+                redPixel = (int)( (redPixel - leastReflect)/(greatestReflect-leastReflect)*255 );
+                bluePixel = (int)( (bluePixel - leastReflect)/(greatestReflect-leastReflect)*255 );
 
 
                 // histogram stretch map to float-point THIS ONE WORKS!!
