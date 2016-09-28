@@ -570,7 +570,7 @@ public class Calibrator{
           x = 0;
           while (x < img.getWidth()) {
 
-
+              bluePixel = (double)bimg.getProcessor().getPixelValue(x, y);
               // NIR remove
               if( photo.getCameraType().equals(CalibrationPrompt.SURVEY2_NDVI) ){
                   redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 0.80 * bimg.getProcessor().getPixelValue(x, y);
@@ -578,12 +578,14 @@ public class Calibrator{
                   redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 0.80 * bimg.getProcessor().getPixelValue(x, y);
               }else if( photo.getCameraType().equals(CalibrationPrompt.DJIPHANTOM3_NDVI) ){
                   redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 0.80 * bimg.getProcessor().getPixelValue(x, y);
+              }else if( photo.getCameraType().equals(CalibrationPrompt.SURVEY1_NDVI) ){
+                  bluePixel = (double)bimg.getProcessor().getPixelValue(x, y) - 0.80 * rimg.getProcessor().getPixelValue(x, y);
               }
               //redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 0.8 * bimg.getProcessor().getPixelValue(x, y);
 
               // Apply reflectance mapping
               redPixel = (double)redPixel * calibrationCeofs[1] + calibrationCeofs[0];
-              bluePixel = (double)bimg.getProcessor().getPixelValue(x, y) * calibrationCeofs[3] + calibrationCeofs[2];
+              bluePixel = (double)bluePixel * calibrationCeofs[3] + calibrationCeofs[2];
 
 
               // THIS ONE WORKS!!

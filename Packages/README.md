@@ -3,13 +3,21 @@ This directory contains the download links to the various pre-packaged Fiji dist
 ## Latest Version (1.3.4)
 
 
-####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160914.zip)
+####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160928.zip)
 
-####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160914.zip)
+####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160928.zip)
 
 
 ## Change Log
 All notable changes to this project will be documented in this file.
+
+## [1.3.5] - 2016-09-28
+### Added
+-Option to normalize RGB images in the pre-process step.
+
+### Fixed
+- Fixed support for Survey1 calibration. Now correctly handles pixel math.
+- Exif data mismatch prompts
 
 ## [1.3.4] - 2016-09-14
 ### Fixed
@@ -24,8 +32,6 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - DNG EXIF data extraction
 - pre-process: Support for DNG only pre-processing out of bounds exception.
-
->>>>>>> origin/master
 
 ## [1.3.2] - 2016-08-17
 ### Added
@@ -122,9 +128,13 @@ All notable changes to this project will be documented in this file.
 
 ## Older versions
 
-####[Fiji Windows 32-bit (1.3.2)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160908.zip)
+####[Fiji Windows 32-bit (1.3.4)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160914.zip)
 
-####[Fiji Windows 64-bit (1.3.2)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160908.zip)
+####[Fiji Windows 64-bit (1.3.4)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160914.zip)
+
+####[Fiji Windows 32-bit (1.3.3)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160908.zip)
+
+####[Fiji Windows 64-bit (1.3.3)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160908.zip)
 
 ####[Fiji Windows 32-bit (1.3.2)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160817.zip)
 

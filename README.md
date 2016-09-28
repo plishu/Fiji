@@ -40,6 +40,10 @@ Within Fiji's Plugin submenu, you will see a MAPIR option. The MAPIR plugin cont
 ## Change Log
 All notable changes to this project will be documented in this file.
 
+## [1.3.5] - 2016-09-28
+### Fixed
+- Fixed support for Survey1 calibration. Now correctly handles pixel math.
+
 ## [1.3.4] - 2016-09-14
 ### Fixed
 - Code to collect highest/lowest pixel values across entire input directory not on a per picture basis
