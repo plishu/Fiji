@@ -62,7 +62,6 @@ public class Post_Process_Batch implements PlugIn{
     //PATH_TO_EXIFTOOL = "/usr/bin/exiftool";
     FLAT_FIELD_DIRECTORY = WorkingDirectory+"Survey2\\Flat-Fields\\";
 
-
     YesNoCancelDialog removeVignetteDialog = new YesNoCancelDialog(null, "Attention", "Do you want to apply vignette removal to the pre-process procedure?");
     if( removeVignetteDialog.yesPressed() ){
         filter_radius_raw = "1";
@@ -149,6 +148,7 @@ public class Post_Process_Batch implements PlugIn{
 
         if( filesToProcess[i+1].getName().contains("jpg") || filesToProcess[i+1].getName().contains("JPG") ){
             raw_jpgBatchToProcess.add(filesToProcess[i+1]);
+            i++;
         }else{
             // Does not comply to directory file structure
             if( showNotCorrectFileStructure().wasOKed() ){
@@ -159,21 +159,23 @@ public class Post_Process_Batch implements PlugIn{
                     IJ.log(filesToProcess[j].getName());
                 }
             }
+            i++;
             return;
         }
 
-        i++; // Skip following JPG in the search
+         // Skip following JPG in the search
       }else if( inImageExt.toUpperCase().equals("DNG") ){
         raw_jpgBatchToProcess.add(filesToProcess[i]);
 
         //IJ.log(filesToProcess[i].getName());
         if( containsDNGOnly( raw_jpgBatchToProcess.iterator()) ){
-
+            IJ.log("Contains DNGs only");
         }
         else
         {
             if( filesToProcess[i+1].getName().contains("jpg") || filesToProcess[i+1].getName().contains("JPG") ){
                 raw_jpgBatchToProcess.add(filesToProcess[i+1]);
+                i++;
             }else{
                 // Does not comply to directory file structure
 
@@ -184,10 +186,11 @@ public class Post_Process_Batch implements PlugIn{
                     for( int j=0; j<filesToProcess.length; j++ ){
                         IJ.log(filesToProcess[j].getName());
                     }
+                    i++;
                     return;
                 }
             }
-            i++;
+
       }
       }else if( inImageExt.toUpperCase().equals("JPG") ){
         jpgBatchToProcess.add(filesToProcess[i]);
@@ -269,7 +272,14 @@ public class Post_Process_Batch implements PlugIn{
 
       // Iterate through each RAW file only!
       // Index JPG by i+1 each time.
-      for( int i=0; i<raw_jpgBatchToProcess.size(); i=i+2 ){
+      for( int i=0; i<raw_jpgBatchToProcess.size(); i++ ){
+        if( (i != 0) && !containsDNGOnly(raw_jpgBatchToProcess.iterator())){
+          i = i+1;
+        }
+        if( i >= raw_jpgBatchToProcess.size()  )
+        {
+            continue;
+        }
         filter_radius_raw = tmp_f_r_raw;
         filter_radius_jpg = tmp_f_r_jpg;
 
@@ -285,9 +295,10 @@ public class Post_Process_Batch implements PlugIn{
 
         // Support for DNG only (DNG has metadata embedded within image)
         if( containsDNGOnly(raw_jpgBatchToProcess.iterator()) ){
-            if( i != 0 ){
-                i = i-1;
-            }
+            IJ.log("Entering SUPPORT FOR DNG ONLY");
+            //if( i != 0 ){
+            //    i = i-1;
+            //}
             String margs = "";
             margs += "path_ff="+FLAT_FIELD_DIRECTORY+FlatField+"\\"+FlatField+".RAW";
             margs += "|";
@@ -298,11 +309,11 @@ public class Post_Process_Batch implements PlugIn{
             margs += "filter_radius="+filter_radius_raw;
             //IJ.log(margs);
             // Clear log for exif data
-            IJ.deleteRows(0, IJ.getLog().length()-1);
+            //IJ.deleteRows(0, IJ.getLog().length()-1);
             //IJ.selectWindow("Log");
-            IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\GetDNGEXIF.ijm", margs);
+            //IJ.runMacroFile(WorkingDirectory+"Survey2\\Macros\\GetDNGEXIF.ijm", margs);
             // Get camera model (dng version)
-            imageEXIFData = new CameraEXIF( new EXIFDNGReader(outDirStr+"MetaData.txt") );
+            imageEXIFData = new CameraEXIF( new EXIFToolsReader(PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i).getAbsolutePath()) );
             NextModel = getDNGCameraModel( imageEXIFData );
         }else{
             NextModel = GetCameraModel(raw_jpgBatchToProcess.get(i+1).getAbsolutePath());
@@ -374,7 +385,8 @@ public class Post_Process_Batch implements PlugIn{
 
         if( containsDNGOnly(raw_jpgBatchToProcess.iterator()) ){
             // Get camera model (dng version)
-            CopyEXIFDNGData(imageEXIFData, PATH_TO_EXIFTOOL, outDirStr+inImageNoExt+".tif");
+        //    CopyEXIFDNGData(imageEXIFData, PATH_TO_EXIFTOOL, outDirStr+inImageNoExt+".tif");
+            CopyEXIFData(OS, PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i).getAbsolutePath(), outDirStr+inImageNoExt+".tif");
             //IJ.log("Done copying EXIF data");
         }else{
             CopyEXIFData(OS, PATH_TO_EXIFTOOL, raw_jpgBatchToProcess.get(i+1).getAbsolutePath(), outDirStr+inImageNoExt+".tif");

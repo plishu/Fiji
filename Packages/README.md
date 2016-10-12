@@ -3,13 +3,17 @@ This directory contains the download links to the various pre-packaged Fiji dist
 ## Latest Version (1.3.4)
 
 
-####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20160928.zip)
+####[Fiji Windows 32-bit](http://www.docs.peauproductions.com/fiji/fiji-win32-20161012.zip)
 
-####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20160928.zip)
+####[Fiji Windows 64-bit](http://www.docs.peauproductions.com/fiji/fiji-win64-20161012.zip)
 
 
 ## Change Log
 All notable changes to this project will be documented in this file.
+
+## [1.3.6] - 2016-10-12
+### Fixed
+- Fixed issues with DNG processing.
 
 ## [1.3.5] - 2016-09-28
 ### Added
@@ -127,6 +131,10 @@ All notable changes to this project will be documented in this file.
 
 
 ## Older versions
+
+####[Fiji Windows 32-bit (1.3.5)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160928.zip)
+
+####[Fiji Windows 64-bit (1.3.5)](http://www.docs.peauproductions.com/fiji/fiji-win64-20160928.zip)
 
 ####[Fiji Windows 32-bit (1.3.4)](http://www.docs.peauproductions.com/fiji/fiji-win32-20160914.zip)
 
