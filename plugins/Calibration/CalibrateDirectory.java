@@ -274,6 +274,7 @@ public class CalibrateDirectory implements PlugIn{
             IJ.log("Detecting QR code. Please Wait.");
 
             qrJPGPhoto = new RGBPhoto(qrJPGDir, qrJPGFilename, qrJPGPath, cameraType, false);
+            //qrJPGPhoto = calibrator.removeGamma(qrJPGPhoto,2.2);
             qrCameraModel = GetEXIFCameraModel("Windows", PATH_TO_EXIFTOOL, qrJPGPath);
 
             if( !qrJPGPhoto.checkChannels() ){
@@ -511,7 +512,10 @@ public class CalibrateDirectory implements PlugIn{
             dirMinMaxes[17] = (dirMinMaxes[17] < blueReflectMin) ? dirMinMaxes[17] : blueReflectMin;
         }
      }
-
+      IJ.log("Tiff Maxes R/G/B: " + dirMinMaxes[0] + " " + dirMinMaxes[2] + " " + dirMinMaxes[4]);
+      IJ.log("Tiff Mins R/G/B: " + dirMinMaxes[1] + " " + dirMinMaxes[3] + " " + dirMinMaxes[5]);
+      IJ.log("JPG Maxes R/G/B: " + dirMinMaxes[6] + " " + dirMinMaxes[8] + " " + dirMinMaxes[10]);
+      IJ.log("JPG Mins R/G/B: " + dirMinMaxes[7] + " " + dirMinMaxes[9] + " " + dirMinMaxes[11]);
       //IJ.log( (String)"Red Max: " + dirMinMaxes[0] + " Red Min: " + dirMinMaxes[1] + " Blue Max: " + dirMinMaxes[2] + "Blue Min: " + dirMinMaxes[3]);
       Iterator<File> jpgIterator = jpgToCalibrate.iterator();
       Iterator<File> tifIterator = tifToCalibrate.iterator();
@@ -561,7 +565,7 @@ public class CalibrateDirectory implements PlugIn{
                     }
                 }
                 if( thereAreJPGs && !continueAnyway){
-                    if( !imageEXIFData.equals(qrTIFEXIFData) )
+                    if( !imageEXIFData.equals(qrJPGEXIFData) )
                     {
                         GenericDialog dialog = showCameraSettingsNotEqualDialog(qrTIFEXIFData.printEXIFData(),imageEXIFData.printEXIFData());
                         continueAnyway = dialog.getNextBoolean();
