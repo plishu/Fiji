@@ -368,7 +368,7 @@ public class Calibrator{
     double greenReflectMin = 0.0;
     double blueReflectMax = 255.0;
     double blueReflectMin = 0.0;
-    if(photo.getExtension().toUpperCase().equals("TIF"))
+    if(photo.getExtension().toUpperCase().contains("TIF"))
     {
         redReflectMax = (pixelMinMaxes[0] * calibrationCeofs[1]) + calibrationCeofs[0];
         redReflectMin = (pixelMinMaxes[1] * calibrationCeofs[1]) + calibrationCeofs[0];
@@ -377,7 +377,7 @@ public class Calibrator{
         blueReflectMax = (pixelMinMaxes[4] * calibrationCeofs[1]) + calibrationCeofs[0];
         blueReflectMin = (pixelMinMaxes[5] * calibrationCeofs[1]) + calibrationCeofs[0];
     }
-    else if(photo.getExtension().toUpperCase().equals("JPG"))
+    else if(photo.getExtension().toUpperCase().contains("JPG"))
     {
         redReflectMax = (pixelMinMaxes[6] * calibrationCeofs[1]) + calibrationCeofs[0];
         redReflectMin = (pixelMinMaxes[7] * calibrationCeofs[1]) + calibrationCeofs[0];
@@ -386,7 +386,7 @@ public class Calibrator{
         blueReflectMax = (pixelMinMaxes[10] * calibrationCeofs[1]) + calibrationCeofs[0];
         blueReflectMin = (pixelMinMaxes[11] * calibrationCeofs[1]) + calibrationCeofs[0];
     }
-    else if(photo.getExtension().toUpperCase().equals("DNG"))
+    else if(photo.getExtension().toUpperCase().contains("DNG"))
     {
         redReflectMax = (pixelMinMaxes[12] * calibrationCeofs[1]) + calibrationCeofs[0];
         redReflectMin = (pixelMinMaxes[13] * calibrationCeofs[1]) + calibrationCeofs[0];
@@ -519,7 +519,7 @@ public class Calibrator{
       double redReflectMin = 0.0;
       double blueReflectMax = 0.0;
       double blueReflectMin = 0.0;
-      if(photo.getExtension().toUpperCase().equals("TIF"))
+      if(photo.getExtension().toUpperCase().contains("TIF"))
       {
           redReflectMax = (pixelMinMaxes[0] * calibrationCeofs[1]) + calibrationCeofs[0];
           redReflectMin = (pixelMinMaxes[1] * calibrationCeofs[1]) + calibrationCeofs[0];
@@ -532,7 +532,7 @@ public class Calibrator{
           // blueReflectMax = (pixelMinMaxes[4] * calibrationCeofs[1]) + calibrationCeofs[0];
           // blueReflectMin = (pixelMinMaxes[5] * calibrationCeofs[1]) + calibrationCeofs[0];
       }
-      else if(photo.getExtension().toUpperCase().equals("JPG"))
+      else if(photo.getExtension().toUpperCase().contains("JPG"))
       {
           redReflectMax = (pixelMinMaxes[6] * calibrationCeofs[1]) + calibrationCeofs[0];
           redReflectMin = (pixelMinMaxes[7] * calibrationCeofs[1]) + calibrationCeofs[0];
@@ -545,7 +545,7 @@ public class Calibrator{
           // blueReflectMax = (pixelMinMaxes[10] * calibrationCeofs[1]) + calibrationCeofs[0];
           // blueReflectMin = (pixelMinMaxes[11] * calibrationCeofs[1]) + calibrationCeofs[0];
       }
-      else if(photo.getExtension().toUpperCase().equals("DNG"))
+      else if(photo.getExtension().toUpperCase().contains("DNG"))
       {
           redReflectMax = (pixelMinMaxes[12] * calibrationCeofs[1]) + calibrationCeofs[0];
           redReflectMin = (pixelMinMaxes[13] * calibrationCeofs[1]) + calibrationCeofs[0];
@@ -598,6 +598,8 @@ public class Calibrator{
                   redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 0.80 * bimg.getProcessor().getPixelValue(x, y);
               }else if( photo.getCameraType().equals(CalibrationPrompt.DJIPHANTOM3_NDVI) ){
                   redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 0.80 * bimg.getProcessor().getPixelValue(x, y);
+              }else if( photo.getCameraType().equals(CalibrationPrompt.DJIX3_NDVI) ){
+                  redPixel = (double)rimg.getProcessor().getPixelValue(x, y) - 0.80 * bimg.getProcessor().getPixelValue(x, y);
               }else if( photo.getCameraType().equals(CalibrationPrompt.SURVEY1_NDVI) ){
                   bluePixel = (double)bimg.getProcessor().getPixelValue(x, y) - 0.80 * rimg.getProcessor().getPixelValue(x, y);
               }
@@ -608,15 +610,15 @@ public class Calibrator{
               bluePixel = (double)bluePixel * calibrationCeofs[3] + calibrationCeofs[2];
 
               if( !ReflectanceImageOnly ){
-                redPixel = (int)( (redPixel - leastReflect)/(greatestReflect-leastReflect)*255 );
-                bluePixel = (int)( (bluePixel - leastReflect)/(greatestReflect-leastReflect)*255 );
-                if(photo.getExtension().toUpperCase().equals("JPG"))
+                redPixel = (int)( ((redPixel - leastReflect)/(greatestReflect-leastReflect))*255 );
+                bluePixel = (int)( ((bluePixel - leastReflect)/(greatestReflect-leastReflect))*255 );
+                if(photo.getExtension().toUpperCase().contains("JPG"))
                     {
                       redPixel = Math.pow(redPixel,(1/2.2));
                       bluePixel = Math.pow(bluePixel,(1/2.2));
                     }
-                redPixel = (double)(redPixel - 0)/(255-0)*1;
-                bluePixel = (double)(bluePixel - 0)/(255-0)*1;
+                redPixel = (double)(redPixel-0)/(255-0)*1;
+                bluePixel = (double)(bluePixel-0)/(255-0)*1;
               }
 
               newRedImage.getProcessor().putPixelValue(x, y, redPixel);

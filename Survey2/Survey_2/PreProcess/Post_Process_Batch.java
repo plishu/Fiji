@@ -41,7 +41,7 @@ public class Post_Process_Batch implements PlugIn{
   private Boolean DeleteOriginals = true;
   private boolean removeVignette = true;
 
-  private final String VERSION = "1.3.4";
+  private final String VERSION = "1.3.8";
 
 
   class FileComparator implements Comparator<File>{
@@ -739,7 +739,7 @@ public class Post_Process_Batch implements PlugIn{
       raw.changes = false;
       raw.close();
 
-      IJ.run(debayed, "Make Composite", "display=Color");
+      IJ.run(debayed, "Make Composite", "display=or");
       IJ.wait(1000);
       //debayed.changes = false;
       //debayed.close();

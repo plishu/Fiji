@@ -608,15 +608,15 @@ public class Calibrator{
               bluePixel = (double)bluePixel * calibrationCeofs[3] + calibrationCeofs[2];
 
               if( !ReflectanceImageOnly ){
-                redPixel = (int)( (redPixel - leastReflect)/(greatestReflect-leastReflect)*255 );
-                bluePixel = (int)( (bluePixel - leastReflect)/(greatestReflect-leastReflect)*255 );
+                redPixel = (int)( ((redPixel - leastReflect)/(greatestReflect-leastReflect))*255 );
+                bluePixel = (int)( ((bluePixel - leastReflect)/(greatestReflect-leastReflect))*255 );
                 if(photo.getExtension().toUpperCase().equals("JPG"))
                     {
                       redPixel = Math.pow(redPixel,(1/2.2));
                       bluePixel = Math.pow(bluePixel,(1/2.2));
                     }
-                redPixel = (double)(redPixel - 0)/(255-0)*1;
-                bluePixel = (double)(bluePixel - 0)/(255-0)*1;
+                redPixel = (double)(redPixel-0)/(255-0)*1;
+                bluePixel = (double)(bluePixel-0)/(255-0)*1;
               }
 
               newRedImage.getProcessor().putPixelValue(x, y, redPixel);

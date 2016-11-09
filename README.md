@@ -40,6 +40,11 @@ Within Fiji's Plugin submenu, you will see a MAPIR option. The MAPIR plugin cont
 ## Change Log
 All notable changes to this project will be documented in this file.
 
+## [1.3.8] - 2016-11-09
+### Fixed
+- DJIX3 camera now properly supported in Calibration steps.
+- Fixed an issue where .tiff (vs. .TIF) files were not being recognized as input.
+
 ## [1.3.7] - 2016-10-19
 ### Fixed
 - Fixed issue removing gamma from JPGs during calibration.
