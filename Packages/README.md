@@ -1,7 +1,7 @@
 This directory contains the download links to the various pre-packaged Fiji distribution with the MAPIR plugin pre-installed
 
-#These packages are obsolete and will no longer be supported. Please head over to our QGIS plugin at the link below
-#[QGIS plugin](https://github.com/mapircamera/QGIS/tree/master/Packages)
+#These packages are obsolete and will no longer be supported. 
+#Please head over to our QGIS plugin [here](https://github.com/mapircamera/QGIS/tree/master/Packages).
 
 ## Latest Version (1.3.8)
 
